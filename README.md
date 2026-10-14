@@ -1,4 +1,4 @@
-# Reporte de Bajas — Army de Wasco · Unidad O.P.E
+# Reporte de Bajas — Army de Wasco · Policía Militar
 
 Página web estática (un solo `index.html`) que llena el formato "Reporte de Bajas" y lo exporta como imagen PNG.
 
