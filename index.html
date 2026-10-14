@@ -43,7 +43,7 @@
 <body>
 <header>
   <h1>Reporte de Bajas · Army de Wasco · Policía Militar</h1>
-  <p>Llena los campos, adjunta las pruebas (1 a 10 fotos) y exporta el formato como imagen. Todo se procesa en tu navegador; nada se sube a ningún servidor.</p>
+  <p>Llena los campos, adjunta las pruebas (1 a 10 fotos) y exporta el formato como imagen en alta resolución (las fotos se repiten en grande debajo del formato). Todo se procesa en tu navegador; nada se sube a ningún servidor.</p>
 </header>
 <main>
   <section>
@@ -82,7 +82,7 @@
 
   <section class="preview">
     <h2>Vista previa</h2>
-    <canvas id="cv" width="1024" height="572"></canvas>
+    <canvas id="cv" width="2048" height="1144"></canvas>
   </section>
 </main>
 
@@ -165,11 +165,29 @@ function showErr(msg){ $('#err').textContent=msg; }
 
 // ---------- Dibujo ----------
 function fit(txt,maxW){ while(ctx.measureText(txt).width>maxW && txt.length>1) txt=txt.slice(0,-1); return txt; }
+const SCALE=2;                      // exportación a 2048 px de ancho
+const W=1024, H=572;
+function annexLayout(){             // filas de 2 fotos debajo del formato
+  const gap=18, colW=(W-gap*3)/2, maxH=520, rows=[];
+  for(let i=0;i<photos.length;i+=2){
+    const pair=photos.slice(i,i+2).map(p=>{
+      const s=Math.min(colW/p.img.naturalWidth, maxH/p.img.naturalHeight);
+      return {p, w:p.img.naturalWidth*s, h:p.img.naturalHeight*s};
+    });
+    rows.push({items:pair, h:Math.max(...pair.map(x=>x.h))});
+  }
+  const total = photos.length ? 60 + rows.reduce((a,r)=>a+r.h+gap,0) + 30 : 0;
+  return {gap,colW,rows,total};
+}
 function draw(){
   if(!tpl.complete||!tpl.naturalWidth) return;
   const d=getData();
-  ctx.clearRect(0,0,cv.width,cv.height);
-  ctx.drawImage(tpl,0,0);
+  const L=annexLayout();
+  cv.width=W*SCALE; cv.height=(H+L.total)*SCALE;
+  ctx.setTransform(SCALE,0,0,SCALE,0,0);
+  ctx.imageSmoothingQuality='high';
+  ctx.fillStyle='#070b0d'; ctx.fillRect(0,0,W,H+L.total);
+  ctx.drawImage(tpl,0,0,W,H);
   ctx.textBaseline='middle';
 
   // Fecha
@@ -216,6 +234,32 @@ function draw(){
     ctx.fillStyle='#000c'; rr(c.x+6,c.y+6,24,16,4); ctx.fill();
     ctx.fillStyle='#f0c24d'; ctx.font='bold 13px "Roboto Condensed",Arial'; ctx.fillText(`${i+1}.`,c.x+10,c.y+14);
   });
+
+  // Anexo fotográfico (fotos grandes)
+  if(photos.length){
+    let y=H;
+    ctx.fillStyle='#0e1b20'; ctx.fillRect(0,y,W,46);
+    ctx.fillStyle='#c9a43a'; ctx.fillRect(0,y,W,3); ctx.fillRect(0,y+43,W,3);
+    ctx.fillStyle='#f0c24d'; ctx.font='italic bold 24px "Roboto Condensed",Arial'; ctx.textAlign='left';
+    ctx.fillText('ANEXO FOTOGRÁFICO · PRUEBAS GRÁFICAS', 24, y+23);
+    ctx.fillStyle='#ffffff'; ctx.font='bold 15px "Roboto Condensed",Arial'; ctx.textAlign='right';
+    ctx.fillText(`${photos.length} foto${photos.length>1?'s':''}${d.fecha?' · '+fmtFecha(d.fecha):''}`, W-24, y+23);
+    ctx.textAlign='left';
+    y+=60; let n=0;
+    L.rows.forEach(r=>{
+      r.items.forEach((it,k)=>{
+        const x=L.gap+k*(L.colW+L.gap)+(L.colW-it.w)/2, yy=y;
+        ctx.fillStyle='#0e1b20'; rr(x-4,yy-4,it.w+8,it.h+8,8); ctx.fill();
+        ctx.strokeStyle='#c9a43a'; ctx.lineWidth=1.5; rr(x-4,yy-4,it.w+8,it.h+8,8); ctx.stroke();
+        ctx.drawImage(it.p.img, x, yy, it.w, it.h);
+        n++; ctx.fillStyle='#000c'; rr(x+8,yy+8,34,24,5); ctx.fill();
+        ctx.fillStyle='#f0c24d'; ctx.font='bold 17px "Roboto Condensed",Arial'; ctx.fillText(`${n}.`,x+15,yy+20);
+      });
+      y+=r.h+L.gap;
+    });
+    ctx.fillStyle='#8a9398'; ctx.font='bold 13px "Roboto Condensed",Arial'; ctx.textAlign='center';
+    ctx.fillText('¡HONOR  ★  LEALTAD  ★  DISCIPLINA!', W/2, y+10); ctx.textAlign='left';
+  }
 }
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 
