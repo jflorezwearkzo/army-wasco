@@ -10,7 +10,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css">
 <style>
-  main{max-width:900px;margin:0 auto;padding:24px 20px 50px}
+  main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
+  .layout{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
+  .lateral{position:sticky;top:60px;background:var(--panel);border:1px solid #2b3a40;border-radius:10px;padding:10px 8px}
+  .lateral .grp{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 10px 4px}
+  .lateral a{display:flex;align-items:center;gap:8px;color:#d7dde0;text-decoration:none;padding:7px 10px;border-radius:7px;font-size:14px}
+  .lateral a span{width:20px;text-align:center}
+  .lateral a:hover{background:#121f26}
+  .lateral a.act{background:#2a1f10;color:var(--gold);border:1px solid #6b5420}
+  .contenido{min-width:0}
+  .contenido h2.sec:first-child{margin-top:0;padding-top:0;border-top:0}
+  .movil{display:none;width:100%;margin:0 0 14px;padding:10px;background:var(--panel);color:#fff;border:1px solid #2b3a40;border-radius:8px;font:inherit}
+  @media (max-width:800px){.layout{grid-template-columns:1fr}.lateral{display:none}.movil{display:block}}
   .cabecera{text-align:center;margin-bottom:22px}
   .cabecera h1{margin:0;color:var(--gold);font-size:34px}
   .cabecera h1 small{display:block;font-size:.4em;font-style:normal;color:var(--muted);letter-spacing:5px;margin-top:6px}
@@ -33,7 +44,7 @@
   .docs a:hover{border-color:var(--gold)}
   .docs a b{display:block;color:var(--gold);margin-bottom:4px}
   .docs a span{color:var(--muted);font-size:13px}
-  h2.sec{color:var(--gold);font-size:16px;letter-spacing:2px;text-transform:uppercase;margin:34px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+  h2.sec{color:var(--gold);font-size:18px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px}
   h2.sec small{display:block;letter-spacing:0;text-transform:none;color:var(--muted);font-size:13px;margin-top:3px}
   .indice{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 10px}
   .indice a{color:#d7dde0;text-decoration:none;border:1px solid #2b3a40;border-radius:20px;padding:5px 12px;font-size:13px;background:var(--panel)}
@@ -65,28 +76,34 @@
 </head>
 <body>
 <main>
-  <div class="cabecera">
+<div class="cabecera">
     <p class="unidad">Army de Wasco · Policía Militar</p>
     <h1>Reglamento<small>Ejército de Wasco · One State</small></h1>
     <p>Normas de conducta, sanciones, rangos, procedimientos y macros de la facción.</p>
   </div>
-
-  <nav class="indice">
-    <a href="#ejercito">Reglamento del Ejército</a>
-    <a href="#servidor">Servidor (Discord)</a>
-    <a href="#base">Reglas en la base</a>
-    <a href="#rp">Roleplay (RP)</a>
-    <a href="#chat">Chat y comunicación</a>
-    <a href="#graves">Infracciones graves</a>
-    <a href="#evento">Evento Robo de Material</a>
-    <a href="#rangos">Rangos</a>
-    <a href="#ascensos">Ascensos</a>
-    <a href="#permisos">Permisos</a>
-    <a href="#macros">Macros</a>
-    <a href="#docs">Manuales (PDF)</a>
-  </nav>
-
-  <h2 class="sec" id="ejercito">Reglamento del Ejército<small>Reglas y castigos para los soldados. Ser soldado requiere paciencia y conocimiento del juego de rol.</small></h2>
+  <select class="movil" id="navMovil" aria-label="Sección"></select>
+  <div class="layout">
+<nav class="lateral" id="nav">
+  <div class="grp">Reglas</div>
+  <a href="#ejercito" data-sec="ejercito"><span>⚔️</span>Reglamento del Ejército</a>
+  <a href="#servidor" data-sec="servidor"><span>💬</span>Servidor (Discord)</a>
+  <a href="#base" data-sec="base"><span>🏰</span>Reglas en la base</a>
+  <a href="#rp" data-sec="rp"><span>🎭</span>Roleplay (RP)</a>
+  <a href="#chat" data-sec="chat"><span>🗨️</span>Chat y comunicación</a>
+  <a href="#graves" data-sec="graves"><span>⚠️</span>Infracciones graves</a>
+  <a href="#evento" data-sec="evento"><span>🎯</span>Evento Robo de Material</a>
+  <div class="grp">Organización</div>
+  <a href="#rangos" data-sec="rangos"><span>🎖️</span>Rangos</a>
+  <a href="#ascensos" data-sec="ascensos"><span>📈</span>Ascensos</a>
+  <a href="#permisos" data-sec="permisos"><span>📝</span>Permisos</a>
+  <div class="grp">Macros</div>
+  <a href="#macros" data-sec="macros"><span>⌨️</span>Macros</a>
+  <div class="grp">Manuales</div>
+  <a href="#docs" data-sec="docs"><span>📚</span>Manuales (PDF)</a>
+</nav>
+<div class="contenido">
+<section class="sec-panel" id="sec-ejercito" hidden>
+<h2 class="sec" id="ejercito">Reglamento del Ejército<small>Reglas y castigos para los soldados. Ser soldado requiere paciencia y conocimiento del juego de rol.</small></h2>
   <ol class="reglas">
     <li><h3>Actitud irrespetuosa hacia compañeros y civiles.</h3>
       <span class="castigo"><b>Castigo:</b> 1 reprimenda o destitución del soldado (por decisión del líder).</span></li>
@@ -121,8 +138,9 @@
       <div><b>3 amonestaciones</b>= destitución del soldado</div>
     </div>
   </div>
-
-  <h2 class="sec" id="servidor">Reglamento oficial del servidor<small>Discord de la facción · Manual del Ejército, Academia (edición 23JUN2026)</small></h2>
+</section>
+<section class="sec-panel" id="sec-servidor" hidden>
+<h2 class="sec" id="servidor">Reglamento oficial del servidor<small>Discord de la facción · Manual del Ejército, Academia (edición 23JUN2026)</small></h2>
   <div class="bloque"><h3>Obligaciones</h3><ol>
     <li><b>Uso correcto de canales:</b> hablar e interactuar únicamente en los canales de texto y voz designados para cada tema. Mantengamos el servidor limpio.</li>
     <li><b>Respetar la cadena de mando:</b> acatar de forma inmediata las órdenes de los Generales y Coroneles.</li>
@@ -134,8 +152,9 @@
     <li><b>Invitaciones externas:</b> prohibido invitar al Discord a personas ajenas al juego One State. Es un espacio exclusivo para la facción.<br><span class="san">Sanción: suspensión (baneo temporal) de 2 días del servidor de Discord.</span></li>
     <li><b>Hostigamiento y spam (regla RP13):</b> prohibido presionar, hostigar o spamear a los Altos Mandos o a otros jugadores (por ejemplo, exigiendo entrevistas de ascenso).<br><span class="san">Sanción: las correspondientes a falta de respeto y acoso según la gravedad.</span></li>
   </ol></div>
-
-  <h2 class="sec" id="base">Reglas dentro de la base militar<small>Las 5 reglas básicas de la base</small></h2>
+</section>
+<section class="sec-panel" id="sec-base" hidden>
+<h2 class="sec" id="base">Reglas dentro de la base militar<small>Las 5 reglas básicas de la base</small></h2>
   <div class="bloque"><ol>
     <li>Prohibido estar <b>AFK</b> dentro de la base. Si te ausentas, cierra sesión.</li>
     <li>Prohibido <b>conducir en la base</b> sin permiso de un General (incluye vehículos que aparecen dentro de la base). <b>No está permitido sacar vehículos de la base.</b></li>
@@ -143,8 +162,9 @@
     <li>Se debe <b>respeto</b> a todos los superiores y compañeros.</li>
     <li>Prohibido <b>disparar o usar Taser</b> sin justificación contra civiles, soldados, policías o cualquier persona (incluye jugar con el Taser).</li>
   </ol></div>
-
-  <h2 class="sec" id="rp">Reglas de Roleplay (RP)<small>Reglas oficiales de One State · castigos en la cárcel de ONESTATE</small></h2>
+</section>
+<section class="sec-panel" id="sec-rp" hidden>
+<h2 class="sec" id="rp">Reglas de Roleplay (RP)<small>Reglas oficiales de One State · castigos en la cárcel de ONESTATE</small></h2>
   <table class="reglas"><thead><tr><th>Regla</th><th>Descripción e infracción</th><th>Castigo</th></tr></thead><tbody><tr><td>RP1</td><td><b>DeathMatch (DM).</b> Infligir daño o matar al personaje de otro jugador sin motivo RP.</td><td>20 min de cárcel</td></tr>
 <tr><td>RP2</td><td><b>DeathMatch Auto (DMAuto).</b> Infligir daño o destruir el vehículo de otro jugador sin motivo RP.</td><td>20 min de cárcel</td></tr>
 <tr><td>RP3</td><td><b>Poder NO RP (NP).</b> Exceder las capacidades físicas del personaje RP.</td><td>10 min de cárcel</td></tr>
@@ -162,8 +182,9 @@
 <tr><td>RP14</td><td><b>Acoso sexual.</b> Cualquier acción sexual no consentida, incluyendo simulaciones y diálogos/acciones explícitas, insultos étnicos y/o LGBT+, o atención excesiva. Toda acción sexual requiere consentimiento OOC y no debe darse en zonas públicas.</td><td>60 min de silencio o 24 h hasta 30 días de ban</td></tr>
 <tr><td>RP15</td><td><b>Interrupción de las operaciones de la facción.</b> Provocar intencionadamente a los miembros de la facción por diversión o perturbar sus operaciones.</td><td>30 min de cárcel</td></tr>
 <tr><td>RP16</td><td><b>Actos delictivos contra el personal de emergencia.</b> Se prohíben los actos delictivos contra el personal médico de emergencia.</td><td>90 min de cárcel hasta 12 h de expulsión</td></tr></tbody></table>
-
-  <h2 class="sec" id="chat">Reglas del chat y comunicación<small>Manual de Reglas Oficiales WCSA</small></h2>
+</section>
+<section class="sec-panel" id="sec-chat" hidden>
+<h2 class="sec" id="chat">Reglas del chat y comunicación<small>Manual de Reglas Oficiales WCSA</small></h2>
   <table class="reglas"><thead><tr><th>Regla</th><th>Infracción</th><th>Castigo</th></tr></thead><tbody><tr><td>CHAT1</td><td><b>Insultos:</b> insultar a jugadores sin razón de RP.</td><td>24 h de suspensión</td></tr>
 <tr><td>CHAT2</td><td><b>Familiares:</b> insultar a familiares de otros jugadores (directo o implícito).</td><td>240 min de silencio hasta 3 días de suspensión</td></tr>
 <tr><td>CHAT3</td><td><b>Discriminación:</b> insultos por religión, nacionalidad o temas delicados.</td><td>240 min de silencio hasta 3 días de suspensión</td></tr>
@@ -184,8 +205,9 @@
 <tr><td>TCHAT2</td><td>Anunciar bienes que no existen o no son tuyos.</td><td>10 min de silencio</td></tr>
 <tr><td>TCHAT3</td><td>Spam o inundación en el chat de comercio.</td><td>5 min de silencio</td></tr>
 <tr><td>TCHAT4</td><td>Fraude en el comercio.</td><td>12 h de suspensión + retirada de artículos</td></tr></tbody></table>
-
-  <h2 class="sec" id="graves">Infracciones graves<small>Abusos y alertas</small></h2>
+</section>
+<section class="sec-panel" id="sec-graves" hidden>
+<h2 class="sec" id="graves">Infracciones graves<small>Abusos y alertas</small></h2>
   <table class="reglas"><thead><tr><th>Regla</th><th>Descripción</th><th>Castigo</th></tr></thead><tbody><tr><td>ABUSO1</td><td><b>Mods / Bugs:</b> usar errores para obtener ventaja o interferir.</td><td>12 h de suspensión</td></tr>
 <tr><td>ABUSO2</td><td><b>Abuso de armas:</b> usar bugs para obtener armamento ilegal.</td><td>Mínimo 3 días de suspensión</td></tr>
 <tr><td>ABUSO3</td><td><b>Abuso de AFK:</b> usar macros/clickers para no ser desconectado.</td><td>3 días de suspensión</td></tr>
@@ -198,8 +220,9 @@
 <tr><td>ALERTA4</td><td><b>Daño económico:</b> transferencias de divisas que excedan los límites.</td><td>Retirada del dinero/propiedades o 30 días de suspensión</td></tr>
 <tr><td>ALERTA5</td><td><b>Difamación externa:</b> socavar la integridad moral o legal del proyecto, sus jugadores, voluntarios o administración en canales externos (otros juegos, redes sociales, Discords externos).</td><td>Suspensión permanente de todas las cuentas</td></tr>
 <tr><td>ALERTA6</td><td><b>Promoción de terceros:</b> promocionar o mencionar otros juegos, productos o servicios externos dentro del juego sin autorización del administrador de la comunidad.</td><td>Desde 1 día de suspensión hasta suspensión permanente</td></tr></tbody></table>
-
-  <h2 class="sec" id="evento">Reglas del evento “Robo de Material”</h2>
+</section>
+<section class="sec-panel" id="sec-evento" hidden>
+<h2 class="sec" id="evento">Reglas del evento “Robo de Material”</h2>
   <div class="bloque"><ol>
     <li>Prohibido disparar a través de paredes u objetos.</li>
     <li>Prohibida la comunicación entre vivos y muertos.</li>
@@ -208,8 +231,9 @@
     <li>Prohibido disparar a los administradores.</li>
   </ol>
   <p class="nota">Las macros deben usarse en todas las interacciones de RP, excepto durante “Robo de Material” o “Toma de territorio” cuando la acción ocurre dentro del área delimitada. Si se dispara hacia afuera del territorio, deben utilizarse las macros.</p></div>
-
-  <h2 class="sec" id="rangos">Rangos y responsabilidades<small>La cadena de mando debe cumplirse en todo momento</small></h2>
+</section>
+<section class="sec-panel" id="sec-rangos" hidden>
+<h2 class="sec" id="rangos">Rangos y responsabilidades<small>La cadena de mando debe cumplirse en todo momento</small></h2>
   <div class="rangos"><div><b>Rango 0 · Recluta</b><span>Guardias básicas, aprendizaje de la base, apoyo en eventos. Prioriza el patrullaje para ascender pronto.</span></div>
 <div><b>Rango 1 · Cabo</b><span>Mismas funciones del recluta; prioriza el patrullaje para ascender pronto.</span></div>
 <div><b>Rango 2 · Sargento</b><span>Acceso a M4 y eventos. Protege D2 y redirige civiles a D1. No hace guardias sin permiso.</span></div>
@@ -225,8 +249,9 @@
   <div class="bloque" style="margin-top:12px"><h3>Farming y experiencia</h3>
     <p>Repetir tareas o misiones para acumular experiencia (EXP): ingresar en <b>TRABAJO: GUARDIA</b>, seleccionar nivel (Recluta / Especialista / Experto / Élite) y pulsar INICIAR; completar el recorrido del mapa; continuar o cancelar para recoger los puntos de EXP. También suman las tareas diarias/semanales de la facción (MENÚ → TAREAS).</p>
     <p>Al completar la barra de experiencia, puede rendir examen de ascenso con el personal autorizado.</p></div>
-
-  <h2 class="sec" id="ascensos">Preguntas para ascenso<small>Las entrevistas las realizan oficiales desde el grado de Coronel. Para rangos superiores decide el liderazgo de la facción.</small></h2>
+</section>
+<section class="sec-panel" id="sec-ascensos" hidden>
+<h2 class="sec" id="ascensos">Preguntas para ascenso<small>Las entrevistas las realizan oficiales desde el grado de Coronel. Para rangos superiores decide el liderazgo de la facción.</small></h2>
   <div class="bloque"><ol>
     <li>Pedir el registro de trabajo y verificar la barra de experiencia.</li>
     <li>Efectuar la entrevista con las preguntas del grado correspondiente.</li>
@@ -246,8 +271,9 @@
 <div class='bloque'><h3>Sargento Primero → Sargento Mayor</h3><ul><li>Obligaciones del rango actual y del siguiente</li><li>¿Qué es RP13? / ¿Qué es RP14?</li><li>¿Cuáles son las 5 reglas básicas de la base?</li><li>¿Cuáles son las reglas del evento “Robo de Material”?</li></ul></div>
 <div class='bloque'><h3>Sargento Mayor → Teniente</h3><ul><li>Obligaciones del rango actual y del siguiente</li><li>¿Qué es RP13? / ¿Qué es RP14?</li><li>¿Cuáles son las 5 reglas básicas de la base?</li><li>¿Cuáles son las reglas del evento “Robo de Material”?</li><li>¿Cuáles son las 10 reglas del ejército?</li></ul></div>
 <div class='bloque'><h3>Teniente → Capitán</h3><ul><li>Obligaciones del rango actual y del siguiente</li><li>¿Qué es RP13? / ¿Qué es RP14?</li><li>¿Cuáles son las 5 reglas básicas de la base?</li><li>¿Cuáles son las reglas del evento “Robo de Material”?</li><li>¿Cuáles son las 10 reglas del ejército?</li><li>(Ejercicio didáctico) Indicar cada zona de la base con sus respectivos nombres</li></ul></div>
-
-  <h2 class="sec" id="permisos">Permisos</h2>
+</section>
+<section class="sec-panel" id="sec-permisos" hidden>
+<h2 class="sec" id="permisos">Permisos</h2>
   <div class="bloque"><h3>Permiso de salida de la base</h3>
     <p>Solicitar en <b>Discord › Facción Ejército de Wasco › #Ejercito-de-wasco › Permisos para salir de la base</b> y esperar aprobación.</p>
     <div class="plantilla">Soldado que solicita: [NOMBRE]
@@ -262,8 +288,9 @@ Rango: [RANGO DEL ACOMPAÑANTE]</div></div>
 Rango: [RANGO DEL SOLICITANTE]
 Motivo: [DETALLAR ACTIVIDAD A REALIZAR]
 Tiempo: [HORAS, DÍAS O SEMANAS QUE SOLICITA]</div></div>
-
-  <h2 class="sec" id="macros">Macros<small>Deben utilizarse en todas las interacciones de RP</small></h2>
+</section>
+<section class="sec-panel" id="sec-macros" hidden>
+<h2 class="sec" id="macros">Macros<small>Deben utilizarse en todas las interacciones de RP</small></h2>
   <div class="bloque"><h3>Macros · Ejército de Wasco</h3><div class="macros"><code><b>/me</b> PRESENTA SU MÁXIMO RESPETO AL SR/SRA [RECLUTA] [NOMBRE], REPORTÁNDOSE FORMALMENTE.</code>
 <code><b>/do</b> ¡Taser! ¡Taser! Descarga eléctrica aplicada al individuo para su inmovilización y control de la situación.</code>
 <code><b>/do</b> ¡Fuego! Se responde en defensa propia o de personas en riesgo cercano.</code>
@@ -322,14 +349,17 @@ Tiempo: [HORAS, DÍAS O SEMANAS QUE SOLICITA]</div></div>
 <code><b>/flobby</b> SOLICITO PERMISO PARA SACAR UN VEHÍCULO DE MISIÓN Y GUARDARLO</code>
 <code><b>/me</b> Para unirse al EJÉRCITO WCSA: ser nivel 6, tener 18 años o más, micrófono funcional, no tener violaciones, su nombre de RP debe coincidir con el de Discord, debe hablar español.</code>
 <code><b>/flobby</b> SOLICITO PERMISO PARA INGRESAR A VER MUNICIONES</code></div></div>
-
-  <h2 class="sec" id="docs">Manuales de referencia<small>Documentos originales en PDF (incluyen mapa de la base, horario de eventos y distintivos de rango)</small></h2>
+</section>
+<section class="sec-panel" id="sec-docs" hidden>
+<h2 class="sec" id="docs">Manuales de referencia<small>Documentos originales en PDF (incluyen mapa de la base, horario de eventos y distintivos de rango)</small></h2>
   <div class="docs">
     <a href="docs/manual-ejercito-wasco.pdf" target="_blank" rel="noopener"><b>📘 Manual del Ejército · Wasco</b><span>Academia · edición 23JUN2026 · reglamento del servidor, del ejército, base, RP, rangos, ascensos, permisos y macros</span></a>
     <a href="docs/manual-reglas-oficiales-wcsa.pdf" target="_blank" rel="noopener"><b>📙 Manual de Reglas Oficiales · WCSA</b><span>One State · reglas de RP, chat, comercio, infracciones graves y macros actualizadas</span></a>
   </div>
-  <a class="arriba" href="#" title="Subir">↑</a>
+</section>
+</div>
+  </div>
 </main>
-<script type="module" src="js/app-reglamento.js?v=9e83fbac"></script>
+<script type="module" src="js/app-reglamento.js?v=51f2bdf8"></script>
 </body>
 </html>
