@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Policía Militar · Reportes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
@@ -47,7 +48,7 @@
 
 <script>
   const fmt = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; };
-  fetch('reportes.json')
+  fetch('reportes.json?v='+Date.now(), {cache:'no-store'})
     .then(r => r.json())
     .then(reportes => {
       const el = document.getElementById('lista');
