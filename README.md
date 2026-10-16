@@ -24,7 +24,7 @@ Un rol es un conjunto de permisos más la lista de formularios a los que da acce
 | Permiso | Qué permite |
 |---|---|
 | Gestión de usuarios | Crear usuarios, activarlos/desactivarlos, editar su nombre y asignar su rango militar |
-| Asignación y creación de roles | Crear/editar/eliminar roles y asignar rol a los usuarios |
+| Asignación y creación de roles | Crear/editar/eliminar roles (incluido su Rango PM) y asignar rol a los usuarios |
 | Creación / gestión de reportes | Registrar formularios en el catálogo, ocultarlos o mostrarlos en el inicio |
 | Ver historial de todos | Ver, descargar y eliminar cualquier reporte guardado |
 | Acceso a formularios | "Todos" o una selección; sin acceso, el formulario no aparece ni se puede abrir |
@@ -37,7 +37,8 @@ Las reglas se aplican en la base de datos (RLS), no solo en la interfaz.
 
 1. El admin crea usuarios desde el panel (usuario, nombre, contraseña inicial, rol). No hay registro libre.
 2. Cada usuario entra en `login.html`, ve solo sus formularios y cambia su contraseña en "Mi cuenta".
-3. Al exportar un reporte, se descarga el PNG y además se guarda (datos + imagen) en el historial.
+3. En los formularios, la fecha arranca en hoy (editable con calendario); nombre, rango y Rango PM se toman del perfil y del rol y no son editables.
+4. Al exportar un reporte, se descarga el PNG y además se guarda (datos + imagen) en el historial.
 
 ## Agregar un formulario nuevo
 

@@ -13,8 +13,12 @@ create table if not exists public.roles (
   -- permisos: {"usuarios":bool, "roles":bool, "formularios":bool, "historial":bool}
   formularios text[] not null default '{}',     -- ids de formularios permitidos; '{*}' = todos
   protegido   boolean not null default false,   -- el rol admin no se puede borrar
+  rango_pm    text,                              -- Rango PM que heredan los usuarios del rol
   creado_en   timestamptz not null default now()
 );
+alter table public.roles add column if not exists rango_pm text;
+alter table public.roles drop constraint if exists roles_rango_pm_check;
+alter table public.roles add constraint roles_rango_pm_check check (rango_pm is null or rango_pm in ('Auxiliar PM','Co-líder PM','Líder PM'));
 
 -- ---------- Perfiles (uno por usuario de auth) ----------
 create table if not exists public.perfiles (
@@ -56,11 +60,11 @@ create table if not exists public.reportes (
 );
 
 -- ---------- Datos iniciales ----------
-insert into public.roles (id, nombre, descripcion, permisos, formularios, protegido) values
+insert into public.roles (id, nombre, descripcion, permisos, formularios, protegido, rango_pm) values
   ('admin',   'Administrador', 'Control total del sitio',
-     '{"usuarios":true,"roles":true,"formularios":true,"historial":true}', '{*}', true),
+     '{"usuarios":true,"roles":true,"formularios":true,"historial":true}', '{*}', true, 'Líder PM'),
   ('usuario', 'Usuario',       'Solo llena reportes',
-     '{"usuarios":false,"roles":false,"formularios":false,"historial":false}', '{*}', false)
+     '{"usuarios":false,"roles":false,"formularios":false,"historial":false}', '{*}', false, 'Auxiliar PM')
 on conflict (id) do nothing;
 
 insert into public.formularios (id, titulo, descripcion, ruta, icono, orden) values

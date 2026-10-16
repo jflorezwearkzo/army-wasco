@@ -8,6 +8,7 @@ export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persis
 
 // Raíz del sitio (funciona en GitHub Pages /army-wasco/ y en local)
 export const RAIZ = new URL('./', import.meta.url).href;
+export const RANGOS_PM = ['Auxiliar PM','Co-líder PM','Líder PM'];
 export const RANGOS = ['Sargento Primero','Sargento Mayor','Teniente','Capitán','Mayor','Coronel','Mayor General','Teniente General','Coronel General','FG Adjunto','FG'];
 // "Capitán Javier Flórez": rango + nombre (o el usuario si no hay nombre)
 export const nombreCompleto = p => [p.rango, p.nombre || p.usuario].filter(Boolean).join(' ');
@@ -29,8 +30,8 @@ export async function cargarYo(){
   const { data: p } = await sb.from('perfiles').select('id,usuario,nombre,rango,activo,rol_id').eq('id', session.user.id).maybeSingle();
   if(!p) return null;
   let rol = null;
-  if(p.rol_id){ const { data: r } = await sb.from('roles').select('id,nombre,permisos,formularios').eq('id', p.rol_id).maybeSingle(); rol = r; }
-  return { ...p, rol: rol || { id:null, nombre:'Sin rol', permisos:{}, formularios:[] } };
+  if(p.rol_id){ const { data: r } = await sb.from('roles').select('id,nombre,permisos,formularios,rango_pm').eq('id', p.rol_id).maybeSingle(); rol = r; }
+  return { ...p, rol: rol || { id:null, nombre:'Sin rol', permisos:{}, formularios:[], rango_pm:null } };
 }
 export const tiene = (yo, permiso) => !!(yo && yo.rol && yo.rol.permisos && yo.rol.permisos[permiso]);
 export const puedeFormulario = (yo, id) => !!(yo && yo.rol && (yo.rol.formularios.includes('*') || yo.rol.formularios.includes(id)));
@@ -80,6 +81,7 @@ export async function urlImagen(path){
   return data.signedUrl;
 }
 
+export function hoyISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 export function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function traducir(m){
   if(/invalid login credentials/i.test(m)) return 'Usuario o contraseña incorrectos.';

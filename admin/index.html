@@ -58,7 +58,7 @@
     <div class="dos">
       <div class="caja">
         <h3>Roles</h3>
-        <table><thead><tr><th>Rol</th><th>Permisos</th><th>Formularios</th><th></th></tr></thead><tbody id="tbRoles"></tbody></table>
+        <table><thead><tr><th>Rol</th><th>Rango PM</th><th>Permisos</th><th>Formularios</th><th></th></tr></thead><tbody id="tbRoles"></tbody></table>
       </div>
       <div class="caja">
         <h3 id="tituloRol">Nuevo rol</h3>
@@ -66,6 +66,8 @@
           <label>Identificador (sin espacios)</label><input id="rId" pattern="[a-z0-9_\-]{2,30}" required>
           <label>Nombre</label><input id="rNombre" required>
           <label>Descripción</label><input id="rDesc">
+          <label>Rango PM (lo heredan los usuarios de este rol en los reportes)</label>
+          <select id="rRangoPM"><option value="">— Sin Rango PM —</option><option>Auxiliar PM</option><option>Co-líder PM</option><option>Líder PM</option></select>
           <label>Permisos</label>
           <div class="chips">
             <label><input type="checkbox" id="pUsuarios"> Gestión de usuarios</label>
@@ -125,7 +127,7 @@
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button class="ghost" onclick="dlg.close()">Cerrar</button></div></dialog>
 
 <script type="module">
-import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, nombreCompleto } from '../auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, RANGOS_PM, nombreCompleto } from '../auth.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
 
@@ -221,7 +223,7 @@ async function cargarRoles(){
     formularios.map(f => `<label><input type="checkbox" value="${esc(f.id)}" class="rf"> ${esc(f.titulo)}</label>`).join('');
   $('#rTodos').onchange = () => document.querySelectorAll('.rf').forEach(c => { c.disabled = $('#rTodos').checked; });
   $('#tbRoles').innerHTML = roles.map(r => `<tr><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
-    <td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
+    <td>${esc(r.rango_pm||'—')}</td><td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
     <td style="white-space:nowrap"><button class="ghost sm" data-re="${r.id}">Editar</button>${r.protegido?'':`<button class="ghost sm" data-rd="${r.id}">Eliminar</button>`}</td></tr>`).join('');
   document.querySelectorAll('[data-re]').forEach(b => b.onclick = () => editarRol(roles.find(r => r.id===b.dataset.re)));
   document.querySelectorAll('[data-rd]').forEach(b => b.onclick = async () => {
@@ -231,7 +233,7 @@ async function cargarRoles(){
 }
 function editarRol(r){
   $('#tituloRol').textContent='Editar rol'; $('#rGuardar').textContent='Guardar';
-  $('#rId').value=r.id; $('#rId').disabled=true; $('#rNombre').value=r.nombre; $('#rDesc').value=r.descripcion||'';
+  $('#rId').value=r.id; $('#rId').disabled=true; $('#rNombre').value=r.nombre; $('#rDesc').value=r.descripcion||''; $('#rRangoPM').value=r.rango_pm||'';
   PERMS.forEach(p => $('#p'+p[0].toUpperCase()+p.slice(1)).checked = !!(r.permisos||{})[p]);
   $('#rTodos').checked = r.formularios.includes('*'); $('#rTodos').onchange();
   document.querySelectorAll('.rf').forEach(c => c.checked = r.formularios.includes(c.value)); msg('r','');
@@ -240,7 +242,7 @@ function limpiarRol(){ $('#fRol').reset(); $('#tituloRol').textContent='Nuevo ro
 $('#rCancelar').onclick = limpiarRol;
 $('#fRol').onsubmit = async e => {
   e.preventDefault(); msg('r','');
-  const rol = { id:$('#rId').value.trim().toLowerCase(), nombre:$('#rNombre').value.trim(), descripcion:$('#rDesc').value.trim(),
+  const rol = { id:$('#rId').value.trim().toLowerCase(), nombre:$('#rNombre').value.trim(), descripcion:$('#rDesc').value.trim(), rango_pm:$('#rRangoPM').value||null,
     permisos: Object.fromEntries(PERMS.map(p => [p, $('#p'+p[0].toUpperCase()+p.slice(1)).checked])),
     formularios: $('#rTodos').checked ? ['*'] : [...document.querySelectorAll('.rf:checked')].map(c => c.value) };
   if(rol.id==='admin' && !rol.permisos.roles){ msg('r','El rol admin debe conservar el permiso de roles.'); return; }

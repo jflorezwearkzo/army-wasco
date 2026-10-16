@@ -89,11 +89,17 @@
 </main>
 
 <script type="module">
-import { requerir, barraUsuario, guardarReporte } from '../../auth.js';
+import { requerir, barraUsuario, guardarReporte, hoyISO } from '../../auth.js';
 const YO = await requerir({ formulario:'bajas' }); barraUsuario(YO);
-// Precarga nombre y rango de quien reporta desde el perfil (editables si el perfil no los tiene)
-if(YO.nombre){ document.getElementById('nombre').value = YO.nombre; }
-if(YO.rango){ document.getElementById('rango').value = YO.rango; document.getElementById('rango').readOnly = true; document.getElementById('rango').title = 'Asignado por el administrador'; }
+// Fecha de hoy (editable); nombre, rango y Rango PM vienen del perfil/rol y quedan bloqueados
+const bloquear=(id,val)=>{ const el=document.getElementById(id); if(!el) return; el.value=val||''; el.readOnly=true; el.tabIndex=-1; el.style.opacity='.75'; el.title='Lo asigna el administrador'; if(el.tagName==='SELECT'){ el.style.pointerEvents='none'; } };
+function precargar(){
+  document.getElementById('fecha').value = hoyISO();
+  bloquear('nombre', YO.nombre || YO.usuario);
+  bloquear('rango', YO.rango);
+  bloquear('rangoPM', YO.rol.rango_pm);
+}
+precargar();
 // ---------- Coordenadas sobre la plantilla (1024 x 765) ----------
 const T = {
   panel: '#0e1b20',
@@ -161,7 +167,7 @@ function validate(d){
   const e=[];
   if(!d.fecha) e.push('• La fecha es obligatoria.');
   if(!d.nombre) e.push('• El nombre de quien reporta es obligatorio.');
-  if(!d.rango) e.push('• El rango de quien reporta es obligatorio.');
+  if(!d.rango) e.push('• Tu perfil no tiene rango asignado. Pide al administrador que lo asigne.');
   if(!d.rows.some(r=>r.nombre)) e.push('• Debes registrar al menos una persona abatida (nombre).');
   d.rows.forEach((r,i)=>{ if(!r.nombre && (r.rango||r.motivo)) e.push(`• Fila ${i+1}: falta el nombre.`); });
   if(photos.length<1) e.push('• Debes adjuntar al menos una foto.');
@@ -290,7 +296,7 @@ $('#btnExport').onclick=async()=>{
   }catch(x){ $('#err').style.color=''; showErr('Se descargó la imagen, pero no se guardó en el historial: '+x.message); }
   btn.disabled=false; btn.textContent='Exportar imagen';
 };
-$('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); if(YO.nombre) $('#nombre').value=YO.nombre; if(YO.rango) $('#rango').value=YO.rango; draw(); };
+$('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); precargar(); draw(); };
 </script>
 </body>
 </html>
