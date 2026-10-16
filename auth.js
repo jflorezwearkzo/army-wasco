@@ -64,16 +64,28 @@ export function barraUsuario(yo){
   document.body.prepend(b);
 }
 
-// Guarda un reporte exportado (datos + PNG) en el historial. Devuelve el id o lanza error.
-export async function guardarReporte({ yo, formularioId, fecha, resumen, datos, pngBlob }){
-  const path = `${yo.id}/${formularioId}-${Date.now()}.png`;
+// Paso 1: registra el reporte (el servidor sella identidad, rango y Rango PM y asigna el folio).
+export async function crearReporte({ formularioId, fecha, resumen, datos }){
+  const { data, error } = await sb.from('reportes')
+    .insert({ formulario_id: formularioId, usuario_id: (await sb.auth.getUser()).data.user.id, fecha: fecha || null, resumen, datos })
+    .select('id, folio_v2, datos').single();
+  if(error) throw new Error('No se pudo registrar el reporte: ' + error.message);
+  return { id: data.id, folio: data.folio_v2, datos: data.datos };
+}
+// Paso 2: sube la imagen con el folio estampado y la adjunta al registro (solo una vez).
+export async function adjuntarImagen({ yo, id, formularioId, pngBlob }){
+  const path = `${yo.id}/${formularioId}-${id}.png`;
   const { error: e1 } = await sb.storage.from('reportes').upload(path, pngBlob, { contentType:'image/png', upsert:false });
   if(e1) throw new Error('No se pudo subir la imagen: ' + e1.message);
-  const { data, error: e2 } = await sb.from('reportes')
-    .insert({ formulario_id: formularioId, usuario_id: yo.id, fecha: fecha || null, resumen, datos, imagen_path: path })
-    .select('id').single();
-  if(e2) throw new Error('No se pudo guardar el registro: ' + e2.message);
-  return data.id;
+  const { error: e2 } = await sb.from('reportes').update({ imagen_path: path }).eq('id', id);
+  if(e2) throw new Error('No se pudo adjuntar la imagen: ' + e2.message);
+  return path;
+}
+// Compatibilidad: flujo completo en una llamada (sin folio en la imagen)
+export async function guardarReporte({ yo, formularioId, fecha, resumen, datos, pngBlob }){
+  const r = await crearReporte({ formularioId, fecha, resumen, datos });
+  await adjuntarImagen({ yo, id: r.id, formularioId, pngBlob });
+  return r.id;
 }
 export async function urlImagen(path){
   const { data, error } = await sb.storage.from('reportes').createSignedUrl(path, 3600);

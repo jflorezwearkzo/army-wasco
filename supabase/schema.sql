@@ -64,8 +64,10 @@ create table if not exists public.reportes (
   resumen        text default '',
   datos          jsonb not null default '{}'::jsonb,
   imagen_path    text,                          -- ruta en el bucket "reportes"
-  creado_en      timestamptz not null default now()
+  creado_en      timestamptz not null default now(),
+  folio_v2       text generated always as ('PM-' || lpad(id::text, 6, '0')) stored   -- folio de verificación
 );
+alter table public.reportes add column if not exists folio_v2 text generated always as ('PM-' || lpad(id::text, 6, '0')) stored;
 
 -- ---------- Datos iniciales ----------
 insert into public.roles (id, nombre, descripcion, permisos, formularios, protegido, rango_pm) values
@@ -313,6 +315,51 @@ drop policy if exists reportes_storage_delete on storage.objects;
 create policy reportes_storage_delete on storage.objects for delete
   using (bucket_id = 'reportes' and public.tengo_permiso('historial'));
 
+-- ---------- Integridad de reportes ----------
+-- Al insertar, el servidor sella usuario, nombre, rango y Rango PM desde el perfil/rol (ignora lo que mande el navegador)
+create or replace function public.sellar_reporte()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare pf record; r record; emisor jsonb;
+begin
+  if auth.uid() is null then raise exception 'Sin sesión'; end if;
+  select * into pf from public.perfiles where id = auth.uid() and activo;
+  if not found then raise exception 'Perfil inactivo'; end if;
+  select * into r from public.roles where id = pf.rol_id;
+  new.usuario_id := auth.uid();
+  if new.formulario_id is null or not public.puedo_usar_formulario(new.formulario_id) then
+    raise exception 'No tienes acceso a este formulario';
+  end if;
+  if new.fecha is null then raise exception 'Fecha obligatoria'; end if;
+  if new.fecha > current_date + 1 then raise exception 'La fecha no puede ser futura'; end if;
+  emisor := jsonb_build_object('nombre', coalesce(nullif(pf.nombre,''), pf.usuario), 'rango', pf.rango, 'rangoPM', r.rango_pm, 'usuario', pf.usuario);
+  new.datos := coalesce(new.datos,'{}'::jsonb) || emisor || jsonb_build_object('sellado_en', now());
+  new.imagen_path := null;
+  new.creado_en := now();
+  return new;
+end $$;
+revoke execute on function public.sellar_reporte() from anon, authenticated, public;
+drop trigger if exists reportes_sellar on public.reportes;
+create trigger reportes_sellar before insert on public.reportes for each row execute function public.sellar_reporte();
+
+-- Tras el sello, el dueño solo puede adjuntar la imagen una vez; nada más cambia
+create or replace function public.validar_update_reporte()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if old.imagen_path is not null then raise exception 'El reporte ya tiene imagen; no se puede modificar'; end if;
+  if new.imagen_path is null or (storage.foldername(new.imagen_path))[1] <> auth.uid()::text then
+    raise exception 'Ruta de imagen inválida';
+  end if;
+  new.formulario_id := old.formulario_id; new.usuario_id := old.usuario_id;
+  new.fecha := old.fecha; new.resumen := old.resumen; new.datos := old.datos; new.creado_en := old.creado_en;
+  return new;
+end $$;
+revoke execute on function public.validar_update_reporte() from anon, authenticated, public;
+drop trigger if exists reportes_validar_update on public.reportes;
+create trigger reportes_validar_update before update on public.reportes for each row execute function public.validar_update_reporte();
+drop policy if exists reportes_update_own on public.reportes;
+create policy reportes_update_own on public.reportes for update
+  using (usuario_id = auth.uid() and imagen_path is null) with check (usuario_id = auth.uid());
+
 -- ¿Puedo restablecer la contraseña de este usuario? (la usa la Edge Function reset-password)
 create or replace function public.puedo_resetear(objetivo uuid)
 returns boolean language plpgsql stable security definer set search_path = public as $$
@@ -333,7 +380,7 @@ grant execute on function public.puedo_resetear(uuid) to authenticated;
 create or replace view public.reportes_vista with (security_invoker = true) as
   select r.id, r.formulario_id, f.titulo as formulario, r.usuario_id,
          p.usuario, p.nombre as usuario_nombre, r.fecha, r.resumen, r.datos, r.imagen_path, r.creado_en,
-         p.rango as usuario_rango
+         p.rango as usuario_rango, r.folio_v2 as folio
   from public.reportes r
   left join public.formularios f on f.id = r.formulario_id
   left join public.perfiles p on p.id = r.usuario_id;

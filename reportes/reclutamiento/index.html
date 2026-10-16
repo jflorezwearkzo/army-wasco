@@ -103,7 +103,7 @@
 </main>
 
 <script type="module">
-import { requerir, barraUsuario, guardarReporte, hoyISO, faviconEmoji, sb } from '../../auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, hoyISO, faviconEmoji, sb } from '../../auth.js';
 const YO = await requerir({ formulario:'reclutamiento' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','reclutamiento').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 // Fecha de hoy (editable); nombre, rango y Rango PM vienen del perfil/rol y quedan bloqueados
@@ -192,6 +192,7 @@ function annexLayout(){            // una foto por fila, a todo el ancho
 }
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 
+let FOLIO=null, SELLO=null;
 function draw(){
   if(!tpl.complete||!tpl.naturalWidth) return;
   const d=getData(), L=annexLayout();
@@ -270,6 +271,16 @@ function draw(){
     ctx.fillStyle='#8a9398'; ctx.font='bold 13px "Roboto Condensed",Arial'; ctx.textAlign='center';
     ctx.fillText('¡HONOR  ★  LEALTAD  ★  DISCIPLINA!',W/2,y+10); ctx.textAlign='left';
   }
+
+  // Sello de verificación (folio asignado por el servidor)
+  if(FOLIO){
+    ctx.save(); ctx.textAlign='right'; ctx.textBaseline='alphabetic';
+    const txt=`FOLIO ${FOLIO} · ${SELLO||''}`;
+    ctx.font='bold 12px "Roboto Condensed",Arial'; const w=ctx.measureText(txt).width+16;
+    ctx.fillStyle='#000c'; rr(W-14-w, H-26, w, 18, 4); ctx.fill();
+    ctx.fillStyle='#f0c24d'; ctx.fillText(txt, W-22, H-13);
+    ctx.restore();
+  }
 }
 
 tpl.onload=draw;
@@ -279,17 +290,22 @@ $('#btnPreview').onclick=draw;
 $('#btnExport').onclick=async()=>{
   const d=getData(), e=validate(d);
   if(e.length){ showErr(e.join('\n')); return; }
-  showErr(''); draw();
-  const btn=$('#btnExport'); btn.disabled=true; btn.textContent='Exportando…';
-  const nombreArchivo=`reporte-reclutamiento-${fmtFecha(d.fecha)}.png`;
-  const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
-  // Descarga local
-  const a=document.createElement('a'); a.download=nombreArchivo; a.href=URL.createObjectURL(blob); a.click();
-  // Guardar en el historial
+  showErr('');
+  const btn=$('#btnExport'); btn.disabled=true; btn.textContent='Registrando…';
   try{
-    await guardarReporte({ yo:YO, formularioId:'reclutamiento', fecha:d.fecha, resumen:`${d.nombre} (${d.rango}, ${d.rangoPM}) reclutó a ${d.ofNombre} · ${d.ofRango}`, datos:{...d, fotos:photos.map(p=>p.name)}, pngBlob:blob });
-    $('#err').style.color='#7fd38a'; showErr('Reporte exportado y guardado en el historial.');
-  }catch(x){ $('#err').style.color=''; showErr('Se descargó la imagen, pero no se guardó en el historial: '+x.message); }
+    // 1) Registro en el servidor (sella identidad y asigna folio)
+    const reg=await crearReporte({ formularioId:'reclutamiento', fecha:d.fecha, resumen:`${d.nombre} (${d.rango}, ${d.rangoPM}) reclutó a ${d.ofNombre} · ${d.ofRango}`, datos:{...d, fotos:photos.map(p=>p.name)} });
+    FOLIO=reg.folio; SELLO=`${(reg.datos.usuario||'')} · ${new Date(reg.datos.sellado_en||Date.now()).toLocaleString('es-CO')}`;
+    draw();
+    // 2) Imagen con el folio estampado
+    btn.textContent='Exportando…';
+    const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
+    const a=document.createElement('a'); a.download=`reporte-reclutamiento-${FOLIO}-${fmtFecha(d.fecha)}.png`; a.href=URL.createObjectURL(blob); a.click();
+    // 3) Adjuntar al historial
+    await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'reclutamiento', pngBlob:blob });
+    $('#err').style.color='#7fd38a'; showErr(`Reporte ${FOLIO} exportado y guardado en el historial.`);
+  }catch(x){ $('#err').style.color=''; showErr('No se pudo completar: '+x.message); }
+  FOLIO=null; SELLO=null;
   btn.disabled=false; btn.textContent='Exportar imagen';
 };
 $('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); precargar(); draw(); };
