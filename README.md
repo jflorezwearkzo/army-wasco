@@ -2,7 +2,7 @@
 
 Sitio en GitHub Pages con acceso por usuario y contraseña, roles con permisos, panel de administración e historial de reportes. Backend: Supabase (Auth + Postgres + Storage).
 
-Publicado en: https://jflorezwearkzo.github.io/army-wasco/
+Publicado en: https://pmwasco.zylarion.io (dominio propio; alias: https://jflorezwearkzo.github.io/army-wasco/)
 
 ## Estructura
 
