@@ -8,7 +8,6 @@ export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persis
 
 // Raíz del sitio (funciona en GitHub Pages /army-wasco/ y en local)
 export const RAIZ = new URL('./', import.meta.url).href;
-export const RANGOS_PM = ['Auxiliar PM','Co-líder PM','Líder PM'];
 export const RANGOS = ['Sargento Primero','Sargento Mayor','Teniente','Capitán','Mayor','Coronel','Mayor General','Teniente General','Coronel General','FG Adjunto','FG'];
 // "Capitán Javier Flórez": rango + nombre (o el usuario si no hay nombre)
 export const nombreCompleto = p => [p.rango, p.nombre || p.usuario].filter(Boolean).join(' ');

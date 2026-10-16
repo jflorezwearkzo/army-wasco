@@ -67,7 +67,7 @@
           <label>Nombre</label><input id="rNombre" required>
           <label>Descripción</label><input id="rDesc">
           <label>Rango PM (lo heredan los usuarios de este rol en los reportes)</label>
-          <select id="rRangoPM"><option value="">— Sin Rango PM —</option><option>Auxiliar PM</option><option>Co-líder PM</option><option>Líder PM</option></select>
+          <select id="rRangoPM"><option value="">— Sin Rango PM —</option></select>
           <label>Permisos</label>
           <div class="chips">
             <label><input type="checkbox" id="pUsuarios"> Gestión de usuarios</label>
@@ -79,6 +79,20 @@
           <div class="chips" id="rForms"></div>
           <div class="fila" style="margin-top:14px"><button class="primary" id="rGuardar">Crear</button><button type="button" class="ghost" id="rCancelar">Cancelar</button></div>
           <div class="err" id="rErr"></div><div class="ok" id="rOk"></div>
+        </form>
+      </div>
+    </div>
+    <div class="caja" style="margin-top:18px" id="cajaRangosPM">
+      <h3>Rangos PM</h3>
+      <p class="muted" style="margin-top:0;font-size:13px">Lista de Rangos PM disponibles para asignar a los roles. Si renombras uno, los roles que lo usan se actualizan.</p>
+      <div class="dos">
+        <table><thead><tr><th>Rango PM</th><th>Orden</th><th>Roles que lo usan</th><th></th></tr></thead><tbody id="tbRangosPM"></tbody></table>
+        <form id="fRangoPM">
+          <input type="hidden" id="pmOriginal">
+          <label>Nombre</label><input id="pmNombre" required maxlength="40">
+          <label>Orden</label><input id="pmOrden" type="number" value="100">
+          <div class="fila" style="margin-top:14px"><button class="primary" id="pmGuardar">Crear</button><button type="button" class="ghost" id="pmCancelar">Cancelar</button></div>
+          <div class="err" id="pmErr"></div><div class="ok" id="pmOk"></div>
         </form>
       </div>
     </div>
@@ -127,7 +141,7 @@
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button class="ghost" onclick="dlg.close()">Cerrar</button></div></dialog>
 
 <script type="module">
-import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, RANGOS_PM, nombreCompleto, esSuperadmin } from '../auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin } from '../auth.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
 
@@ -135,7 +149,7 @@ const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 const PERMS = ['usuarios','roles','formularios','historial'];
 const NOMBRE_PERM = { usuarios:'Usuarios', roles:'Roles', formularios:'Formularios', historial:'Historial' };
-let roles = [], formularios = [];
+let roles = [], formularios = [], rangosPM = [];
 
 // ---------- Pestañas según permisos ----------
 const tabs = PERMS.filter(p => tiene(yo, p));
@@ -153,6 +167,7 @@ abrir(tabs[0]);
 async function cargarCatalogos(){
   roles = (await sb.from('roles').select('*').order('nombre')).data || [];
   formularios = (await sb.from('formularios').select('*').order('orden')).data || [];
+  rangosPM = (await sb.from('rangos_pm').select('*').order('orden')).data || [];
 }
 // ¿Puedo otorgar/asignar este conjunto de permisos y formularios? (Administrador: siempre)
 function dentroDeMisPermisos(permisos, formularios){
@@ -230,6 +245,18 @@ $('#fUsuario').onsubmit = async e => {
 // ====================== ROLES ======================
 async function cargarRoles(){
   await cargarCatalogos();
+  const sel = $('#rRangoPM'), cur = sel.value;
+  sel.innerHTML = '<option value="">— Sin Rango PM —</option>' + rangosPM.map(r => `<option>${esc(r.nombre)}</option>`).join(''); sel.value = cur;
+  $('#cajaRangosPM').style.display = tiene(yo,'roles') ? '' : 'none';
+  $('#tbRangosPM').innerHTML = rangosPM.map(r => `<tr><td><b>${esc(r.nombre)}</b></td><td>${r.orden}</td>
+    <td class="muted">${esc(roles.filter(x => x.rango_pm===r.nombre).map(x => x.nombre).join(', ') || '—')}</td>
+    <td style="white-space:nowrap"><button class="ghost sm" data-pme="${esc(r.nombre)}">Editar</button><button class="ghost sm" data-pmd="${esc(r.nombre)}">Eliminar</button></td></tr>`).join('') || '<tr><td colspan=4 class="muted">Sin rangos PM</td></tr>';
+  document.querySelectorAll('[data-pme]').forEach(b => b.onclick = () => { const r = rangosPM.find(x => x.nombre===b.dataset.pme); $('#pmOriginal').value=r.nombre; $('#pmNombre').value=r.nombre; $('#pmOrden').value=r.orden; $('#pmGuardar').textContent='Guardar'; msg('pm',''); });
+  document.querySelectorAll('[data-pmd]').forEach(b => b.onclick = async () => {
+    const usan = roles.filter(x => x.rango_pm===b.dataset.pmd).length;
+    if(!confirm(`¿Eliminar "${b.dataset.pmd}"?${usan ? ` ${usan} rol(es) quedarán sin Rango PM.` : ''}`)) return;
+    const { error } = await sb.from('rangos_pm').delete().eq('nombre', b.dataset.pmd); if(error) alert(error.message); cargarRoles();
+  });
   $('#rForms').innerHTML = `<label><input type="checkbox" value="*" id="rTodos"> Todos</label>` +
     formularios.map(f => `<label><input type="checkbox" value="${esc(f.id)}" class="rf"> ${esc(f.titulo)}</label>`).join('');
   const mf = yo.rol.formularios || [], mp = yo.rol.permisos || {}, sup = esSuperadmin(yo);
@@ -263,6 +290,19 @@ $('#fRol').onsubmit = async e => {
   if(rol.id==='admin' && !rol.permisos.roles){ msg('r','El rol admin debe conservar el permiso de roles.'); return; }
   const { error } = await sb.from('roles').upsert(rol); if(error){ msg('r', error.message); return; }
   limpiarRol(); msg('r','Rol guardado.', true); cargarRoles();
+};
+
+function limpiarRangoPM(){ $('#fRangoPM').reset(); $('#pmOriginal').value=''; $('#pmOrden').value=100; $('#pmGuardar').textContent='Crear'; msg('pm',''); }
+$('#pmCancelar').onclick = limpiarRangoPM;
+$('#fRangoPM').onsubmit = async e => {
+  e.preventDefault(); msg('pm','');
+  const nombre=$('#pmNombre').value.trim(), orden=parseInt($('#pmOrden').value)||100, original=$('#pmOriginal').value;
+  if(!nombre) return;
+  const { error } = original
+    ? await sb.from('rangos_pm').update({ nombre, orden }).eq('nombre', original)
+    : await sb.from('rangos_pm').insert({ nombre, orden });
+  if(error){ msg('pm', /duplicate|unique/i.test(error.message) ? 'Ya existe un Rango PM con ese nombre.' : error.message); return; }
+  limpiarRangoPM(); msg('pm','Rango PM guardado.', true); cargarRoles();
 };
 
 // ====================== FORMULARIOS ======================

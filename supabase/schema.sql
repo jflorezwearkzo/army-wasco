@@ -16,9 +16,17 @@ create table if not exists public.roles (
   rango_pm    text,                              -- Rango PM que heredan los usuarios del rol
   creado_en   timestamptz not null default now()
 );
+-- ---------- Catálogo de Rangos PM (editable desde el panel con permiso "roles") ----------
+create table if not exists public.rangos_pm (
+  nombre    text primary key,
+  orden     int not null default 100,
+  creado_en timestamptz not null default now()
+);
+insert into public.rangos_pm (nombre, orden) values ('Auxiliar PM',10),('Co-líder PM',20),('Líder PM',30) on conflict do nothing;
 alter table public.roles add column if not exists rango_pm text;
 alter table public.roles drop constraint if exists roles_rango_pm_check;
-alter table public.roles add constraint roles_rango_pm_check check (rango_pm is null or rango_pm in ('Auxiliar PM','Co-líder PM','Líder PM'));
+alter table public.roles drop constraint if exists roles_rango_pm_fkey;
+alter table public.roles add constraint roles_rango_pm_fkey foreign key (rango_pm) references public.rangos_pm(nombre) on update cascade on delete set null;
 
 -- ---------- Perfiles (uno por usuario de auth) ----------
 create table if not exists public.perfiles (
@@ -237,6 +245,11 @@ alter table public.roles       enable row level security;
 alter table public.perfiles    enable row level security;
 alter table public.formularios enable row level security;
 alter table public.reportes    enable row level security;
+alter table public.rangos_pm   enable row level security;
+drop policy if exists rangos_pm_select on public.rangos_pm;
+create policy rangos_pm_select on public.rangos_pm for select using (public.mi_perfil_activo());
+drop policy if exists rangos_pm_write on public.rangos_pm;
+create policy rangos_pm_write on public.rangos_pm for all using (public.tengo_permiso('roles')) with check (public.tengo_permiso('roles'));
 
 -- roles: todos los activos leen; solo permiso "roles" escribe
 drop policy if exists roles_select on public.roles;
