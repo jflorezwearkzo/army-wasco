@@ -1,5 +1,6 @@
 // Construye js/ (ofuscado) a partir de src/ (legible).  Uso: npm install && npm run build
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import JavaScriptObfuscator from 'javascript-obfuscator';
 mkdirSync('js', { recursive: true });
 for (const f of readdirSync('src').filter(f => f.endsWith('.js'))) {
@@ -16,3 +17,20 @@ for (const f of readdirSync('src').filter(f => f.endsWith('.js'))) {
   writeFileSync(`js/${f}`, out);
   console.log('ok', f, out.length);
 }
+// Rompe-caché: las páginas referencian js/<archivo>.js?v=<hash> para que un cambio se vea de inmediato
+const ver = {};
+for (const f of readdirSync('js')) ver[f] = createHash('sha1').update(readFileSync(`js/${f}`)).digest('hex').slice(0, 8);
+const pages = ['index.html', 'login.html', 'cuenta.html', 'admin/index.html', 'reportes/bajas/index.html', 'reportes/reclutamiento/index.html'];
+for (const p of pages) {
+  let html = readFileSync(p, 'utf8');
+  html = html.replace(/(src="(?:\.\.\/)*js\/)([a-z0-9-]+\.js)(\?v=[0-9a-f]+)?"/g, (m, pre, file) => `${pre}${file}?v=${ver[file]}"`);
+  writeFileSync(p, html);
+}
+// Los imports internos (./auth.js, ./config.js) también llevan versión
+for (const f of readdirSync('js')) {
+  if (f === 'config.js') continue;
+  let code = readFileSync(`js/${f}`, 'utf8');
+  code = code.replace(/\.\/(auth|config)\.js(\?v=[0-9a-f]+)?/g, (m, name) => `./${name}.js?v=${ver[name + '.js']}`);
+  writeFileSync(`js/${f}`, code);
+}
+console.log('versiones', ver);
