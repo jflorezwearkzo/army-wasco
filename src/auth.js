@@ -1,7 +1,8 @@
 // Módulo compartido de autenticación y permisos.
 // Uso en una página:  import { requerir, barraUsuario } from '<ruta>/auth.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_ANON_KEY, DOMINIO_USUARIOS } from './config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, DOMINIO_USUARIOS, TURNSTILE_SITE_KEY } from './config.js';
+export { TURNSTILE_SITE_KEY };
 
 export const configurado = !SUPABASE_URL.includes('TU-PROYECTO') && SUPABASE_ANON_KEY !== 'TU_ANON_KEY';
 export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
@@ -13,8 +14,9 @@ export const RANGOS = ['Sargento Primero','Sargento Mayor','Teniente','Capitán'
 export const nombreCompleto = p => [p.rango, p.nombre || p.usuario].filter(Boolean).join(' ');
 export const emailDe = usuario => `${usuario.trim().toLowerCase()}@${DOMINIO_USUARIOS}`;
 
-export async function iniciarSesion(usuario, password){
-  const { error } = await sb.auth.signInWithPassword({ email: emailDe(usuario), password });
+export async function iniciarSesion(usuario, password, captchaToken){
+  const opciones = captchaToken ? { captchaToken } : undefined;
+  const { error } = await sb.auth.signInWithPassword({ email: emailDe(usuario), password, options: opciones });
   if(error) throw new Error(traducir(error.message));
   const yo = await cargarYo();
   if(!yo || !yo.activo){ await sb.auth.signOut(); throw new Error('Tu cuenta aún no está activa. Pide al administrador que la active.'); }

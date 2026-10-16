@@ -1,6 +1,4 @@
 import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
@@ -97,12 +95,11 @@ $('#fUsuario').onsubmit = async e => {
           } else {
       if(!tiene(yo,'usuarios')) throw new Error('No tienes permiso para crear usuarios.');
       const pass=$('#uPass').value; { const v=validarPassword(pass); if(v) throw new Error('Contraseña inicial: '+v); }
-      // Cliente secundario para no reemplazar la sesión del administrador
-      const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:false, autoRefreshToken:false } });
-      const { data, error } = await tmp.auth.signUp({ email: emailDe(usuario), password: pass, options:{ data:{ usuario, nombre } } });
-      if(error) throw new Error(traducirAuth(error.message));
-      await tmp.auth.signOut().catch(()=>{});
-      if(!data.user) throw new Error('Supabase no devolvió el usuario. ¿Está desactivado "Confirm email"?');
+      // Alta por función de servidor (clave de servicio: no pasa por captcha ni por el registro público)
+      const { data, error } = await sb.functions.invoke('crear-usuario', { body:{ usuario, nombre, password: pass } });
+      if(error){ let m=error.message; try{ const j=await error.context.json(); if(j.error) m=j.error; }catch{} throw new Error(m); }
+      if(!data || !data.id) throw new Error((data && data.error) || 'No se pudo crear el usuario.');
+      data.user = { id: data.id };
       // El trigger creó el perfil inactivo con rol "usuario"; ahora lo ajustamos
       const cambios = { nombre, rango, activo }; if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
       // pequeño reintento: el trigger puede tardar unos ms

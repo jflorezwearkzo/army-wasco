@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net https://challenges.cloudflare.com; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Ingresar · Policía Militar</title>
@@ -27,11 +27,12 @@
     <input id="u" autocomplete="username" required autofocus>
     <label for="p">Contraseña</label>
     <input id="p" type="password" autocomplete="current-password" required>
+    <div id="turnstile" style="margin-top:14px;min-height:0"></div>
     <button class="primary" id="b">Ingresar</button>
     <div class="err" id="err"></div>
   </form>
   <p class="muted" style="font-size:12px">¿Sin cuenta? Pídesela al administrador.</p>
 </div>
-<script type="module" src="js/app-login.js?v=ca1a0682"></script>
+<script type="module" src="js/app-login.js?v=a4bbacf0"></script>
 </body>
 </html>
