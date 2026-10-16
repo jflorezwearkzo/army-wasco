@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Administración · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilos.css">
+<style>
+  main{max-width:1200px;margin:0 auto;padding:20px}
+  h1{color:var(--gold);margin:6px 0 16px;font-size:30px}
+  nav{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid #1c272c;margin-bottom:18px}
+  nav button{background:transparent;color:var(--muted);border-radius:6px 6px 0 0;padding:10px 16px}
+  nav button.on{background:var(--panel);color:var(--gold);border:1px solid #1c272c;border-bottom-color:var(--panel);margin-bottom:-1px}
+  section{display:none} section.on{display:block}
+  .dos{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
+  @media(max-width:950px){.dos{grid-template-columns:1fr}}
+  .caja h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:14px;letter-spacing:1px}
+  img.mini{height:48px;border-radius:4px;border:1px solid #2b3a40}
+  dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;max-width:95vw}
+  dialog img{max-width:90vw;max-height:80vh;display:block}
+  dialog::backdrop{background:#000a}
+</style>
+</head>
+<body>
+<main>
+  <h1>Panel de administración</h1>
+  <nav id="tabs"></nav>
+
+  <!-- ===================== USUARIOS ===================== -->
+  <section id="t-usuarios">
+    <div class="dos">
+      <div class="caja">
+        <h3>Usuarios</h3>
+        <table><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
+      </div>
+      <div class="caja">
+        <h3 id="tituloUsuario">Nuevo usuario</h3>
+        <form id="fUsuario">
+          <input type="hidden" id="uId">
+          <label>Usuario (para ingresar)</label><input id="uUsuario" pattern="[a-z0-9._\-]{3,30}" title="3-30 caracteres: minúsculas, números, punto, guion" required>
+          <label>Nombre completo</label><input id="uNombre">
+          <label>Contraseña inicial</label><input id="uPass" type="password" minlength="8" autocomplete="new-password">
+          <label>Rol</label><select id="uRol"></select>
+          <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="uActivo" checked> Activo</label></label>
+          <div class="fila" style="margin-top:14px"><button class="primary" id="uGuardar">Crear</button><button type="button" class="ghost" id="uCancelar">Cancelar</button></div>
+          <div class="err" id="uErr"></div><div class="ok" id="uOk"></div>
+        </form>
+        <p class="muted" style="font-size:12px">Para restablecer una contraseña olvidada: Supabase → Authentication → Users → el usuario → "Reset password", o crea un usuario nuevo y desactiva el anterior.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ROLES ===================== -->
+  <section id="t-roles">
+    <div class="dos">
+      <div class="caja">
+        <h3>Roles</h3>
+        <table><thead><tr><th>Rol</th><th>Permisos</th><th>Formularios</th><th></th></tr></thead><tbody id="tbRoles"></tbody></table>
+      </div>
+      <div class="caja">
+        <h3 id="tituloRol">Nuevo rol</h3>
+        <form id="fRol">
+          <label>Identificador (sin espacios)</label><input id="rId" pattern="[a-z0-9_\-]{2,30}" required>
+          <label>Nombre</label><input id="rNombre" required>
+          <label>Descripción</label><input id="rDesc">
+          <label>Permisos</label>
+          <div class="chips">
+            <label><input type="checkbox" id="pUsuarios"> Gestión de usuarios</label>
+            <label><input type="checkbox" id="pRoles"> Asignación y creación de roles</label>
+            <label><input type="checkbox" id="pFormularios"> Creación / gestión de reportes</label>
+            <label><input type="checkbox" id="pHistorial"> Ver historial de todos</label>
+          </div>
+          <label>Acceso a formularios</label>
+          <div class="chips" id="rForms"></div>
+          <div class="fila" style="margin-top:14px"><button class="primary" id="rGuardar">Crear</button><button type="button" class="ghost" id="rCancelar">Cancelar</button></div>
+          <div class="err" id="rErr"></div><div class="ok" id="rOk"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FORMULARIOS ===================== -->
+  <section id="t-formularios">
+    <div class="dos">
+      <div class="caja">
+        <h3>Formularios de reporte</h3>
+        <table><thead><tr><th></th><th>Título</th><th>Ruta</th><th>Orden</th><th>Estado</th><th></th></tr></thead><tbody id="tbForms"></tbody></table>
+      </div>
+      <div class="caja">
+        <h3 id="tituloForm">Nuevo formulario</h3>
+        <form id="fForm">
+          <label>Identificador</label><input id="fId" pattern="[a-z0-9_\-]{2,30}" required>
+          <label>Título</label><input id="fTitulo" required>
+          <label>Descripción</label><textarea id="fDesc" rows="3"></textarea>
+          <div class="fila"><div><label>Icono</label><input id="fIcono" value="📋"></div><div><label>Orden</label><input id="fOrden" type="number" value="100"></div></div>
+          <label>Ruta de la página</label><input id="fRuta" placeholder="reportes/nuevo/" required>
+          <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="fActivo" checked> Visible en el inicio</label></label>
+          <div class="fila" style="margin-top:14px"><button class="primary" id="fGuardar">Crear</button><button type="button" class="ghost" id="fCancelar">Cancelar</button></div>
+          <div class="err" id="fErr"></div><div class="ok" id="fOk"></div>
+        </form>
+        <p class="muted" style="font-size:12px">La página del formulario (su carpeta en <code>reportes/</code>) se publica en el repositorio; aquí solo se registra y se activa o desactiva.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HISTORIAL ===================== -->
+  <section id="t-historial">
+    <div class="caja">
+      <h3>Historial de reportes</h3>
+      <div class="fila" style="margin-bottom:12px">
+        <div><label>Formulario</label><select id="hForm"><option value="">Todos</option></select></div>
+        <div><label>Usuario</label><input id="hUsuario" placeholder="filtrar por usuario"></div>
+        <div><label>Desde</label><input id="hDesde" type="date"></div>
+        <div><label>Hasta</label><input id="hHasta" type="date"></div>
+        <div><button class="secondary" id="hBuscar" style="width:100%">Buscar</button></div>
+      </div>
+      <table><thead><tr><th>#</th><th>Fecha</th><th>Formulario</th><th>Usuario</th><th>Resumen</th><th>Registrado</th><th>Imagen</th><th></th></tr></thead><tbody id="tbHist"></tbody></table>
+      <div class="err" id="hErr"></div>
+    </div>
+  </section>
+</main>
+<dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button class="ghost" onclick="dlg.close()">Cerrar</button></div></dialog>
+
+<script type="module">
+import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe } from '../auth.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
+
+const yo = await requerir(); barraUsuario(yo);
+const $ = s => document.querySelector(s);
+const PERMS = ['usuarios','roles','formularios','historial'];
+const NOMBRE_PERM = { usuarios:'Usuarios', roles:'Roles', formularios:'Formularios', historial:'Historial' };
+let roles = [], formularios = [];
+
+// ---------- Pestañas según permisos ----------
+const tabs = PERMS.filter(p => tiene(yo, p));
+if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
+$('#tabs').innerHTML = tabs.map(p => `<button data-t="${p}">${NOMBRE_PERM[p]}</button>`).join('');
+function abrir(t){
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
+  ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist})[t]();
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => abrir(b.dataset.t));
+await cargarCatalogos();
+abrir(tabs[0]);
+
+async function cargarCatalogos(){
+  roles = (await sb.from('roles').select('*').order('nombre')).data || [];
+  formularios = (await sb.from('formularios').select('*').order('orden')).data || [];
+}
+const permisosTexto = r => PERMS.filter(p => r.permisos && r.permisos[p]).map(p => NOMBRE_PERM[p]).join(', ') || '—';
+const formsTexto = r => r.formularios.includes('*') ? 'Todos' : (r.formularios.map(id => (formularios.find(f=>f.id===id)||{titulo:id}).titulo).join(', ') || 'Ninguno');
+const msg = (id, t, ok=false) => { $('#'+id+'Err').textContent = ok?'':t; $('#'+id+'Ok').textContent = ok?t:''; };
+
+// ====================== USUARIOS ======================
+async function cargarUsuarios(){
+  const { data, error } = await sb.from('perfiles').select('*').order('usuario');
+  if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=5 class="err">${esc(error.message)}</td></tr>`; return; }
+  $('#uRol').innerHTML = roles.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
+  $('#uRol').disabled = !tiene(yo,'roles'); $('#uRol').title = tiene(yo,'roles') ? '' : 'Necesitas el permiso de roles para asignar roles';
+  $('#tbUsuarios').innerHTML = data.map(u => {
+    const r = roles.find(x => x.id===u.rol_id);
+    return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(u.nombre)}</td><td>${esc(r ? r.nombre : '—')}</td>
+      <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
+      <td style="white-space:nowrap"><button class="ghost sm" data-e="${u.id}">Editar</button>
+      <button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button></td></tr>`;
+  }).join('') || '<tr><td colspan=5 class="muted">Sin usuarios</td></tr>';
+  document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => editarUsuario(data.find(u => u.id===b.dataset.e)));
+  document.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
+    if(b.dataset.a===yo.id && b.dataset.v==='0'){ alert('No puedes desactivar tu propia cuenta.'); return; }
+    const { error } = await sb.from('perfiles').update({ activo: b.dataset.v==='1' }).eq('id', b.dataset.a);
+    if(error) alert(error.message); cargarUsuarios();
+  });
+}
+function editarUsuario(u){
+  $('#tituloUsuario').textContent = 'Editar usuario'; $('#uGuardar').textContent = 'Guardar';
+  $('#uId').value = u.id; $('#uUsuario').value = u.usuario; $('#uUsuario').disabled = true; $('#uNombre').value = u.nombre;
+  $('#uPass').value=''; $('#uPass').disabled = true; $('#uPass').placeholder = 'Solo el propio usuario cambia su contraseña';
+  $('#uRol').value = u.rol_id || ''; $('#uActivo').checked = u.activo; msg('u','');
+}
+function limpiarUsuario(){
+  $('#fUsuario').reset(); $('#tituloUsuario').textContent = 'Nuevo usuario'; $('#uGuardar').textContent = 'Crear';
+  $('#uId').value=''; $('#uUsuario').disabled=false; $('#uPass').disabled=false; $('#uPass').placeholder=''; $('#uActivo').checked=true; msg('u','');
+}
+$('#uCancelar').onclick = limpiarUsuario;
+$('#fUsuario').onsubmit = async e => {
+  e.preventDefault(); msg('u','');
+  const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rol=$('#uRol').value, activo=$('#uActivo').checked;
+  try{
+    if(id){
+      const cambios = { nombre, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol;
+      const { error } = await sb.from('perfiles').update(cambios).eq('id', id); if(error) throw error;
+          } else {
+      const pass=$('#uPass').value; if(pass.length<8) throw new Error('La contraseña inicial debe tener al menos 8 caracteres.');
+      // Cliente secundario para no reemplazar la sesión del administrador
+      const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:false, autoRefreshToken:false } });
+      const { data, error } = await tmp.auth.signUp({ email: emailDe(usuario), password: pass, options:{ data:{ usuario, nombre } } });
+      if(error) throw error;
+      await tmp.auth.signOut().catch(()=>{});
+      if(!data.user) throw new Error('Supabase no devolvió el usuario. ¿Está desactivado "Confirm email"?');
+      // El trigger creó el perfil inactivo con rol "usuario"; ahora lo ajustamos
+      const cambios = { nombre, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol;
+      // pequeño reintento: el trigger puede tardar unos ms
+      let ok=false; for(let i=0;i<5 && !ok;i++){ const r = await sb.from('perfiles').update(cambios).eq('id', data.user.id).select('id'); ok = !r.error && r.data && r.data.length; if(!ok) await new Promise(r=>setTimeout(r,400)); }
+      if(!ok) throw new Error('El usuario se creó pero no se pudo activar; edítalo desde la lista.');
+      limpiarUsuario(); msg('u',`Usuario "${usuario}" creado.`, true); cargarUsuarios(); return;
+    }
+    limpiarUsuario(); msg('u','Usuario actualizado.', true); cargarUsuarios();
+  }catch(x){ msg('u', x.message || String(x)); }
+};
+
+// ====================== ROLES ======================
+async function cargarRoles(){
+  await cargarCatalogos();
+  $('#rForms').innerHTML = `<label><input type="checkbox" value="*" id="rTodos"> Todos</label>` +
+    formularios.map(f => `<label><input type="checkbox" value="${esc(f.id)}" class="rf"> ${esc(f.titulo)}</label>`).join('');
+  $('#rTodos').onchange = () => document.querySelectorAll('.rf').forEach(c => { c.disabled = $('#rTodos').checked; });
+  $('#tbRoles').innerHTML = roles.map(r => `<tr><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
+    <td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
+    <td style="white-space:nowrap"><button class="ghost sm" data-re="${r.id}">Editar</button>${r.protegido?'':`<button class="ghost sm" data-rd="${r.id}">Eliminar</button>`}</td></tr>`).join('');
+  document.querySelectorAll('[data-re]').forEach(b => b.onclick = () => editarRol(roles.find(r => r.id===b.dataset.re)));
+  document.querySelectorAll('[data-rd]').forEach(b => b.onclick = async () => {
+    if(!confirm('¿Eliminar este rol? Los usuarios que lo tengan quedarán sin rol.')) return;
+    const { error } = await sb.from('roles').delete().eq('id', b.dataset.rd); if(error) alert(error.message); cargarRoles();
+  });
+}
+function editarRol(r){
+  $('#tituloRol').textContent='Editar rol'; $('#rGuardar').textContent='Guardar';
+  $('#rId').value=r.id; $('#rId').disabled=true; $('#rNombre').value=r.nombre; $('#rDesc').value=r.descripcion||'';
+  PERMS.forEach(p => $('#p'+p[0].toUpperCase()+p.slice(1)).checked = !!(r.permisos||{})[p]);
+  $('#rTodos').checked = r.formularios.includes('*'); $('#rTodos').onchange();
+  document.querySelectorAll('.rf').forEach(c => c.checked = r.formularios.includes(c.value)); msg('r','');
+}
+function limpiarRol(){ $('#fRol').reset(); $('#tituloRol').textContent='Nuevo rol'; $('#rGuardar').textContent='Crear'; $('#rId').disabled=false; document.querySelectorAll('.rf').forEach(c=>c.disabled=false); msg('r',''); }
+$('#rCancelar').onclick = limpiarRol;
+$('#fRol').onsubmit = async e => {
+  e.preventDefault(); msg('r','');
+  const rol = { id:$('#rId').value.trim().toLowerCase(), nombre:$('#rNombre').value.trim(), descripcion:$('#rDesc').value.trim(),
+    permisos: Object.fromEntries(PERMS.map(p => [p, $('#p'+p[0].toUpperCase()+p.slice(1)).checked])),
+    formularios: $('#rTodos').checked ? ['*'] : [...document.querySelectorAll('.rf:checked')].map(c => c.value) };
+  if(rol.id==='admin' && !rol.permisos.roles){ msg('r','El rol admin debe conservar el permiso de roles.'); return; }
+  const { error } = await sb.from('roles').upsert(rol); if(error){ msg('r', error.message); return; }
+  limpiarRol(); msg('r','Rol guardado.', true); cargarRoles();
+};
+
+// ====================== FORMULARIOS ======================
+async function cargarForms(){
+  await cargarCatalogos();
+  $('#tbForms').innerHTML = formularios.map(f => `<tr><td style="font-size:22px">${esc(f.icono||'')}</td><td><b>${esc(f.titulo)}</b><br><span class="muted">${esc(f.id)}</span></td>
+    <td><a href="../${esc(f.ruta)}" target="_blank">${esc(f.ruta)}</a></td><td>${f.orden}</td>
+    <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span></td>
+    <td style="white-space:nowrap"><button class="ghost sm" data-fe="${f.id}">Editar</button>
+    <button class="ghost sm" data-fa="${f.id}" data-v="${f.activo?0:1}">${f.activo?'Ocultar':'Mostrar'}</button>
+    <button class="ghost sm" data-fd="${f.id}">Eliminar</button></td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
+  document.querySelectorAll('[data-fe]').forEach(b => b.onclick = () => editarForm(formularios.find(f => f.id===b.dataset.fe)));
+  document.querySelectorAll('[data-fa]').forEach(b => b.onclick = async () => { const { error } = await sb.from('formularios').update({ activo: b.dataset.v==='1' }).eq('id', b.dataset.fa); if(error) alert(error.message); cargarForms(); });
+  document.querySelectorAll('[data-fd]').forEach(b => b.onclick = async () => {
+    if(!confirm('¿Eliminar este formulario del catálogo? Los reportes del historial se conservan.')) return;
+    const { error } = await sb.from('formularios').delete().eq('id', b.dataset.fd); if(error) alert(error.message); cargarForms();
+  });
+}
+function editarForm(f){
+  $('#tituloForm').textContent='Editar formulario'; $('#fGuardar').textContent='Guardar';
+  $('#fId').value=f.id; $('#fId').disabled=true; $('#fTitulo').value=f.titulo; $('#fDesc').value=f.descripcion||''; $('#fIcono').value=f.icono||'';
+  $('#fOrden').value=f.orden; $('#fRuta').value=f.ruta; $('#fActivo').checked=f.activo; msg('f','');
+}
+function limpiarForm(){ $('#fForm').reset(); $('#tituloForm').textContent='Nuevo formulario'; $('#fGuardar').textContent='Crear'; $('#fId').disabled=false; $('#fIcono').value='📋'; $('#fOrden').value=100; msg('f',''); }
+$('#fCancelar').onclick = limpiarForm;
+$('#fForm').onsubmit = async e => {
+  e.preventDefault(); msg('f','');
+  const f = { id:$('#fId').value.trim().toLowerCase(), titulo:$('#fTitulo').value.trim(), descripcion:$('#fDesc').value.trim(), icono:$('#fIcono').value.trim(),
+    orden:parseInt($('#fOrden').value)||100, ruta:$('#fRuta').value.trim(), activo:$('#fActivo').checked };
+  const { error } = await sb.from('formularios').upsert(f); if(error){ msg('f', error.message); return; }
+  limpiarForm(); msg('f','Formulario guardado.', true); cargarForms();
+};
+
+// ====================== HISTORIAL ======================
+async function cargarHist(){
+  await cargarCatalogos();
+  $('#hForm').innerHTML = '<option value="">Todos</option>' + formularios.map(f => `<option value="${esc(f.id)}">${esc(f.titulo)}</option>`).join('');
+  buscarHist();
+}
+$('#hBuscar').onclick = buscarHist;
+async function buscarHist(){
+  let q = sb.from('reportes_vista').select('*').order('creado_en', { ascending:false }).limit(300);
+  if($('#hForm').value) q = q.eq('formulario_id', $('#hForm').value);
+  if($('#hUsuario').value.trim()) q = q.ilike('usuario', `%${$('#hUsuario').value.trim()}%`);
+  if($('#hDesde').value) q = q.gte('fecha', $('#hDesde').value);
+  if($('#hHasta').value) q = q.lte('fecha', $('#hHasta').value);
+  const { data, error } = await q;
+  if(error){ $('#hErr').textContent = error.message; return; }
+  $('#hErr').textContent='';
+  const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
+  $('#tbHist').innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||r.formulario_id||'—')}</td>
+    <td>${esc(r.usuario||'—')}<br><span class="muted">${esc(r.usuario_nombre||'')}</span></td><td>${esc(r.resumen||'')}</td>
+    <td class="muted">${new Date(r.creado_en).toLocaleString('es-CO')}</td>
+    <td>${r.imagen_path ? `<button class="ghost sm" data-hv="${esc(r.imagen_path)}" data-n="reporte-${r.id}.png">Ver</button>` : '—'}</td>
+    <td><button class="ghost sm" data-hd="${r.id}" data-p="${esc(r.imagen_path||'')}">Eliminar</button></td></tr>`).join('') || '<tr><td colspan=8 class="muted">Sin reportes</td></tr>';
+  document.querySelectorAll('[data-hv]').forEach(b => b.onclick = async () => {
+    try{ const u = await urlImagen(b.dataset.hv); $('#dlgImg').src = u; $('#dlgDl').href = u; $('#dlgDl').download = b.dataset.n; $('#dlg').showModal(); }
+    catch(x){ alert(x.message); }
+  });
+  document.querySelectorAll('[data-hd]').forEach(b => b.onclick = async () => {
+    if(!confirm('¿Eliminar este reporte del historial?')) return;
+    if(b.dataset.p) await sb.storage.from('reportes').remove([b.dataset.p]);
+    const { error } = await sb.from('reportes').delete().eq('id', b.dataset.hd); if(error) alert(error.message); buscarHist();
+  });
+}
+</script>
+</body>
+</html>

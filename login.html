@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Ingresar · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body{display:flex;align-items:center;justify-content:center;padding:20px}
+  .login{width:100%;max-width:380px;text-align:center}
+  .login h1{margin:0;font-size:38px;line-height:1}
+  .login h1 small{display:block;font-size:.4em;font-style:normal;color:var(--muted);letter-spacing:5px;margin-top:6px}
+  form{text-align:left;margin-top:22px}
+  button{width:100%;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="login caja">
+  <p class="unidad">Army de Wasco</p>
+  <h1>Policía Militar<small>Reportes</small></h1>
+  <form id="f">
+    <label for="u">Usuario</label>
+    <input id="u" autocomplete="username" required autofocus>
+    <label for="p">Contraseña</label>
+    <input id="p" type="password" autocomplete="current-password" required>
+    <button class="primary" id="b">Ingresar</button>
+    <div class="err" id="err"></div>
+  </form>
+  <p class="muted" style="font-size:12px">¿Sin cuenta? Pídesela al administrador.</p>
+</div>
+<script type="module">
+  import { iniciarSesion, cargarYo, configurado, RAIZ } from './auth.js';
+  const err=document.getElementById('err'), b=document.getElementById('b');
+  const next=new URLSearchParams(location.search).get('next');
+  const destino=()=> (next && next.startsWith(RAIZ)) ? next : RAIZ;
+  if(!configurado) err.textContent='Falta configurar config.js con las claves de Supabase.';
+  else { const yo=await cargarYo(); if(yo && yo.activo) location.replace(destino()); }
+  document.getElementById('f').onsubmit=async e=>{
+    e.preventDefault(); err.textContent=''; b.disabled=true; b.textContent='Ingresando…';
+    try{ await iniciarSesion(document.getElementById('u').value, document.getElementById('p').value); location.replace(destino()); }
+    catch(x){ err.textContent=x.message; b.disabled=false; b.textContent='Ingresar'; }
+  };
+</script>
+</body>
+</html>

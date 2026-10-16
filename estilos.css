@@ -1,0 +1,31 @@
+:root{--bg:#0b1216;--panel:#101c21;--line:#c9a43a;--gold:#f0c24d;--text:#f3f3f3;--muted:#9aa7ad;--err:#ff6b6b;--ok:#7fd38a;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif;min-height:100vh}
+a{color:var(--gold)}
+h1{font-style:italic;text-transform:uppercase;letter-spacing:1px}
+.unidad{color:var(--gold);letter-spacing:4px;font-size:13px;font-weight:700;text-transform:uppercase;margin:0 0 6px}
+.caja{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:9px 11px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+button{cursor:pointer;border:0;border-radius:6px;padding:10px 16px;font-family:inherit;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.5px}
+.primary{background:var(--gold);color:#1a1200}
+.secondary{background:#243239;color:var(--text)}
+.danger{background:#5a1f1f;color:#ffd6d6}
+.ghost{background:transparent;color:var(--muted);border:1px solid #2b3a40;padding:6px 10px;font-size:12px}
+.sm{padding:5px 9px;font-size:12px}
+.err{color:var(--err);font-size:14px;min-height:20px;margin-top:8px;white-space:pre-line}
+.ok{color:var(--ok);font-size:14px;min-height:20px;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid #1c272c;text-align:left;vertical-align:middle}
+th{color:var(--gold);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+tr:hover td{background:#0d181d}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;background:#243239;color:var(--muted)}
+.tag.on{background:#173a24;color:var(--ok)}
+.tag.off{background:#3a1717;color:#ff9f9f}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{display:flex;align-items:center;gap:6px;margin:0;padding:6px 10px;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-size:14px;cursor:pointer}
+.chips input{width:auto}
+.muted{color:var(--muted)}
+.fila{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.fila>*{flex:1;min-width:140px}

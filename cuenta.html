@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Mi cuenta · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style> main{max-width:520px;margin:30px auto;padding:0 20px} </style>
+</head>
+<body>
+<main>
+  <h1 style="color:var(--gold)">Mi cuenta</h1>
+  <div class="caja" id="info"></div>
+  <div class="caja" style="margin-top:16px">
+    <h3 style="margin-top:0">Cambiar contraseña</h3>
+    <form id="f">
+      <label for="p1">Nueva contraseña (mínimo 8 caracteres)</label><input id="p1" type="password" minlength="8" required autocomplete="new-password">
+      <label for="p2">Repite la contraseña</label><input id="p2" type="password" minlength="8" required autocomplete="new-password">
+      <button class="primary" style="margin-top:14px">Guardar</button>
+      <div class="err" id="err"></div><div class="ok" id="ok"></div>
+    </form>
+  </div>
+</main>
+<script type="module">
+  import { requerir, barraUsuario, sb, esc } from './auth.js';
+  const yo=await requerir(); barraUsuario(yo);
+  const perms=Object.entries(yo.rol.permisos||{}).filter(([k,v])=>v).map(([k])=>k).join(', ')||'ninguno';
+  const forms=yo.rol.formularios.includes('*')?'todos':(yo.rol.formularios.join(', ')||'ninguno');
+  document.getElementById('info').innerHTML=`<p><b>Usuario:</b> ${esc(yo.usuario)}</p><p><b>Nombre:</b> ${esc(yo.nombre||'—')}</p>
+    <p><b>Rol:</b> ${esc(yo.rol.nombre)}</p><p class="muted">Permisos: ${esc(perms)} · Formularios: ${esc(forms)}</p>`;
+  document.getElementById('f').onsubmit=async e=>{
+    e.preventDefault(); const err=document.getElementById('err'), ok=document.getElementById('ok'); err.textContent=''; ok.textContent='';
+    const a=p1.value, b=p2.value; if(a!==b){ err.textContent='Las contraseñas no coinciden.'; return; }
+    const { error }=await sb.auth.updateUser({ password:a });
+    if(error) err.textContent=error.message; else { ok.textContent='Contraseña actualizada.'; e.target.reset(); }
+  };
+</script>
+</body>
+</html>

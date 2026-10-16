@@ -104,7 +104,9 @@
   </section>
 </main>
 
-<script>
+<script type="module">
+import { requerir, barraUsuario, guardarReporte } from '../../auth.js';
+const YO = await requerir({ formulario:'reclutamiento' }); barraUsuario(YO);
 // ---------- Coordenadas sobre la plantilla (1024 x 572) ----------
 const T = {
   panel: '#0e1b20',
@@ -159,7 +161,7 @@ function validate(d){
   if(photos.length!==1) e.push('• Debes adjuntar la foto de evidencia.');
   return e;
 }
-function showErr(msg){ $('#err').textContent=msg; }
+function showErr(msg){ $('#err').textContent=msg; if(!msg) $('#err').style.color=''; }
 
 // ---------- Dibujo ----------
 const SCALE=2, W=1024, H=572;
@@ -265,13 +267,21 @@ tpl.onload=draw;
 document.fonts && document.fonts.ready.then(draw);
 $('#form').addEventListener('input',draw);
 $('#btnPreview').onclick=draw;
-$('#btnExport').onclick=()=>{
+$('#btnExport').onclick=async()=>{
   const d=getData(), e=validate(d);
   if(e.length){ showErr(e.join('\n')); return; }
   showErr(''); draw();
-  const a=document.createElement('a');
-  a.download=`reporte-reclutamiento-${fmtFecha(d.fecha)}.png`;
-  a.href=cv.toDataURL('image/png'); a.click();
+  const btn=$('#btnExport'); btn.disabled=true; btn.textContent='Exportando…';
+  const nombreArchivo=`reporte-reclutamiento-${fmtFecha(d.fecha)}.png`;
+  const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
+  // Descarga local
+  const a=document.createElement('a'); a.download=nombreArchivo; a.href=URL.createObjectURL(blob); a.click();
+  // Guardar en el historial
+  try{
+    await guardarReporte({ yo:YO, formularioId:'reclutamiento', fecha:d.fecha, resumen:`${d.nombre} (${d.rango}, ${d.rangoPM}) reclutó a ${d.ofNombre} · ${d.ofRango}`, datos:{...d, fotos:photos.map(p=>p.name)}, pngBlob:blob });
+    $('#err').style.color='#7fd38a'; showErr('Reporte exportado y guardado en el historial.');
+  }catch(x){ $('#err').style.color=''; showErr('Se descargó la imagen, pero no se guardó en el historial: '+x.message); }
+  btn.disabled=false; btn.textContent='Exportar imagen';
 };
 $('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); draw(); };
 </script>
