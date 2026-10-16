@@ -21,6 +21,12 @@
   dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;max-width:95vw}
   dialog img{max-width:90vw;max-height:80vh;display:block}
   dialog::backdrop{background:#000a}
+  input[type=date]{color-scheme:dark;cursor:pointer}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) sepia(1) saturate(5) hue-rotate(5deg);cursor:pointer;opacity:.9}
+  .sugs{position:absolute;left:0;right:0;top:100%;z-index:5;background:#0a1114;border:1px solid var(--gold);border-top:0;border-radius:0 0 6px 6px;max-height:220px;overflow:auto;display:none}
+  .sugs div{padding:8px 11px;cursor:pointer;font-size:14px}
+  .sugs div:hover,.sugs div.act{background:#1b2a31;color:var(--gold)}
+  .sugs small{color:var(--muted);margin-left:6px}
 </style>
 </head>
 <body>
@@ -128,9 +134,9 @@
       <h3>Historial de reportes</h3>
       <div class="fila" style="margin-bottom:12px">
         <div><label>Formulario</label><select id="hForm"><option value="">Todos</option></select></div>
-        <div><label>Usuario</label><input id="hUsuario" list="hUsuarios" placeholder="escribe para filtrar" autocomplete="off"><datalist id="hUsuarios"></datalist></div>
-        <div><label>Desde</label><select id="hDesde"><option value="">Cualquiera</option></select></div>
-        <div><label>Hasta</label><select id="hHasta"><option value="">Cualquiera</option></select></div>
+        <div style="position:relative"><label>Usuario</label><input id="hUsuario" placeholder="escribe para filtrar" autocomplete="off"><div class="sugs" id="hSugs"></div></div>
+        <div><label>Desde</label><input id="hDesde" type="date"></div>
+        <div><label>Hasta</label><input id="hHasta" type="date"></div>
         <div><button type="button" class="ghost" id="hLimpiar" style="width:100%">Limpiar filtros</button></div>
       </div>
       <table><thead><tr><th>#</th><th>Fecha</th><th>Formulario</th><th>Usuario</th><th>Resumen</th><th>Registrado</th><th>Imagen</th><th></th></tr></thead><tbody id="tbHist"></tbody></table>
@@ -340,19 +346,30 @@ $('#fForm').onsubmit = async e => {
 async function cargarHist(){
   await cargarCatalogos();
   $('#hForm').innerHTML = '<option value="">Todos</option>' + formularios.map(f => `<option value="${esc(f.id)}">${esc(f.titulo)}</option>`).join('');
-  // Opciones a partir de lo que existe en el historial
-  const { data } = await sb.from('reportes_vista').select('fecha,usuario').limit(2000);
-  const fechas = [...new Set((data||[]).map(r => r.fecha).filter(Boolean))].sort();
-  const fmtF = iso => iso.split('-').reverse().join('-');
-  const ops = fechas.map(f => `<option value="${f}">${fmtF(f)}</option>`).join('');
-  $('#hDesde').innerHTML = '<option value="">Cualquiera</option>' + ops;
-  $('#hHasta').innerHTML = '<option value="">Cualquiera</option>' + ops;
-  const usuarios = [...new Set((data||[]).map(r => r.usuario).filter(Boolean))].sort();
-  $('#hUsuarios').innerHTML = usuarios.map(u => `<option value="${esc(u)}">`).join('');
+  // Rango de fechas y lista de usuarios a partir de lo que existe en el historial
+  const { data } = await sb.from('reportes_vista').select('fecha,usuario,usuario_nombre,usuario_rango').limit(2000);
+  const fechas = (data||[]).map(r => r.fecha).filter(Boolean).sort();
+  ['#hDesde','#hHasta'].forEach(s => { $(s).min = fechas[0] || ''; $(s).max = fechas[fechas.length-1] || ''; });
+  const seen = {}; (data||[]).forEach(r => { if(r.usuario && !seen[r.usuario]) seen[r.usuario] = [r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '); });
+  usuariosHist = Object.entries(seen).map(([u,n]) => ({u,n})).sort((a,b) => a.u.localeCompare(b.u));
   buscarHist();
 }
+let usuariosHist = [];
 ['#hForm','#hDesde','#hHasta'].forEach(s => $(s).onchange = buscarHist);
-let tHist; $('#hUsuario').oninput = () => { clearTimeout(tHist); tHist = setTimeout(buscarHist, 250); };
+['#hDesde','#hHasta'].forEach(s => $(s).onclick = () => { try{ $(s).showPicker(); }catch(e){} });
+let tHist;
+function mostrarSugs(){
+  const q = $('#hUsuario').value.trim().toLowerCase(), box = $('#hSugs');
+  const lista = q ? usuariosHist.filter(x => x.u.toLowerCase().includes(q) || x.n.toLowerCase().includes(q)) : usuariosHist;
+  if(!lista.length || document.activeElement !== $('#hUsuario')){ box.style.display='none'; return; }
+  box.innerHTML = lista.slice(0,12).map(x => `<div data-u="${esc(x.u)}"><b>${esc(x.u)}</b>${x.n ? `<small>${esc(x.n)}</small>` : ''}</div>`).join('');
+  box.style.display='block';
+  box.querySelectorAll('div').forEach(el => el.onmousedown = e => { e.preventDefault(); $('#hUsuario').value = el.dataset.u; box.style.display='none'; buscarHist(); });
+}
+$('#hUsuario').oninput = () => { mostrarSugs(); clearTimeout(tHist); tHist = setTimeout(buscarHist, 250); };
+$('#hUsuario').onfocus = mostrarSugs;
+$('#hUsuario').onblur = () => setTimeout(() => $('#hSugs').style.display='none', 150);
+$('#hUsuario').onkeydown = e => { if(e.key==='Escape') $('#hSugs').style.display='none'; };
 $('#hLimpiar').onclick = () => { $('#hForm').value=''; $('#hUsuario').value=''; $('#hDesde').value=''; $('#hHasta').value=''; buscarHist(); };
 async function buscarHist(){
   let q = sb.from('reportes_vista').select('*').order('creado_en', { ascending:false }).limit(300);
