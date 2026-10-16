@@ -72,7 +72,7 @@ alter table public.reportes add column if not exists folio_v2 text generated alw
 -- ---------- Datos iniciales ----------
 insert into public.roles (id, nombre, descripcion, permisos, formularios, protegido, rango_pm) values
   ('admin',   'Administrador', 'Control total del sitio',
-     '{"usuarios":true,"asignar_roles":true,"reset_password":true,"crear_roles":true,"crear_reportes":true,"gestion_reportes":true,"historial":true,"eliminar_historial":true}', '{*}', true, 'Líder PM'),
+     '{"usuarios":true,"asignar_roles":true,"reset_password":true,"crear_roles":true,"crear_reportes":true,"gestion_reportes":true,"historial":true,"eliminar_historial":true,"auditoria":true}', '{*}', true, 'Líder PM'),
   ('usuario', 'Usuario',       'Solo llena reportes',
      '{}', '{*}', false, 'Auxiliar PM')
 on conflict (id) do nothing;
@@ -375,6 +375,64 @@ begin
 end $$;
 revoke execute on function public.puedo_resetear(uuid) from anon, public;
 grant execute on function public.puedo_resetear(uuid) to authenticated;
+
+-- ---------- Auditoría (inalterable, 30 días) ----------
+create table if not exists public.auditoria (
+  id          bigint generated always as identity primary key,
+  en          timestamptz not null default now(),
+  usuario_id  uuid,
+  usuario     text,
+  accion      text not null,
+  tabla       text not null,
+  registro    text,
+  detalle     jsonb not null default '{}'::jsonb
+);
+create index if not exists auditoria_en_idx on public.auditoria (en desc);
+alter table public.auditoria enable row level security;
+drop policy if exists auditoria_select on public.auditoria;
+create policy auditoria_select on public.auditoria for select using (public.tengo_permiso('auditoria'));
+revoke insert, update, delete, truncate on public.auditoria from anon, authenticated;
+
+create or replace function public.registrar_auditoria()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare u text; reg text; det jsonb; fila jsonb;
+begin
+  select usuario into u from public.perfiles where id = auth.uid();
+  fila := case when tg_op = 'DELETE' then to_jsonb(old) else to_jsonb(new) end;
+  reg := case tg_table_name
+           when 'perfiles'    then coalesce(fila->>'usuario', fila->>'id')
+           when 'reportes'    then coalesce(fila->>'folio_v2', fila->>'id')
+           else coalesce(fila->>'id', fila->>'nombre') end;
+  if tg_op = 'UPDATE' then
+    select coalesce(jsonb_object_agg(k, jsonb_build_object('antes', o.value, 'despues', n.value)), '{}'::jsonb) into det
+      from jsonb_each(to_jsonb(old)) o(k, value) join jsonb_each(to_jsonb(new)) n(k, value) using (k)
+     where o.value is distinct from n.value;
+    if det = '{}'::jsonb then return new; end if;
+  else
+    det := fila - 'datos';
+  end if;
+  insert into public.auditoria (usuario_id, usuario, accion, tabla, registro, detalle)
+    values (auth.uid(), coalesce(u, case when auth.uid() is null then 'sistema' else auth.uid()::text end), lower(tg_op), tg_table_name, reg, det);
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end $$;
+revoke execute on function public.registrar_auditoria() from anon, authenticated, public;
+drop trigger if exists aud_perfiles on public.perfiles;       create trigger aud_perfiles    after insert or update or delete on public.perfiles    for each row execute function public.registrar_auditoria();
+drop trigger if exists aud_roles on public.roles;             create trigger aud_roles       after insert or update or delete on public.roles       for each row execute function public.registrar_auditoria();
+drop trigger if exists aud_formularios on public.formularios; create trigger aud_formularios after insert or update or delete on public.formularios for each row execute function public.registrar_auditoria();
+drop trigger if exists aud_reportes on public.reportes;       create trigger aud_reportes    after insert or update or delete on public.reportes    for each row execute function public.registrar_auditoria();
+drop trigger if exists aud_rangos_pm on public.rangos_pm;     create trigger aud_rangos_pm   after insert or update or delete on public.rangos_pm   for each row execute function public.registrar_auditoria();
+
+create or replace function public.auditar_evento(p_usuario_id uuid, p_accion text, p_tabla text, p_registro text, p_detalle jsonb)
+returns void language sql security definer set search_path = public as $$
+  insert into public.auditoria (usuario_id, usuario, accion, tabla, registro, detalle)
+  select p_usuario_id, coalesce((select usuario from public.perfiles where id = p_usuario_id), p_usuario_id::text), p_accion, p_tabla, p_registro, coalesce(p_detalle,'{}'::jsonb);
+$$;
+revoke execute on function public.auditar_evento(uuid, text, text, text, jsonb) from anon, authenticated, public;
+
+-- Retención 30 días (pg_cron, diario 03:15 UTC)
+create extension if not exists pg_cron with schema pg_catalog;
+select cron.schedule('auditoria_retencion_30d', '15 3 * * *', $$delete from public.auditoria where en < now() - interval '30 days'$$);
 
 -- ---------- Vista cómoda para el historial ----------
 create or replace view public.reportes_vista with (security_invoker = true) as

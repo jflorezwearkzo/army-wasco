@@ -140,6 +140,20 @@
       <div class="err" id="hErr"></div>
     </div>
   </section>
+  <!-- ===================== AUDITORÍA ===================== -->
+  <section id="t-auditoria">
+    <div class="caja">
+      <h3>Auditoría</h3>
+      <p class="muted" style="margin-top:0;font-size:13px">Registro inalterable de acciones (lo escribe la base de datos; nadie puede borrarlo ni editarlo). Se conserva 30 días.</p>
+      <div class="fila" style="margin-bottom:12px">
+        <div><label>Tipo</label><select id="aTabla"><option value="">Todos</option><option value="perfiles">Usuarios</option><option value="roles">Roles</option><option value="rangos_pm">Rangos PM</option><option value="formularios">Formularios</option><option value="reportes">Reportes</option><option value="auth">Contraseñas</option></select></div>
+        <div><label>Usuario</label><input id="aUsuario" placeholder="quién hizo la acción" autocomplete="off"></div>
+        <div><button type="button" class="secondary" id="aBuscar" style="width:100%">Actualizar</button></div>
+      </div>
+      <table><thead><tr><th>Cuándo</th><th>Quién</th><th>Acción</th><th>Registro</th><th>Detalle</th></tr></thead><tbody id="tbAud"></tbody></table>
+      <div class="err" id="aErr"></div>
+    </div>
+  </section>
 </main>
 <dialog id="dlgPass" style="padding:22px;min-width:320px">
   <h3 style="margin:0 0 6px;color:var(--gold)">Restablecer contraseña</h3>

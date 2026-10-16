@@ -34,6 +34,7 @@ Un rol es un conjunto de permisos más la lista de formularios a los que da acce
 | Gestión de reportes | Editar, ocultar/mostrar y eliminar formularios del catálogo |
 | Ver historial | Ver y descargar cualquier reporte guardado |
 | Eliminar historial | Eliminar reportes del historial (incluida su imagen) |
+| Ver auditoría | Consultar el registro de auditoría |
 | Acceso a formularios | "Todos" o una selección; sin acceso, el formulario no aparece ni se puede abrir |
 
 Roles iniciales: **Administrador** (todo) y **Usuario** (solo llena reportes). Se pueden crear los que hagan falta desde el panel.
@@ -43,6 +44,10 @@ Las reglas se aplican en la base de datos (RLS), no solo en la interfaz.
 **Super administrador:** el rol Administrador está protegido. Solo un Administrador puede editar, desactivar o degradar a otro Administrador, nombrar nuevos Administradores o modificar el rol Administrador. Un rol con "Gestión de usuarios" puede crear y gestionar a todos los demás usuarios, pero no a los Administradores.
 
 **Delegación acotada:** quien no es Administrador solo puede crear o editar roles con permisos y formularios que él mismo tiene, y solo puede asignar roles que quepan dentro de sus permisos. Los usuarios nuevos nacen sin rol; el gestor les asigna uno.
+
+## Auditoría
+
+Cada alta, cambio o baja en usuarios, roles, Rangos PM, formularios y reportes, y cada restablecimiento de contraseña (concedido o denegado), queda en la tabla `auditoria` con quién, cuándo, qué registro y qué cambió (antes → después). La escriben únicamente triggers de la base de datos; ningún usuario, ni el Administrador, puede borrar ni modificar filas por la API. Se consulta en Panel → Auditoría (permiso "Ver auditoría"). Una tarea de pg_cron borra lo anterior a 30 días cada noche.
 
 ## Protección del lado del cliente
 

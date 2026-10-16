@@ -5,14 +5,15 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','historial','eliminar_historial'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','historial','eliminar_historial','auditoria'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', historial:'Ver historial', eliminar_historial:'Eliminar historial' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
   ['roles',       'Roles',       ['crear_roles']],
   ['formularios', 'Formularios', ['crear_reportes','gestion_reportes']],
   ['historial',   'Historial',   ['historial','eliminar_historial']],
+  ['auditoria',   'Auditoría',   ['auditoria']],
 ];
 let roles = [], formularios = [], rangosPM = [];
 
@@ -24,7 +25,7 @@ $('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre]
 function abrir(t){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
-  ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist})[t]();
+  ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, auditoria:cargarAud})[t]();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => abrir(b.dataset.t));
 await cargarCatalogos();
@@ -173,7 +174,7 @@ $('#fRol').onsubmit = async e => {
   const rol = { id:$('#rId').value.trim().toLowerCase(), nombre:$('#rNombre').value.trim(), descripcion:$('#rDesc').value.trim(), rango_pm:$('#rRangoPM').value||null,
     permisos: Object.fromEntries([...document.querySelectorAll('.rp')].map(c => [c.value, c.checked])),
     formularios: $('#rTodos').checked ? ['*'] : [...document.querySelectorAll('.rf:checked')].map(c => c.value) };
-  if(rol.id==='admin' && !(rol.permisos.crear_roles && rol.permisos.asignar_roles)){ msg('r','El rol admin debe conservar los permisos de roles.'); return; }
+  if(rol.id==='admin' && !(rol.permisos.crear_roles && rol.permisos.asignar_roles && rol.permisos.auditoria)){ msg('r','El rol admin debe conservar los permisos de roles.'); return; }
   const { error } = await sb.from('roles').upsert(rol); if(error){ msg('r', error.message); return; }
   limpiarRol(); msg('r','Rol guardado.', true); cargarRoles();
 };
@@ -287,4 +288,27 @@ async function buscarHist(){
     if(b.dataset.p) await sb.storage.from('reportes').remove([b.dataset.p]);
     const { error } = await sb.from('reportes').delete().eq('id', b.dataset.hd); if(error) alert(error.message); buscarHist();
   });
+}
+
+// ====================== AUDITORÍA ======================
+const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado' };
+const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta' };
+async function cargarAud(){ buscarAud(); }
+$('#aBuscar').onclick = buscarAud; $('#aTabla').onchange = buscarAud;
+let tAud; $('#aUsuario').oninput = () => { clearTimeout(tAud); tAud = setTimeout(buscarAud, 250); };
+async function buscarAud(){
+  let q = sb.from('auditoria').select('*').order('id', { ascending:false }).limit(500);
+  if($('#aTabla').value) q = q.eq('tabla', $('#aTabla').value);
+  if($('#aUsuario').value.trim()) q = q.ilike('usuario', `%${$('#aUsuario').value.trim()}%`);
+  const { data, error } = await q;
+  if(error){ $('#aErr').textContent = error.message; return; }
+  $('#aErr').textContent = '';
+  const resumen = r => {
+    if(r.accion==='update') return Object.entries(r.detalle||{}).map(([k,v]) => `${k}: ${fmtV(v.antes)} → ${fmtV(v.despues)}`).join(' · ');
+    const d = r.detalle||{}; return Object.entries(d).filter(([k]) => !['id','creado_en','sellado_en'].includes(k)).slice(0,6).map(([k,v]) => `${k}: ${fmtV(v)}`).join(' · ');
+  };
+  const fmtV = v => v===null||v===undefined ? '—' : (typeof v==='object' ? JSON.stringify(v) : String(v)).slice(0,60);
+  $('#tbAud').innerHTML = data.map(r => `<tr><td class="muted" style="white-space:nowrap">${new Date(r.en).toLocaleString('es-CO')}</td>
+    <td><b>${esc(r.usuario||'sistema')}</b></td><td>${esc(ACCION[r.accion]||r.accion)} ${esc(TABLA[r.tabla]||r.tabla)}</td>
+    <td>${esc(r.registro||'')}</td><td class="muted" style="font-size:12px">${esc(resumen(r))}</td></tr>`).join('') || '<tr><td colspan=5 class="muted">Sin eventos</td></tr>';
 }

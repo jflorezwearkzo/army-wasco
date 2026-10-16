@@ -30,14 +30,20 @@ Deno.serve(async (req: Request) => {
   const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   // 1) ¿Quién llama y tiene derecho? (se evalúa con SU sesión, no con la de servicio)
+  const admin = createClient(url, service, { auth: { persistSession: false } });
   const caller = createClient(url, anon, { global: { headers: { Authorization: auth } } });
+  const { data: me } = await caller.auth.getUser();
+  const callerId = me?.user?.id ?? null;
   const { data: ok, error: e1 } = await caller.rpc("puedo_resetear", { objetivo: usuario_id });
   if (e1) return json(401, { error: "Sesión inválida: " + e1.message });
-  if (!ok) return json(403, { error: "No tienes permiso para restablecer la contraseña de este usuario" });
+  if (!ok) {
+    await admin.rpc("auditar_evento", { p_usuario_id: callerId, p_accion: "reset_password_denegado", p_tabla: "auth", p_registro: usuario_id, p_detalle: {} });
+    return json(403, { error: "No tienes permiso para restablecer la contraseña de este usuario" });
+  }
 
-  // 2) Cambio de contraseña con la clave de servicio
-  const admin = createClient(url, service, { auth: { persistSession: false } });
+  // 2) Cambio de contraseña con la clave de servicio (queda en auditoría)
   const { error: e2 } = await admin.auth.admin.updateUserById(usuario_id, { password });
   if (e2) return json(500, { error: e2.message });
+  await admin.rpc("auditar_evento", { p_usuario_id: callerId, p_accion: "reset_password", p_tabla: "auth", p_registro: usuario_id, p_detalle: {} });
   return json(200, { ok: true });
 });
