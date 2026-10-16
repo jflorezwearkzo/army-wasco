@@ -1,15 +1,41 @@
-# Reporte de Bajas — Army de Wasco · Policía Militar
+# Policía Militar · Reportes — Army de Wasco
 
-Página web estática (un solo `index.html`) que llena el formato "Reporte de Bajas" y lo exporta como imagen PNG.
+Sitio estático (GitHub Pages) con la página de inicio **Policía Militar · Reportes** y los formatos de reporte de la unidad.
 
-## Uso
-1. Abre `index.html` (o la página publicada en GitHub Pages).
-2. Llena **fecha**, **nombre** y **rango** de quien reporta (obligatorios).
-3. Registra de **1 a 10 personas abatidas** (nombre obligatorio; rango y motivo opcionales).
-4. Adjunta de **1 a 10 fotos** como prueba.
-5. Pulsa **Exportar imagen**: se descarga `reporte-bajas-DD-MM-AAAA.png` con el formato lleno.
+Publicado en: https://jflorezwearkzo.github.io/army-wasco/
 
-Todo se procesa en el navegador; no se envía nada a ningún servidor.
+## Estructura
 
-## Publicar en GitHub Pages
-Settings → Pages → Source: *Deploy from a branch* → rama `main`, carpeta `/ (root)`.
+```
+index.html          Página de inicio: lista los reportes
+reportes.json       Catálogo de reportes (alimenta la lista de inicio)
+reportes/
+  bajas/            Reporte de Bajas (index.html + plantilla.png)
+```
+
+## Reportes disponibles
+
+| Reporte | Ruta | Descripción |
+|---|---|---|
+| Reporte de Bajas | `reportes/bajas/` | Llena el formato con fecha, emisor, hasta 10 abatidos y de 1 a 10 fotos; exporta PNG en alta resolución con anexo fotográfico. |
+
+## Agregar un reporte nuevo
+
+1. Crea la carpeta `reportes/<id>/` con su `index.html` (y su plantilla si la usa).
+2. Añade una entrada en `reportes.json`:
+
+```json
+{
+  "id": "<id>",
+  "titulo": "Nombre del reporte",
+  "descripcion": "Qué hace",
+  "ruta": "reportes/<id>/",
+  "icono": "📋",
+  "creado": "AAAA-MM-DD",
+  "estado": "activo"
+}
+```
+
+`"estado": "proximo"` muestra la tarjeta deshabilitada como "Próximamente".
+
+Todo se procesa en el navegador; no hay servidor ni se sube información a ningún lado.

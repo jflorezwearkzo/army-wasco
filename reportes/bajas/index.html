@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporte de Bajas — Policía Militar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b1216;--panel:#101c21;--line:#c9a43a;--gold:#f0c24d;--text:#f3f3f3;--muted:#9aa7ad;--err:#ff6b6b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif;}
+  header{padding:18px 20px 8px;border-bottom:1px solid #223;}
+  header h1{margin:0;font-size:26px;letter-spacing:1px;color:var(--gold);text-transform:uppercase}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  main{display:grid;grid-template-columns:420px 1fr;gap:20px;padding:20px;max-width:1500px;margin:0 auto}
+  @media (max-width:1000px){main{grid-template-columns:1fr}}
+  fieldset{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 16px;background:var(--panel)}
+  legend{color:var(--gold);font-weight:700;padding:0 6px;text-transform:uppercase;font-size:14px}
+  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+  input[type=text],input[type=date]{width:100%;padding:8px 10px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
+  input:focus{outline:none;border-color:var(--gold)}
+  .row{display:grid;grid-template-columns:22px 1fr 1fr 1fr;gap:6px;align-items:center;margin-bottom:6px}
+  .row span{color:var(--gold);font-weight:700;text-align:right}
+  .row input{padding:6px 8px;font-size:14px}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  button{cursor:pointer;border:0;border-radius:6px;padding:10px 16px;font-family:inherit;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.5px}
+  .primary{background:var(--gold);color:#1a1200}
+  .secondary{background:#243239;color:var(--text)}
+  .ghost{background:transparent;color:var(--muted);border:1px solid #2b3a40;padding:6px 10px;font-size:12px}
+  .photos{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+  .thumb{position:relative;aspect-ratio:1;background:#0a1114;border:1px dashed #2b3a40;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#45565d;font-size:12px}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb b{position:absolute;top:2px;left:5px;color:var(--gold);text-shadow:0 0 3px #000}
+  .thumb button{position:absolute;top:2px;right:2px;padding:0 6px;font-size:12px;background:#000a;color:#fff;border-radius:4px}
+  .err{color:var(--err);font-size:14px;min-height:20px;margin-top:8px;white-space:pre-line}
+  .preview{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .preview h2{margin:0 0 10px;font-size:15px;color:var(--gold);text-transform:uppercase}
+  canvas{width:100%;height:auto;display:block;border-radius:4px;background:#000}
+  small{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <a href="../../" style="color:#9aa7ad;text-decoration:none;font-size:13px">&larr; Volver a Reportes</a>
+  <h1>Reporte de Bajas · Army de Wasco · Policía Militar</h1>
+  <p>Llena los campos, adjunta las pruebas (1 a 10 fotos) y exporta el formato como imagen en alta resolución (las fotos se repiten en grande debajo del formato). Todo se procesa en tu navegador; nada se sube a ningún servidor.</p>
+</header>
+<main>
+  <section>
+    <form id="form" onsubmit="return false">
+      <fieldset>
+        <legend>Datos del emisor</legend>
+        <label for="fecha">Fecha *</label>
+        <input id="fecha" type="date" required>
+        <label for="nombre">Nombre de quien reporta *</label>
+        <input id="nombre" type="text" maxlength="40" required>
+        <label for="rango">Rango de quien reporta *</label>
+        <input id="rango" type="text" maxlength="30" required>
+      </fieldset>
+
+      <fieldset>
+        <legend>Personas abatidas (mínimo 1, máximo 10)</legend>
+        <div class="row" style="margin-bottom:2px"><span></span><small>Nombre</small><small>Rango</small><small>Motivo</small></div>
+        <div id="abatidos"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pruebas gráficas / fotos (mínimo 1, máximo 10)</legend>
+        <input id="fotos" type="file" accept="image/*" multiple style="font-size:13px">
+        <div class="photos" id="thumbs"></div>
+        <small id="fotoCount">0 / 10 fotos</small>
+      </fieldset>
+
+      <div class="err" id="err"></div>
+      <div class="btns">
+        <button class="primary" id="btnExport">Exportar imagen</button>
+        <button class="secondary" id="btnPreview">Actualizar vista previa</button>
+        <button class="ghost" id="btnReset" type="button">Limpiar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="preview">
+    <h2>Vista previa</h2>
+    <canvas id="cv" width="2048" height="1144"></canvas>
+  </section>
+</main>
+
+<script>
+// ---------- Coordenadas sobre la plantilla (1024 x 765) ----------
+const T = {
+  panel: '#0e1b20',
+  date:  {x:552, y:58, w:96, h:20},               // cuadro "DD-MM-AAAA"
+  nombre:{x:104, y:155, w:396, h:21},              // valor "Nombre:"
+  rango: {x:92,  y:175, w:408, h:21},              // valor "Rango:"
+  lineY0:252, lineStep:21.8,                       // filas 1..10 de abatidos
+  lineX:{clear:[48,502], clear10:58, text:50},
+  cells: (()=>{                                    // 12 celdas en la plantilla (se usan 10)
+    const cols=[540,700,858], rows=[162,242,321,401], w=147, h=76, out=[];
+    for(let r=0;r<4;r++) for(let c=0;c<3;c++){
+      let hh=h; if(out.length===11) hh=56;        // última celda: no tapar el escudo
+      out.push({x:cols[c], y:rows[r], w, h:hh});
+    }
+    return out;
+  })()
+};
+
+const $=s=>document.querySelector(s);
+const cv=$('#cv'), ctx=cv.getContext('2d');
+const tpl=new Image(); tpl.src='plantilla.png';
+let photos=[]; // {img, name}
+
+// Filas de abatidos
+const abat=$('#abatidos');
+for(let i=1;i<=10;i++){
+  abat.insertAdjacentHTML('beforeend',
+   `<div class="row"><span>${i}.</span>
+    <input type="text" class="a-nombre" maxlength="22" placeholder="Nombre">
+    <input type="text" class="a-rango" maxlength="16" placeholder="Rango">
+    <input type="text" class="a-motivo" maxlength="26" placeholder="Motivo"></div>`);
+}
+
+// Fotos
+$('#fotos').addEventListener('change', async e=>{
+  const files=[...e.target.files];
+  for(const f of files){
+    if(photos.length>=10){ showErr('Máximo 10 fotos. Se ignoraron las demás.'); break; }
+    const img=await loadFile(f); photos.push({img,name:f.name});
+  }
+  e.target.value=''; renderThumbs(); draw();
+});
+function loadFile(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f);const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});}
+function renderThumbs(){
+  const t=$('#thumbs'); t.innerHTML='';
+  photos.forEach((p,i)=>{
+    const d=document.createElement('div'); d.className='thumb';
+    d.innerHTML=`<img src="${p.img.src}" alt=""><b>${i+1}</b><button type="button" title="Quitar">✕</button>`;
+    d.querySelector('button').onclick=()=>{photos.splice(i,1);renderThumbs();draw();};
+    t.appendChild(d);
+  });
+  $('#fotoCount').textContent=`${photos.length} / 10 fotos`;
+}
+
+// ---------- Datos ----------
+function getData(){
+  const rows=[...abat.querySelectorAll('.row')].map(r=>({
+    nombre:r.querySelector('.a-nombre').value.trim(),
+    rango:r.querySelector('.a-rango').value.trim(),
+    motivo:r.querySelector('.a-motivo').value.trim()}));
+  return {fecha:$('#fecha').value, nombre:$('#nombre').value.trim(), rango:$('#rango').value.trim(), rows};
+}
+function fmtFecha(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; }
+function validate(d){
+  const e=[];
+  if(!d.fecha) e.push('• La fecha es obligatoria.');
+  if(!d.nombre) e.push('• El nombre de quien reporta es obligatorio.');
+  if(!d.rango) e.push('• El rango de quien reporta es obligatorio.');
+  if(!d.rows.some(r=>r.nombre)) e.push('• Debes registrar al menos una persona abatida (nombre).');
+  d.rows.forEach((r,i)=>{ if(!r.nombre && (r.rango||r.motivo)) e.push(`• Fila ${i+1}: falta el nombre.`); });
+  if(photos.length<1) e.push('• Debes adjuntar al menos una foto.');
+  if(photos.length>10) e.push('• Máximo 10 fotos.');
+  return e;
+}
+function showErr(msg){ $('#err').textContent=msg; }
+
+// ---------- Dibujo ----------
+function fit(txt,maxW){ while(ctx.measureText(txt).width>maxW && txt.length>1) txt=txt.slice(0,-1); return txt; }
+const SCALE=2;                      // exportación a 2048 px de ancho
+const W=1024, H=572;
+function annexLayout(){             // filas de 2 fotos debajo del formato
+  const gap=18, colW=(W-gap*3)/2, maxH=520, rows=[];
+  for(let i=0;i<photos.length;i+=2){
+    const pair=photos.slice(i,i+2).map(p=>{
+      const s=Math.min(colW/p.img.naturalWidth, maxH/p.img.naturalHeight);
+      return {p, w:p.img.naturalWidth*s, h:p.img.naturalHeight*s};
+    });
+    rows.push({items:pair, h:Math.max(...pair.map(x=>x.h))});
+  }
+  const total = photos.length ? 60 + rows.reduce((a,r)=>a+r.h+gap,0) + 30 : 0;
+  return {gap,colW,rows,total};
+}
+function draw(){
+  if(!tpl.complete||!tpl.naturalWidth) return;
+  const d=getData();
+  const L=annexLayout();
+  cv.width=W*SCALE; cv.height=(H+L.total)*SCALE;
+  ctx.setTransform(SCALE,0,0,SCALE,0,0);
+  ctx.imageSmoothingQuality='high';
+  ctx.fillStyle='#070b0d'; ctx.fillRect(0,0,W,H+L.total);
+  ctx.drawImage(tpl,0,0,W,H);
+  ctx.textBaseline='middle';
+
+  // Fecha
+  if(d.fecha){
+    ctx.fillStyle='#0c0f10'; rr(T.date.x,T.date.y,T.date.w,T.date.h,4); ctx.fill();
+    ctx.fillStyle='#ffffff'; ctx.font='bold 15px "Roboto Condensed",Arial';
+    ctx.textAlign='center'; ctx.fillText(fmtFecha(d.fecha),T.date.x+T.date.w/2,T.date.y+T.date.h/2+1);
+  }
+  ctx.textAlign='left';
+
+  // Emisor
+  for(const [k,box] of [['nombre',T.nombre],['rango',T.rango]]){
+    if(!d[k]) continue;
+    ctx.fillStyle=T.panel; ctx.fillRect(box.x,box.y,box.w,box.h);
+    ctx.fillStyle='#f0c24d'; ctx.font='bold 17px "Roboto Condensed",Arial';
+    ctx.fillText(fit(d[k],box.w-4),box.x+2,box.y+box.h/2);
+  }
+
+  // Abatidos
+  d.rows.forEach((r,i)=>{
+    if(!r.nombre) return;
+    const y=T.lineY0+i*T.lineStep;
+    const x0=i===9?T.lineX.clear10:T.lineX.clear[0];
+    ctx.fillStyle=T.panel; ctx.fillRect(x0,y-10,T.lineX.clear[1]-x0,20);
+    let x=x0+2;
+    const part=(lbl,val,w)=>{
+      ctx.font='bold 15px "Roboto Condensed",Arial'; ctx.fillStyle='#ffffff'; ctx.fillText(lbl,x,y); x+=ctx.measureText(lbl).width+4;
+      ctx.fillStyle='#f0c24d'; const v=fit(val||'—',w); ctx.fillText(v,x,y); x+=ctx.measureText(v).width+6;
+    };
+    part('Nombre:',r.nombre,118); sep(); part('Rango:',r.rango,80); sep(); part('Motivo:',r.motivo,110);
+    function sep(){ ctx.fillStyle='#8a9398'; ctx.fillText('|',x,y); x+=10; }
+  });
+
+  // Fotos: tapa el texto de la celda y dibuja la foto (contain) con su número
+  T.cells.forEach((c,i)=>{
+    ctx.fillStyle='#070b0d'; rr(c.x+4,c.y+4,c.w-8,c.h-8,6); ctx.fill();   // limpia el texto de la celda
+    const p=photos[i];
+    if(!p){ if(i<10){ ctx.fillStyle='#f0c24d'; ctx.font='bold 13px "Roboto Condensed",Arial'; ctx.fillText(`${i+1}.`,c.x+10,c.y+14);} return; }
+    const pad=5, aw=c.w-pad*2, ah=c.h-pad*2;
+    const s=Math.min(aw/p.img.naturalWidth, ah/p.img.naturalHeight);
+    const w=p.img.naturalWidth*s, h=p.img.naturalHeight*s;
+    ctx.save(); rr(c.x+4,c.y+4,c.w-8,c.h-8,6); ctx.clip();
+    ctx.drawImage(p.img, c.x+(c.w-w)/2, c.y+(c.h-h)/2, w, h); ctx.restore();
+    ctx.fillStyle='#000c'; rr(c.x+6,c.y+6,24,16,4); ctx.fill();
+    ctx.fillStyle='#f0c24d'; ctx.font='bold 13px "Roboto Condensed",Arial'; ctx.fillText(`${i+1}.`,c.x+10,c.y+14);
+  });
+
+  // Anexo fotográfico (fotos grandes)
+  if(photos.length){
+    let y=H;
+    ctx.fillStyle='#0e1b20'; ctx.fillRect(0,y,W,46);
+    ctx.fillStyle='#c9a43a'; ctx.fillRect(0,y,W,3); ctx.fillRect(0,y+43,W,3);
+    ctx.fillStyle='#f0c24d'; ctx.font='italic bold 24px "Roboto Condensed",Arial'; ctx.textAlign='left';
+    ctx.fillText('ANEXO FOTOGRÁFICO · PRUEBAS GRÁFICAS', 24, y+23);
+    ctx.fillStyle='#ffffff'; ctx.font='bold 15px "Roboto Condensed",Arial'; ctx.textAlign='right';
+    ctx.fillText(`${photos.length} foto${photos.length>1?'s':''}${d.fecha?' · '+fmtFecha(d.fecha):''}`, W-24, y+23);
+    ctx.textAlign='left';
+    y+=60; let n=0;
+    L.rows.forEach(r=>{
+      r.items.forEach((it,k)=>{
+        const x=L.gap+k*(L.colW+L.gap)+(L.colW-it.w)/2, yy=y;
+        ctx.fillStyle='#0e1b20'; rr(x-4,yy-4,it.w+8,it.h+8,8); ctx.fill();
+        ctx.strokeStyle='#c9a43a'; ctx.lineWidth=1.5; rr(x-4,yy-4,it.w+8,it.h+8,8); ctx.stroke();
+        ctx.drawImage(it.p.img, x, yy, it.w, it.h);
+        n++; ctx.fillStyle='#000c'; rr(x+8,yy+8,34,24,5); ctx.fill();
+        ctx.fillStyle='#f0c24d'; ctx.font='bold 17px "Roboto Condensed",Arial'; ctx.fillText(`${n}.`,x+15,yy+20);
+      });
+      y+=r.h+L.gap;
+    });
+    ctx.fillStyle='#8a9398'; ctx.font='bold 13px "Roboto Condensed",Arial'; ctx.textAlign='center';
+    ctx.fillText('¡HONOR  ★  LEALTAD  ★  DISCIPLINA!', W/2, y+10); ctx.textAlign='left';
+  }
+}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+tpl.onload=draw;
+document.fonts && document.fonts.ready.then(draw);
+$('#form').addEventListener('input',draw);
+$('#btnPreview').onclick=draw;
+$('#btnExport').onclick=()=>{
+  const d=getData(), e=validate(d);
+  if(e.length){ showErr(e.join('\n')); return; }
+  showErr(''); draw();
+  const a=document.createElement('a');
+  a.download=`reporte-bajas-${fmtFecha(d.fecha)}.png`;
+  a.href=cv.toDataURL('image/png'); a.click();
+};
+$('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); draw(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+[
+  {
+    "id": "bajas",
+    "titulo": "Reporte de Bajas",
+    "descripcion": "Registro de personas abatidas con datos del emisor y hasta 10 pruebas gráficas. Exporta el formato lleno como imagen en alta resolución.",
+    "ruta": "reportes/bajas/",
+    "icono": "🎯",
+    "creado": "2026-10-14",
+    "estado": "activo"
+  }
+]
