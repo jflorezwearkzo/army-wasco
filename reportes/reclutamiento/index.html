@@ -168,11 +168,12 @@ function wrap(txt,maxW){
     out.push(line); }
   return out;
 }
-function annexLayout(){
-  const gap=18, colW=(W-gap*3)/2, maxH=520, rows=[];
-  for(let i=0;i<photos.length;i+=2){
-    const pair=photos.slice(i,i+2).map(p=>{const s=Math.min(colW/p.img.naturalWidth,maxH/p.img.naturalHeight);return {p,w:p.img.naturalWidth*s,h:p.img.naturalHeight*s};});
-    rows.push({items:pair,h:Math.max(...pair.map(x=>x.h))});
+function annexLayout(){            // una foto por fila, a todo el ancho
+  const gap=18, colW=W-gap*2, maxH=1200, rows=[];
+  for(const p of photos){
+    const s=Math.min(colW/p.img.naturalWidth,maxH/p.img.naturalHeight);
+    const it={p,w:p.img.naturalWidth*s,h:p.img.naturalHeight*s};
+    rows.push({items:[it],h:it.h});
   }
   return {gap,colW,rows,total: photos.length ? 60+rows.reduce((a,r)=>a+r.h+gap,0)+30 : 0};
 }
