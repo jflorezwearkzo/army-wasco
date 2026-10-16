@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Reglamento · Policía Militar</title>
@@ -70,6 +70,17 @@
   .rangos div span{font-size:13px;color:#d7dde0}
   .plantilla{background:#0d161b;border:1px dashed #3b4b52;border-radius:8px;padding:10px 14px;font-family:ui-monospace,Consolas,monospace;font-size:13px;color:#d7dde0;white-space:pre-wrap;margin:8px 0}
   .nota{font-size:13px;color:var(--muted);margin:6px 0}
+  .mapa img{display:block;width:100%;border-radius:8px;border:1px solid #2b3a40}
+  .video{position:relative;padding-top:56.25%;border-radius:8px;overflow:hidden;border:1px solid #2b3a40;background:#000}
+  .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .leyendas{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px}
+  .leyendas .bloque{margin:0}
+  .pin{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:-1px}
+  ul.leyenda{list-style:none;margin:0;padding:0}
+  ul.leyenda li{display:flex;align-items:center;gap:10px;margin:6px 0}
+  ul.leyenda b{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-size:12px;color:#fff;flex:none;text-shadow:0 1px 1px #000}
+  @media (max-width:900px){.dos{grid-template-columns:1fr}}
   .arriba{position:fixed;right:18px;bottom:18px;background:var(--panel);border:1px solid #2b3a40;color:var(--gold);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:18px}
   @media (max-width:640px){ol.reglas li{padding-left:56px} ol.reglas>li::before{left:12px;font-size:22px} table.reglas{font-size:13px} table.reglas td:first-child{white-space:normal}}
 </style>
@@ -98,6 +109,7 @@
   <div class="grp">Organización</div>
   <a href="#rangos" data-sec="rangos"><span>🎖️</span>Rangos</a>
   <a href="#ascensos" data-sec="ascensos"><span>📈</span>Ascensos</a>
+  <a href="#mapa" data-sec="mapa"><span>🗺️</span>Mapa de la base</a>
   <a href="#permisos" data-sec="permisos"><span>📝</span>Permisos</a>
   <div class="grp">Macros</div>
   <a href="#macros" data-sec="macros"><span>⌨️</span>Macros del Ejército</a>
@@ -121,6 +133,14 @@
     <h2>Sanciones de patrullaje</h2>
     <p style="margin:0 0 12px;color:#d7dde0">Para patrullar es necesario cumplir con todas las reglas anteriores. De no ser así, recibirás una advertencia.</p>
     <div class="f"><div><b>3 advertencias</b>= expulsión de la unidad</div></div>
+  </div>
+  <div class="dos">
+    <div class="bloque mapa"><h3>🗺️ Ruta de patrullaje</h3>
+      <p class="nota">Radio de cobertura de patrullaje de Policía Militar (línea azul) alrededor de Camp Pacific Military Base. No pasar estos límites.</p>
+      <a href="docs/mapa-patrullaje.png" target="_blank" rel="noopener"><img src="docs/mapa-patrullaje.png" alt="Mapa del radio de cobertura de patrullaje de Policía Militar"></a></div>
+    <div class="bloque"><h3>🎬 Video del procedimiento de preparación</h3>
+      <div class="video"><iframe src="https://www.youtube-nocookie.com/embed/GgKjk2yoXIw" title="Procedimiento de preparación de patrullaje" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>
+      <p class="nota"><a href="https://www.youtube.com/watch?v=GgKjk2yoXIw" target="_blank" rel="noopener" style="color:var(--gold)">Abrir en YouTube ↗</a></p></div>
   </div>
   <div class="bloque"><h3>⚠️ Salir a patrullar</h3><div class="macros"><code><b>/flobby</b> [PM] INICIANDO PROCEDIMIENTO ANTI-DISTURBIOS</code></div></div>
   <div class="bloque"><h3>⚠️ Novedades · mandar cada 20 minutos</h3><div class="macros"><code><b>/flobby</b> [PM] ALREDEDORES SIN NOVEDAD!! 😎</code></div></div>
@@ -306,6 +326,18 @@
 <div class='bloque'><h3>Sargento Mayor → Teniente</h3><ul><li>Obligaciones del rango actual y del siguiente</li><li>¿Qué es RP13? / ¿Qué es RP14?</li><li>¿Cuáles son las 5 reglas básicas de la base?</li><li>¿Cuáles son las reglas del evento “Robo de Material”?</li><li>¿Cuáles son las 10 reglas del ejército?</li></ul></div>
 <div class='bloque'><h3>Teniente → Capitán</h3><ul><li>Obligaciones del rango actual y del siguiente</li><li>¿Qué es RP13? / ¿Qué es RP14?</li><li>¿Cuáles son las 5 reglas básicas de la base?</li><li>¿Cuáles son las reglas del evento “Robo de Material”?</li><li>¿Cuáles son las 10 reglas del ejército?</li><li>(Ejercicio didáctico) Indicar cada zona de la base con sus respectivos nombres</li></ul></div>
 </section>
+<section class="sec-panel" id="sec-mapa" hidden>
+<h2 class="sec" id="mapa">Mapa de la base<small>Ubicaciones de la base militar de Wasco · Camp Pacific Military Base</small></h2>
+  <div class="bloque mapa"><a href="docs/mapa-base.png" target="_blank" rel="noopener"><img src="docs/mapa-base.png" alt="Mapa de ubicaciones de la base militar de Wasco"></a>
+  <p class="nota">Toca el mapa para abrirlo a tamaño completo. Zonas sin numerar: Barracas / Dormitorios, Campo de entrenamiento y Campo de tiro.</p></div>
+  <div class="leyendas"><div class="bloque"><h3><span class="pin" style="background:#2f6bff"></span>Entradas</h3><ul class="leyenda"><li><b style="background:#2f6bff">1</b>Delta 1 (Entrada Sur-Oeste)</li><li><b style="background:#2f6bff">2</b>Delta 2 (Entrada Nor-Este)</li></ul></div>
+<div class="bloque"><h3><span class="pin" style="background:#e8e8e8"></span>Parqueos</h3><ul class="leyenda"><li><b style="background:#e8e8e8;color:#111;text-shadow:none">3</b>Parqueo Delta 1</li><li><b style="background:#e8e8e8;color:#111;text-shadow:none">4</b>Parqueo Delta 2</li></ul></div>
+<div class="bloque"><h3><span class="pin" style="background:#e03a3a"></span>Accesos / Ingresos</h3><ul class="leyenda"><li><b style="background:#e03a3a">5</b>Ingreso Gangero · Rampa de madera</li><li><b style="background:#e03a3a">6</b>Ingreso Gangero · Pasillos del Bunker</li><li><b style="background:#e03a3a">7</b>Ingreso Gangero · Rampa de madera · Delta 2</li></ul></div>
+<div class="bloque"><h3><span class="pin" style="background:#9b3fb5"></span>Almacenes</h3><ul class="leyenda"><li><b style="background:#9b3fb5">8</b>Caja #1</li><li><b style="background:#9b3fb5">9</b>Caja #2</li></ul></div>
+<div class="bloque"><h3><span class="pin" style="background:#2fa35a"></span>Servicios</h3><ul class="leyenda"><li><b style="background:#2fa35a">10</b>Torre de control</li><li><b style="background:#2fa35a">11</b>Sede Central</li><li><b style="background:#2fa35a">12</b>Hospital de la base</li><li><b style="background:#2fa35a">13</b>Tienda de comestibles</li></ul></div>
+<div class="bloque"><h3><span class="pin" style="background:#f0a020"></span>Torres de vigilancia</h3><ul class="leyenda"><li><b style="background:#f0a020">14</b>Caja 1</li><li><b style="background:#f0a020">15</b>Delta 1</li><li><b style="background:#f0a020">16</b>Tienda</li><li><b style="background:#f0a020">17</b>Bunker</li><li><b style="background:#f0a020">18</b>Hospital</li><li><b style="background:#f0a020">19</b>Delta 2A</li><li><b style="background:#f0a020">20</b>Delta 2B</li><li><b style="background:#f0a020">21</b>Caja 2</li></ul></div>
+</div>
+</section>
 <section class="sec-panel" id="sec-permisos" hidden>
 <h2 class="sec" id="permisos">Permisos</h2>
   <div class="bloque"><h3>Permiso de salida de la base</h3>
@@ -362,6 +394,6 @@ Tiempo: [HORAS, DÍAS O SEMANAS QUE SOLICITA]</div></div>
 </div>
   </div>
 </main>
-<script type="module" src="js/app-reglamento.js?v=d231906c"></script>
+<script type="module" src="js/app-reglamento.js?v=1c3e992e"></script>
 </body>
 </html>
