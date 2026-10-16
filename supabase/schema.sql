@@ -122,22 +122,68 @@ create trigger on_auth_user_created
   after insert on auth.users for each row execute function public.crear_perfil();
 
 
--- Cambiar el rol de un usuario exige el permiso "roles" (además de "usuarios" para editar perfiles)
+-- ¿El usuario actual tiene un rol protegido (super administrador)?
+create or replace function public.soy_superadmin()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select r.protegido from public.perfiles pf join public.roles r on r.id = pf.rol_id
+    where pf.id = auth.uid() and pf.activo
+  ), false);
+$$;
+
+-- Perfiles: cambiar rol exige permiso "roles"; tocar a un superadmin (o nombrar uno) exige ser superadmin
 create or replace function public.validar_cambio_rol()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  rol_viejo_prot boolean; rol_nuevo_prot boolean;
 begin
-  if new.rol_id is distinct from old.rol_id and not public.tengo_permiso('roles') then
+  if tg_op = 'UPDATE' and new.rol_id is distinct from old.rol_id and not public.tengo_permiso('roles') then
     raise exception 'No tienes permiso para asignar roles';
   end if;
+  select coalesce(protegido,false) into rol_viejo_prot from public.roles where id = old.rol_id;
+  if tg_op <> 'DELETE' then
+    select coalesce(protegido,false) into rol_nuevo_prot from public.roles where id = new.rol_id;
+  end if;
+  if (coalesce(rol_viejo_prot,false) or coalesce(rol_nuevo_prot,false)) and not public.soy_superadmin() then
+    raise exception 'Solo un Administrador puede gestionar cuentas de Administrador';
+  end if;
+  if tg_op = 'DELETE' then return old; end if;
   return new;
 end $$;
 drop trigger if exists perfiles_validar_rol on public.perfiles;
-create trigger perfiles_validar_rol before update on public.perfiles
+drop trigger if exists perfiles_validar_rol_v2 on public.perfiles;
+create trigger perfiles_validar_rol_v2 before update or delete on public.perfiles
   for each row execute function public.validar_cambio_rol();
+
+-- Roles: el rol protegido solo lo modifica un superadmin y nunca se elimina
+create or replace function public.validar_rol_protegido()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'DELETE' then
+    if old.protegido then raise exception 'El rol Administrador no se puede eliminar'; end if;
+    return old;
+  end if;
+  if tg_op = 'UPDATE' and old.protegido and not public.soy_superadmin() then
+    raise exception 'Solo un Administrador puede modificar el rol Administrador';
+  end if;
+  if tg_op = 'UPDATE' and old.protegido and not new.protegido then
+    raise exception 'El rol Administrador debe seguir protegido';
+  end if;
+  if tg_op = 'INSERT' and new.protegido and not public.soy_superadmin() then
+    raise exception 'Solo un Administrador puede crear roles protegidos';
+  end if;
+  return new;
+end $$;
+drop trigger if exists roles_validar_protegido on public.roles;
+create trigger roles_validar_protegido before insert or update or delete on public.roles
+  for each row execute function public.validar_rol_protegido();
 
 -- Solo usuarios autenticados pueden ejecutar las funciones de permisos; las de trigger, nadie
 revoke execute on function public.crear_perfil() from anon, authenticated, public;
 revoke execute on function public.validar_cambio_rol() from anon, authenticated, public;
+revoke execute on function public.validar_rol_protegido() from anon, authenticated, public;
+revoke execute on function public.soy_superadmin() from anon, public;
+grant execute on function public.soy_superadmin() to authenticated;
 revoke execute on function public.mi_perfil_activo() from anon, public;
 revoke execute on function public.tengo_permiso(text) from anon, public;
 revoke execute on function public.puedo_usar_formulario(text) from anon, public;

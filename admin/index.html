@@ -127,7 +127,7 @@
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button class="ghost" onclick="dlg.close()">Cerrar</button></div></dialog>
 
 <script type="module">
-import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, RANGOS_PM, nombreCompleto } from '../auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, RANGOS_PM, nombreCompleto, esSuperadmin } from '../auth.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
 
@@ -163,14 +163,15 @@ async function cargarUsuarios(){
   const { data, error } = await sb.from('perfiles').select('*').order('usuario');
   if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=5 class="err">${esc(error.message)}</td></tr>`; return; }
   $('#uRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option>${esc(r)}</option>`).join('');
-  $('#uRol').innerHTML = roles.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
+  const rolesAsignables = roles.filter(r => !r.protegido || esSuperadmin(yo));
+  $('#uRol').innerHTML = rolesAsignables.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
   $('#uRol').disabled = !tiene(yo,'roles'); $('#uRol').title = tiene(yo,'roles') ? '' : 'Necesitas el permiso de roles para asignar roles';
   $('#tbUsuarios').innerHTML = data.map(u => {
     const r = roles.find(x => x.id===u.rol_id);
     return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : '—')}</td>
       <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
-      <td style="white-space:nowrap"><button class="ghost sm" data-e="${u.id}">Editar</button>
-      <button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button></td></tr>`;
+      <td style="white-space:nowrap">${(r && r.protegido && !esSuperadmin(yo)) ? '<span class="muted">Solo Administrador</span>' : `<button class="ghost sm" data-e="${u.id}">Editar</button>
+      <button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button>`}</td></tr>`;
   }).join('') || '<tr><td colspan=5 class="muted">Sin usuarios</td></tr>';
   document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => editarUsuario(data.find(u => u.id===b.dataset.e)));
   document.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
@@ -224,7 +225,7 @@ async function cargarRoles(){
   $('#rTodos').onchange = () => document.querySelectorAll('.rf').forEach(c => { c.disabled = $('#rTodos').checked; });
   $('#tbRoles').innerHTML = roles.map(r => `<tr><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
     <td>${esc(r.rango_pm||'—')}</td><td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
-    <td style="white-space:nowrap"><button class="ghost sm" data-re="${r.id}">Editar</button>${r.protegido?'':`<button class="ghost sm" data-rd="${r.id}">Eliminar</button>`}</td></tr>`).join('');
+    <td style="white-space:nowrap">${(r.protegido && !esSuperadmin(yo)) ? '<span class="muted">Solo Administrador</span>' : `<button class="ghost sm" data-re="${r.id}">Editar</button>${r.protegido?'':`<button class="ghost sm" data-rd="${r.id}">Eliminar</button>`}`}</td></tr>`).join('');
   document.querySelectorAll('[data-re]').forEach(b => b.onclick = () => editarRol(roles.find(r => r.id===b.dataset.re)));
   document.querySelectorAll('[data-rd]').forEach(b => b.onclick = async () => {
     if(!confirm('¿Eliminar este rol? Los usuarios que lo tengan quedarán sin rol.')) return;

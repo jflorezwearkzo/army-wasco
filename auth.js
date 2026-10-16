@@ -30,11 +30,12 @@ export async function cargarYo(){
   const { data: p } = await sb.from('perfiles').select('id,usuario,nombre,rango,activo,rol_id').eq('id', session.user.id).maybeSingle();
   if(!p) return null;
   let rol = null;
-  if(p.rol_id){ const { data: r } = await sb.from('roles').select('id,nombre,permisos,formularios,rango_pm').eq('id', p.rol_id).maybeSingle(); rol = r; }
+  if(p.rol_id){ const { data: r } = await sb.from('roles').select('id,nombre,permisos,formularios,rango_pm,protegido').eq('id', p.rol_id).maybeSingle(); rol = r; }
   return { ...p, rol: rol || { id:null, nombre:'Sin rol', permisos:{}, formularios:[], rango_pm:null } };
 }
 export const tiene = (yo, permiso) => !!(yo && yo.rol && yo.rol.permisos && yo.rol.permisos[permiso]);
 export const puedeFormulario = (yo, id) => !!(yo && yo.rol && (yo.rol.formularios.includes('*') || yo.rol.formularios.includes(id)));
+export const esSuperadmin = yo => !!(yo && yo.rol && yo.rol.protegido);
 export const esAdminDeAlgo = yo => ['usuarios','roles','formularios','historial'].some(p => tiene(yo,p));
 
 // Exige sesión activa; opcionalmente un permiso o un formulario. Redirige a login si no cumple.

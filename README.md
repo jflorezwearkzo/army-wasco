@@ -33,6 +33,8 @@ Roles iniciales: **Administrador** (todo) y **Usuario** (solo llena reportes). S
 
 Las reglas se aplican en la base de datos (RLS), no solo en la interfaz.
 
+**Super administrador:** el rol Administrador está protegido. Solo un Administrador puede editar, desactivar o degradar a otro Administrador, nombrar nuevos Administradores o modificar el rol Administrador. Un rol con "Gestión de usuarios" puede crear y gestionar a todos los demás usuarios, pero no a los Administradores.
+
 ## Flujo
 
 1. El admin crea usuarios desde el panel (usuario, nombre, contraseña inicial, rol). No hay registro libre.
