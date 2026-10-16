@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, hoyISO, faviconEmoji, sb } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, hoyISO, faviconEmoji, sb, RANGOS } from './auth.js';
 const YO = await requerir({ formulario:'reclutamiento' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','reclutamiento').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 // Fecha de hoy (editable); nombre, rango y Rango PM vienen del perfil/rol y quedan bloqueados
@@ -24,6 +24,7 @@ const T = {
   box:    {x:534, y:200, w:468, h:268}     // recuadro de evidencia
 };
 const RANGOS_ASIG=['Oficial','Auxiliar PM','Co-Líder'];
+document.getElementById('ofRangoLibre').innerHTML='<option value="">— Selecciona —</option>'+RANGOS.map(r=>`<option>${r}</option>`).join('');
 
 const $=s=>document.querySelector(s);
 const cv=$('#cv'), ctx=cv.getContext('2d');
@@ -49,7 +50,7 @@ function renderThumbs(){
 
 function getData(){
   return {fecha:$('#fecha').value, nombre:$('#nombre').value.trim(), rango:$('#rango').value.trim(), rangoPM:$('#rangoPM').value.trim(),
-          ofNombre:$('#ofNombre').value.trim(), ofRangoLibre:$('#ofRangoLibre').value.trim(), ofRango:$('#ofRango').value,
+          ofNombre:$('#ofNombre').value.trim(), ofRangoLibre:$('#ofRangoLibre').value, ofRango:$('#ofRango').value,
           notas:$('#notas').value.trim()};
 }
 function fmtFecha(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; }
@@ -60,7 +61,7 @@ function validate(d){
   if(!d.rango) e.push('• Tu perfil no tiene rango asignado. Pide al administrador que lo asigne.');
   if(!d.ofNombre) e.push('• El nombre del oficial reclutado es obligatorio.');
   if(!d.rangoPM) e.push('• Tu rol no tiene Rango PM asignado. Pide al administrador que lo configure en el rol.');
-  if(!d.ofRangoLibre) e.push('• El rango del oficial es obligatorio.');
+  if(!RANGOS.includes(d.ofRangoLibre)) e.push('• Selecciona el rango del oficial.');
   if(!RANGOS_ASIG.includes(d.ofRango)) e.push('• Selecciona el rango asignado PM.');
   if(photos.length!==1) e.push('• Debes adjuntar la foto de evidencia.');
   return e;
