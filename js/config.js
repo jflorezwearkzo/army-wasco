@@ -8,4 +8,4 @@ export const SUPABASE_ANON_KEY = 'sb_publishable_02CX_XHARt2vV6AouHjQ-A_PEZfHViR
 export const DOMINIO_USUARIOS = 'armywasco.local';
 
 // Cloudflare Turnstile (clave de sitio, pública). Vacío = sin captcha en el login.
-export const TURNSTILE_SITE_KEY = '';
+export const TURNSTILE_SITE_KEY = '0x4AAAAAAFYv4mcBFXtubNo9';
