@@ -22,6 +22,8 @@
   input[type=text],input[type=date],select,textarea{width:100%;padding:8px 10px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
   textarea{resize:vertical;min-height:70px}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  input[type=date]{color-scheme:dark;cursor:pointer}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) sepia(1) saturate(5) hue-rotate(5deg);cursor:pointer;opacity:.9}
   .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
   button{cursor:pointer;border:0;border-radius:6px;padding:10px 16px;font-family:inherit;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.5px}
   .primary{background:var(--gold);color:#1a1200}
@@ -111,6 +113,7 @@ const YO = await requerir({ formulario:'reclutamiento' }); barraUsuario(YO);
 const bloquear=(id,val)=>{ const el=document.getElementById(id); if(!el) return; el.value=val||''; el.readOnly=true; el.tabIndex=-1; el.style.opacity='.75'; el.title='Lo asigna el administrador'; if(el.tagName==='SELECT'){ el.style.pointerEvents='none'; } };
 function precargar(){
   document.getElementById('fecha').value = hoyISO();
+  const fe=document.getElementById('fecha'); if(!fe.dataset.picker){ fe.dataset.picker='1'; fe.addEventListener('click',()=>{ try{ fe.showPicker(); }catch(e){} }); }
   bloquear('nombre', YO.nombre || YO.usuario);
   bloquear('rango', YO.rango);
   bloquear('rangoPM', YO.rol.rango_pm);
