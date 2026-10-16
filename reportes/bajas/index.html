@@ -91,6 +91,9 @@
 <script type="module">
 import { requerir, barraUsuario, guardarReporte } from '../../auth.js';
 const YO = await requerir({ formulario:'bajas' }); barraUsuario(YO);
+// Precarga nombre y rango de quien reporta desde el perfil (editables si el perfil no los tiene)
+if(YO.nombre){ document.getElementById('nombre').value = YO.nombre; }
+if(YO.rango){ document.getElementById('rango').value = YO.rango; document.getElementById('rango').readOnly = true; document.getElementById('rango').title = 'Asignado por el administrador'; }
 // ---------- Coordenadas sobre la plantilla (1024 x 765) ----------
 const T = {
   panel: '#0e1b20',
@@ -287,7 +290,7 @@ $('#btnExport').onclick=async()=>{
   }catch(x){ $('#err').style.color=''; showErr('Se descargó la imagen, pero no se guardó en el historial: '+x.message); }
   btn.disabled=false; btn.textContent='Exportar imagen';
 };
-$('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); draw(); };
+$('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); if(YO.nombre) $('#nombre').value=YO.nombre; if(YO.rango) $('#rango').value=YO.rango; draw(); };
 </script>
 </body>
 </html>

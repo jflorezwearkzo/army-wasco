@@ -23,8 +23,13 @@ create table if not exists public.perfiles (
   nombre    text not null default '',
   rol_id    text references public.roles(id) on delete set null,
   activo    boolean not null default false,
+  rango     text,                               -- rango militar, lo asigna un administrador
   creado_en timestamptz not null default now()
 );
+alter table public.perfiles add column if not exists rango text;
+alter table public.perfiles drop constraint if exists perfiles_rango_check;
+alter table public.perfiles add constraint perfiles_rango_check check (rango is null or rango in
+  ('Sargento Primero','Sargento Mayor','Teniente','Capitán','Mayor','Coronel','Mayor General','Teniente General','Coronel General','FG Adjunto','FG'));
 
 -- ---------- Catálogo de formularios ----------
 create table if not exists public.formularios (
@@ -198,7 +203,8 @@ create policy reportes_storage_delete on storage.objects for delete
 -- ---------- Vista cómoda para el historial ----------
 create or replace view public.reportes_vista with (security_invoker = true) as
   select r.id, r.formulario_id, f.titulo as formulario, r.usuario_id,
-         p.usuario, p.nombre as usuario_nombre, r.fecha, r.resumen, r.datos, r.imagen_path, r.creado_en
+         p.usuario, p.nombre as usuario_nombre, r.fecha, r.resumen, r.datos, r.imagen_path, r.creado_en,
+         p.rango as usuario_rango
   from public.reportes r
   left join public.formularios f on f.id = r.formulario_id
   left join public.perfiles p on p.id = r.usuario_id;

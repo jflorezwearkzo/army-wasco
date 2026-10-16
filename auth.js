@@ -8,6 +8,9 @@ export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persis
 
 // Raíz del sitio (funciona en GitHub Pages /army-wasco/ y en local)
 export const RAIZ = new URL('./', import.meta.url).href;
+export const RANGOS = ['Sargento Primero','Sargento Mayor','Teniente','Capitán','Mayor','Coronel','Mayor General','Teniente General','Coronel General','FG Adjunto','FG'];
+// "Capitán Javier Flórez": rango + nombre (o el usuario si no hay nombre)
+export const nombreCompleto = p => [p.rango, p.nombre || p.usuario].filter(Boolean).join(' ');
 export const emailDe = usuario => `${usuario.trim().toLowerCase()}@${DOMINIO_USUARIOS}`;
 
 export async function iniciarSesion(usuario, password){
@@ -23,7 +26,7 @@ export async function cerrarSesion(){ await sb.auth.signOut(); location.href = R
 export async function cargarYo(){
   const { data:{ session } } = await sb.auth.getSession();
   if(!session) return null;
-  const { data: p } = await sb.from('perfiles').select('id,usuario,nombre,activo,rol_id').eq('id', session.user.id).maybeSingle();
+  const { data: p } = await sb.from('perfiles').select('id,usuario,nombre,rango,activo,rol_id').eq('id', session.user.id).maybeSingle();
   if(!p) return null;
   let rol = null;
   if(p.rol_id){ const { data: r } = await sb.from('roles').select('id,nombre,permisos,formularios').eq('id', p.rol_id).maybeSingle(); rol = r; }
@@ -52,7 +55,7 @@ export function barraUsuario(yo){
   const b = document.createElement('div');
   b.style.cssText = 'display:flex;gap:14px;align-items:center;justify-content:flex-end;padding:8px 20px;background:#07100f;border-bottom:1px solid #1c272c;font:13px "Roboto Condensed",Arial,sans-serif;color:#9aa7ad';
   b.innerHTML = `<span style="margin-right:auto"><a href="${RAIZ}" style="color:#9aa7ad;text-decoration:none">Inicio</a></span>
-    <span>👤 <b style="color:#f3f3f3">${esc(yo.nombre || yo.usuario)}</b> · ${esc(yo.rol.nombre)}</span>
+    <span>👤 <b style="color:#f3f3f3">${esc(nombreCompleto(yo))}</b> · ${esc(yo.rol.nombre)}</span>
     ${esAdminDeAlgo(yo) ? `<a href="${RAIZ}admin/" style="color:#f0c24d;text-decoration:none">Administración</a>` : ''}
     <a href="${RAIZ}cuenta.html" style="color:#9aa7ad;text-decoration:none">Mi cuenta</a>
     <a href="#" id="btnSalir" style="color:#9aa7ad;text-decoration:none">Salir</a>`;

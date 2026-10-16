@@ -33,7 +33,7 @@
     <div class="dos">
       <div class="caja">
         <h3>Usuarios</h3>
-        <table><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
+        <table><thead><tr><th>Usuario</th><th>Rango y nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
       </div>
       <div class="caja">
         <h3 id="tituloUsuario">Nuevo usuario</h3>
@@ -41,6 +41,7 @@
           <input type="hidden" id="uId">
           <label>Usuario (para ingresar)</label><input id="uUsuario" pattern="[a-z0-9._\-]{3,30}" title="3-30 caracteres: minúsculas, números, punto, guion" required>
           <label>Nombre completo</label><input id="uNombre">
+          <label>Rango</label><select id="uRango"><option value="">— Sin rango —</option></select>
           <label>Contraseña inicial</label><input id="uPass" type="password" minlength="8" autocomplete="new-password">
           <label>Rol</label><select id="uRol"></select>
           <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="uActivo" checked> Activo</label></label>
@@ -124,7 +125,7 @@
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button class="ghost" onclick="dlg.close()">Cerrar</button></div></dialog>
 
 <script type="module">
-import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe } from '../auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, nombreCompleto } from '../auth.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
 
@@ -159,11 +160,12 @@ const msg = (id, t, ok=false) => { $('#'+id+'Err').textContent = ok?'':t; $('#'+
 async function cargarUsuarios(){
   const { data, error } = await sb.from('perfiles').select('*').order('usuario');
   if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=5 class="err">${esc(error.message)}</td></tr>`; return; }
+  $('#uRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option>${esc(r)}</option>`).join('');
   $('#uRol').innerHTML = roles.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
   $('#uRol').disabled = !tiene(yo,'roles'); $('#uRol').title = tiene(yo,'roles') ? '' : 'Necesitas el permiso de roles para asignar roles';
   $('#tbUsuarios').innerHTML = data.map(u => {
     const r = roles.find(x => x.id===u.rol_id);
-    return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(u.nombre)}</td><td>${esc(r ? r.nombre : '—')}</td>
+    return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : '—')}</td>
       <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
       <td style="white-space:nowrap"><button class="ghost sm" data-e="${u.id}">Editar</button>
       <button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button></td></tr>`;
@@ -177,7 +179,7 @@ async function cargarUsuarios(){
 }
 function editarUsuario(u){
   $('#tituloUsuario').textContent = 'Editar usuario'; $('#uGuardar').textContent = 'Guardar';
-  $('#uId').value = u.id; $('#uUsuario').value = u.usuario; $('#uUsuario').disabled = true; $('#uNombre').value = u.nombre;
+  $('#uId').value = u.id; $('#uUsuario').value = u.usuario; $('#uUsuario').disabled = true; $('#uNombre').value = u.nombre; $('#uRango').value = u.rango || '';
   $('#uPass').value=''; $('#uPass').disabled = true; $('#uPass').placeholder = 'Solo el propio usuario cambia su contraseña';
   $('#uRol').value = u.rol_id || ''; $('#uActivo').checked = u.activo; msg('u','');
 }
@@ -188,10 +190,10 @@ function limpiarUsuario(){
 $('#uCancelar').onclick = limpiarUsuario;
 $('#fUsuario').onsubmit = async e => {
   e.preventDefault(); msg('u','');
-  const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rol=$('#uRol').value, activo=$('#uActivo').checked;
+  const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rango=$('#uRango').value||null, rol=$('#uRol').value, activo=$('#uActivo').checked;
   try{
     if(id){
-      const cambios = { nombre, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol;
+      const cambios = { nombre, rango, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol;
       const { error } = await sb.from('perfiles').update(cambios).eq('id', id); if(error) throw error;
           } else {
       const pass=$('#uPass').value; if(pass.length<8) throw new Error('La contraseña inicial debe tener al menos 8 caracteres.');
@@ -202,7 +204,7 @@ $('#fUsuario').onsubmit = async e => {
       await tmp.auth.signOut().catch(()=>{});
       if(!data.user) throw new Error('Supabase no devolvió el usuario. ¿Está desactivado "Confirm email"?');
       // El trigger creó el perfil inactivo con rol "usuario"; ahora lo ajustamos
-      const cambios = { nombre, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol;
+      const cambios = { nombre, rango, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol;
       // pequeño reintento: el trigger puede tardar unos ms
       let ok=false; for(let i=0;i<5 && !ok;i++){ const r = await sb.from('perfiles').update(cambios).eq('id', data.user.id).select('id'); ok = !r.error && r.data && r.data.length; if(!ok) await new Promise(r=>setTimeout(r,400)); }
       if(!ok) throw new Error('El usuario se creó pero no se pudo activar; edítalo desde la lista.');
@@ -295,7 +297,7 @@ async function buscarHist(){
   $('#hErr').textContent='';
   const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
   $('#tbHist').innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||r.formulario_id||'—')}</td>
-    <td>${esc(r.usuario||'—')}<br><span class="muted">${esc(r.usuario_nombre||'')}</span></td><td>${esc(r.resumen||'')}</td>
+    <td>${esc(r.usuario||'—')}<br><span class="muted">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td>
     <td class="muted">${new Date(r.creado_en).toLocaleString('es-CO')}</td>
     <td>${r.imagen_path ? `<button class="ghost sm" data-hv="${esc(r.imagen_path)}" data-n="reporte-${r.id}.png">Ver</button>` : '—'}</td>
     <td><button class="ghost sm" data-hd="${r.id}" data-p="${esc(r.imagen_path||'')}">Eliminar</button></td></tr>`).join('') || '<tr><td colspan=8 class="muted">Sin reportes</td></tr>';

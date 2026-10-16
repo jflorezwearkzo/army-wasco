@@ -23,7 +23,7 @@ Un rol es un conjunto de permisos más la lista de formularios a los que da acce
 
 | Permiso | Qué permite |
 |---|---|
-| Gestión de usuarios | Crear usuarios, activarlos/desactivarlos, editar su nombre |
+| Gestión de usuarios | Crear usuarios, activarlos/desactivarlos, editar su nombre y asignar su rango militar |
 | Asignación y creación de roles | Crear/editar/eliminar roles y asignar rol a los usuarios |
 | Creación / gestión de reportes | Registrar formularios en el catálogo, ocultarlos o mostrarlos en el inicio |
 | Ver historial de todos | Ver, descargar y eliminar cualquier reporte guardado |
