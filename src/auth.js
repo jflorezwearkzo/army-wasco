@@ -60,6 +60,7 @@ export function barraUsuario(yo){
   b.innerHTML = `<span style="margin-right:auto"><a href="${RAIZ}" style="color:#9aa7ad;text-decoration:none">Inicio</a></span>
     <span>👤 <b style="color:#f3f3f3">${esc(nombreCompleto(yo))}</b> · ${esc(yo.rol.nombre)}</span>
     ${esAdminDeAlgo(yo) ? `<a href="${RAIZ}admin/" style="color:#f0c24d;text-decoration:none">Administración</a>` : ''}
+    <a href="${RAIZ}reglamento.html" style="color:#9aa7ad;text-decoration:none">Reglamento</a>
     <a href="${RAIZ}cuenta.html" style="color:#9aa7ad;text-decoration:none">Mi cuenta</a>
     <a href="#" id="btnSalir" style="color:#9aa7ad;text-decoration:none">Salir</a>`;
   b.querySelector('#btnSalir').onclick = e => { e.preventDefault(); cerrarSesion(); };

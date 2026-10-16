@@ -10,6 +10,7 @@ Publicado en: https://pmwasco.zylarion.io (dominio propio; alias: https://jflore
 index.html            Inicio: lista los formularios que el rol del usuario puede usar
 login.html            Ingreso con usuario y contraseña
 cuenta.html           Mi cuenta: cambiar contraseña
+reglamento.html       Reglamento (reglas y sanciones) + manuales en docs/
 admin/index.html      Panel de administración (pestañas según permisos)
 src/                  Código JavaScript legible (auth.js, config.js y el script de cada página)
 js/                   Código publicado: ofuscado a partir de src/ (no editar a mano)

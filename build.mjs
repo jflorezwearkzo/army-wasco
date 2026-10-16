@@ -20,7 +20,7 @@ for (const f of readdirSync('src').filter(f => f.endsWith('.js'))) {
 // Rompe-caché: las páginas referencian js/<archivo>.js?v=<hash> para que un cambio se vea de inmediato
 const ver = {};
 for (const f of readdirSync('js')) ver[f] = createHash('sha1').update(readFileSync(`js/${f}`)).digest('hex').slice(0, 8);
-const pages = ['index.html', 'login.html', 'cuenta.html', 'admin/index.html', 'reportes/bajas/index.html', 'reportes/reclutamiento/index.html'];
+const pages = ['index.html', 'login.html', 'cuenta.html', 'reglamento.html', 'admin/index.html', 'reportes/bajas/index.html', 'reportes/reclutamiento/index.html'];
 for (const p of pages) {
   let html = readFileSync(p, 'utf8');
   html = html.replace(/(src="(?:\.\.\/)*js\/)([a-z0-9-]+\.js)(\?v=[0-9a-f]+)?"/g, (m, pre, file) => `${pre}${file}?v=${ver[file]}"`);
