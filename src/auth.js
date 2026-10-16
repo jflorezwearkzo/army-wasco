@@ -55,15 +55,42 @@ function aviso(html){
 
 // Barra superior con usuario, rol, enlaces y salir. Se inserta al inicio de <body>.
 export function barraUsuario(yo){
-  const b = document.createElement('div');
-  b.style.cssText = 'display:flex;gap:14px;align-items:center;justify-content:flex-end;padding:8px 20px;background:#07100f;border-bottom:1px solid #1c272c;font:13px "Roboto Condensed",Arial,sans-serif;color:#9aa7ad';
-  b.innerHTML = `<span style="margin-right:auto"><a href="${RAIZ}" style="color:#9aa7ad;text-decoration:none">Inicio</a></span>
-    <span>👤 <b style="color:#f3f3f3">${esc(nombreCompleto(yo))}</b> · ${esc(yo.rol.nombre)}</span>
-    ${esAdminDeAlgo(yo) ? `<a href="${RAIZ}admin/" style="color:#f0c24d;text-decoration:none">Administración</a>` : ''}
-    <a href="${RAIZ}reglamento.html" style="color:#9aa7ad;text-decoration:none">Reglamento</a>
-    <a href="${RAIZ}cuenta.html" style="color:#9aa7ad;text-decoration:none">Mi cuenta</a>
-    <a href="${RAIZ}privacidad.html" style="color:#9aa7ad;text-decoration:none;font-size:12px">Privacidad</a>
-    <a href="#" id="btnSalir" style="color:#9aa7ad;text-decoration:none">Salir</a>`;
+  if(!document.getElementById('barraCss')){
+    const s = document.createElement('style'); s.id = 'barraCss';
+    s.textContent = `
+.barra{display:flex;gap:14px;align-items:center;padding:8px 20px;background:#07100f;border-bottom:1px solid #1c272c;font:13px "Roboto Condensed",Arial,sans-serif;color:#9aa7ad;position:relative;z-index:50}
+.barra a{color:#9aa7ad;text-decoration:none}
+.barra a.oro{color:#f0c24d}
+.barra .inicio{margin-right:auto}
+.barra .menu{display:flex;gap:14px;align-items:center}
+.barra .yo{color:#9aa7ad}.barra .yo b{color:#f3f3f3}
+.barra .btn{display:none;background:#121f26;border:1px solid #2b3a40;color:#f3f3f3;border-radius:7px;padding:6px 10px;font:inherit;cursor:pointer;align-items:center;gap:8px;max-width:60vw}
+.barra .btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:720px){
+  .barra{padding:8px 14px}
+  .barra .btn{display:flex}
+  .barra .menu{display:none;position:absolute;right:10px;top:calc(100% + 6px);flex-direction:column;align-items:stretch;gap:0;background:#0f1a20;border:1px solid #2b3a40;border-radius:10px;min-width:220px;box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden}
+  .barra.abierta .menu{display:flex}
+  .barra .menu a,.barra .menu .yo{padding:12px 16px;border-bottom:1px solid #1c272c;font-size:15px}
+  .barra .menu .yo{background:#121f26}
+  .barra .menu a:last-child{border-bottom:0}
+}`;
+    document.head.append(s);
+  }
+  const b = document.createElement('div'); b.className = 'barra';
+  b.innerHTML = `<a class="inicio" href="${RAIZ}">Inicio</a>
+    <button class="btn" type="button" aria-label="Menú" aria-expanded="false"><span>👤 ${esc(nombreCompleto(yo))}</span> ☰</button>
+    <nav class="menu">
+      <span class="yo">👤 <b>${esc(nombreCompleto(yo))}</b> · ${esc(yo.rol.nombre)}</span>
+      ${esAdminDeAlgo(yo) ? `<a class="oro" href="${RAIZ}admin/">Administración</a>` : ''}
+      <a href="${RAIZ}reglamento.html">Reglamento</a>
+      <a href="${RAIZ}cuenta.html">Mi cuenta</a>
+      <a href="${RAIZ}privacidad.html" style="font-size:12px">Privacidad</a>
+      <a href="#" id="btnSalir">Salir</a>
+    </nav>`;
+  const btn = b.querySelector('.btn');
+  btn.onclick = e => { e.stopPropagation(); const ab = b.classList.toggle('abierta'); btn.setAttribute('aria-expanded', ab); };
+  document.addEventListener('click', e => { if(!b.contains(e.target)){ b.classList.remove('abierta'); btn.setAttribute('aria-expanded','false'); } });
   b.querySelector('#btnSalir').onclick = e => { e.preventDefault(); cerrarSesion(); };
   document.body.prepend(b);
 }
