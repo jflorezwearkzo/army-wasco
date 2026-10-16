@@ -7,5 +7,14 @@
     "icono": "🎯",
     "creado": "2026-10-14",
     "estado": "activo"
+  },
+  {
+    "id": "reclutamiento",
+    "titulo": "Reporte de Reclutamiento",
+    "descripcion": "Registro de un oficial reclutado: datos de quien reporta (con Rango PM), rango asignado, notas y evidencia fotográfica. Exporta el formato lleno en alta resolución.",
+    "ruta": "reportes/reclutamiento/",
+    "icono": "🪖",
+    "creado": "2026-10-16",
+    "estado": "activo"
   }
 ]

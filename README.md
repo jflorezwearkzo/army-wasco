@@ -11,6 +11,7 @@ index.html          Página de inicio: lista los reportes
 reportes.json       Catálogo de reportes (alimenta la lista de inicio)
 reportes/
   bajas/            Reporte de Bajas (index.html + plantilla.png)
+  reclutamiento/    Reporte de Reclutamiento (index.html + plantilla.png)
 ```
 
 ## Reportes disponibles
@@ -18,6 +19,7 @@ reportes/
 | Reporte | Ruta | Descripción |
 |---|---|---|
 | Reporte de Bajas | `reportes/bajas/` | Llena el formato con fecha, emisor, hasta 10 abatidos y de 1 a 10 fotos; exporta PNG en alta resolución con anexo fotográfico. |
+| Reporte de Reclutamiento | `reportes/reclutamiento/` | Fecha, emisor (rango + Rango PM: Auxiliar/Co-líder/Líder PM), oficial reclutado con rango asignado (Oficial/Auxiliar PM/Co-Líder), notas y 1 a 10 fotos de evidencia; exporta PNG en alta resolución con anexo. |
 
 ## Agregar un reporte nuevo
 
