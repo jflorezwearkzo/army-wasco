@@ -110,7 +110,7 @@ begin
     new.id,
     coalesce(new.raw_user_meta_data ->> 'usuario', split_part(new.email, '@', 1)),
     coalesce(new.raw_user_meta_data ->> 'nombre', ''),
-    'usuario',
+    null,            -- sin rol hasta que un gestor le asigne uno
     false
   )
   on conflict (id) do nothing;
@@ -131,7 +131,33 @@ returns boolean language sql stable security definer set search_path = public as
   ), false);
 $$;
 
--- Perfiles: cambiar rol exige permiso "roles"; tocar a un superadmin (o nombrar uno) exige ser superadmin
+-- ¿Un conjunto de permisos/formularios cabe dentro de los míos? (superadmin: siempre)
+create or replace function public.dentro_de_mis_permisos(p jsonb, f text[])
+returns boolean language plpgsql stable security definer set search_path = public as $$
+declare mp jsonb; mf text[]; k text;
+begin
+  if public.soy_superadmin() then return true; end if;
+  select r.permisos, r.formularios into mp, mf from public.perfiles pf join public.roles r on r.id = pf.rol_id
+    where pf.id = auth.uid() and pf.activo;
+  if mp is null then return false; end if;
+  for k in select jsonb_object_keys(coalesce(p,'{}'::jsonb)) loop
+    if coalesce((p->>k)::boolean,false) and not coalesce((mp->>k)::boolean,false) then return false; end if;
+  end loop;
+  if '*' = any(coalesce(mf,'{}')) then return true; end if;
+  if '*' = any(coalesce(f,'{}')) then return false; end if;
+  return coalesce(f,'{}') <@ coalesce(mf,'{}');
+end $$;
+create or replace function public.rol_dentro_de_mis_permisos(rid text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select public.dentro_de_mis_permisos(r.permisos, r.formularios) from public.roles r where r.id = rid), rid is null);
+$$;
+revoke execute on function public.dentro_de_mis_permisos(jsonb, text[]) from anon, public;
+grant execute on function public.dentro_de_mis_permisos(jsonb, text[]) to authenticated;
+revoke execute on function public.rol_dentro_de_mis_permisos(text) from anon, public;
+grant execute on function public.rol_dentro_de_mis_permisos(text) to authenticated;
+
+-- Perfiles: cambiar rol exige permiso "roles"; tocar a un superadmin (o nombrar uno) exige ser superadmin;
+-- solo gestiono cuentas y asigno roles que caben en mis permisos
 create or replace function public.validar_cambio_rol()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
@@ -147,6 +173,12 @@ begin
   if (coalesce(rol_viejo_prot,false) or coalesce(rol_nuevo_prot,false)) and not public.soy_superadmin() then
     raise exception 'Solo un Administrador puede gestionar cuentas de Administrador';
   end if;
+  if old.id <> auth.uid() and not public.rol_dentro_de_mis_permisos(old.rol_id) then
+    raise exception 'No puedes gestionar una cuenta con permisos que no tienes';
+  end if;
+  if tg_op = 'UPDATE' and new.rol_id is distinct from old.rol_id and not public.rol_dentro_de_mis_permisos(new.rol_id) then
+    raise exception 'Solo puedes asignar roles con permisos que tú mismo tienes';
+  end if;
   if tg_op = 'DELETE' then return old; end if;
   return new;
 end $$;
@@ -161,6 +193,9 @@ returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'DELETE' then
     if old.protegido then raise exception 'El rol Administrador no se puede eliminar'; end if;
+    if not public.dentro_de_mis_permisos(old.permisos, old.formularios) then
+      raise exception 'No puedes eliminar un rol con permisos que no tienes';
+    end if;
     return old;
   end if;
   if tg_op = 'UPDATE' and old.protegido and not public.soy_superadmin() then
@@ -169,8 +204,14 @@ begin
   if tg_op = 'UPDATE' and old.protegido and not new.protegido then
     raise exception 'El rol Administrador debe seguir protegido';
   end if;
-  if tg_op = 'INSERT' and new.protegido and not public.soy_superadmin() then
+  if new.protegido and not public.soy_superadmin() then
     raise exception 'Solo un Administrador puede crear roles protegidos';
+  end if;
+  if tg_op = 'UPDATE' and not public.dentro_de_mis_permisos(old.permisos, old.formularios) then
+    raise exception 'No puedes modificar un rol con permisos que no tienes';
+  end if;
+  if not public.dentro_de_mis_permisos(new.permisos, new.formularios) then
+    raise exception 'Solo puedes otorgar permisos y formularios que tú mismo tienes';
   end if;
   return new;
 end $$;

@@ -154,6 +154,16 @@ async function cargarCatalogos(){
   roles = (await sb.from('roles').select('*').order('nombre')).data || [];
   formularios = (await sb.from('formularios').select('*').order('orden')).data || [];
 }
+// ¿Puedo otorgar/asignar este conjunto de permisos y formularios? (Administrador: siempre)
+function dentroDeMisPermisos(permisos, formularios){
+  if(esSuperadmin(yo)) return true;
+  const mp = yo.rol.permisos || {}, mf = yo.rol.formularios || [];
+  if(PERMS.some(p => (permisos||{})[p] && !mp[p])) return false;
+  if(mf.includes('*')) return true;
+  if((formularios||[]).includes('*')) return false;
+  return (formularios||[]).every(f => mf.includes(f));
+}
+const rolAsignable = r => !!r && dentroDeMisPermisos(r.permisos, r.formularios) && (!r.protegido || esSuperadmin(yo));
 const permisosTexto = r => PERMS.filter(p => r.permisos && r.permisos[p]).map(p => NOMBRE_PERM[p]).join(', ') || '—';
 const formsTexto = r => r.formularios.includes('*') ? 'Todos' : (r.formularios.map(id => (formularios.find(f=>f.id===id)||{titulo:id}).titulo).join(', ') || 'Ninguno');
 const msg = (id, t, ok=false) => { $('#'+id+'Err').textContent = ok?'':t; $('#'+id+'Ok').textContent = ok?t:''; };
@@ -163,14 +173,14 @@ async function cargarUsuarios(){
   const { data, error } = await sb.from('perfiles').select('*').order('usuario');
   if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=5 class="err">${esc(error.message)}</td></tr>`; return; }
   $('#uRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option>${esc(r)}</option>`).join('');
-  const rolesAsignables = roles.filter(r => !r.protegido || esSuperadmin(yo));
-  $('#uRol').innerHTML = rolesAsignables.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
+  const rolesAsignables = roles.filter(rolAsignable);
+  $('#uRol').innerHTML = '<option value="">— Sin rol —</option>' + rolesAsignables.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
   $('#uRol').disabled = !tiene(yo,'roles'); $('#uRol').title = tiene(yo,'roles') ? '' : 'Necesitas el permiso de roles para asignar roles';
   $('#tbUsuarios').innerHTML = data.map(u => {
     const r = roles.find(x => x.id===u.rol_id);
-    return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : '—')}</td>
+    return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}</td>
       <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
-      <td style="white-space:nowrap">${(r && r.protegido && !esSuperadmin(yo)) ? '<span class="muted">Solo Administrador</span>' : `<button class="ghost sm" data-e="${u.id}">Editar</button>
+      <td style="white-space:nowrap">${(r && !rolAsignable(r) && u.id!==yo.id) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `<button class="ghost sm" data-e="${u.id}">Editar</button>
       <button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button>`}</td></tr>`;
   }).join('') || '<tr><td colspan=5 class="muted">Sin usuarios</td></tr>';
   document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => editarUsuario(data.find(u => u.id===b.dataset.e)));
@@ -196,7 +206,7 @@ $('#fUsuario').onsubmit = async e => {
   const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rango=$('#uRango').value||null, rol=$('#uRol').value, activo=$('#uActivo').checked;
   try{
     if(id){
-      const cambios = { nombre, rango, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol;
+      const cambios = { nombre, rango, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol || null;
       const { error } = await sb.from('perfiles').update(cambios).eq('id', id); if(error) throw error;
           } else {
       const pass=$('#uPass').value; if(pass.length<8) throw new Error('La contraseña inicial debe tener al menos 8 caracteres.');
@@ -207,7 +217,7 @@ $('#fUsuario').onsubmit = async e => {
       await tmp.auth.signOut().catch(()=>{});
       if(!data.user) throw new Error('Supabase no devolvió el usuario. ¿Está desactivado "Confirm email"?');
       // El trigger creó el perfil inactivo con rol "usuario"; ahora lo ajustamos
-      const cambios = { nombre, rango, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol;
+      const cambios = { nombre, rango, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol || null;
       // pequeño reintento: el trigger puede tardar unos ms
       let ok=false; for(let i=0;i<5 && !ok;i++){ const r = await sb.from('perfiles').update(cambios).eq('id', data.user.id).select('id'); ok = !r.error && r.data && r.data.length; if(!ok) await new Promise(r=>setTimeout(r,400)); }
       if(!ok) throw new Error('El usuario se creó pero no se pudo activar; edítalo desde la lista.');
@@ -222,10 +232,14 @@ async function cargarRoles(){
   await cargarCatalogos();
   $('#rForms').innerHTML = `<label><input type="checkbox" value="*" id="rTodos"> Todos</label>` +
     formularios.map(f => `<label><input type="checkbox" value="${esc(f.id)}" class="rf"> ${esc(f.titulo)}</label>`).join('');
-  $('#rTodos').onchange = () => document.querySelectorAll('.rf').forEach(c => { c.disabled = $('#rTodos').checked; });
+  const mf = yo.rol.formularios || [], mp = yo.rol.permisos || {}, sup = esSuperadmin(yo);
+  $('#rTodos').disabled = !sup && !mf.includes('*');
+  PERMS.forEach(p => { const c = $('#p'+p[0].toUpperCase()+p.slice(1)); c.disabled = !sup && !mp[p]; c.parentElement.title = c.disabled ? 'No tienes este permiso' : ''; c.parentElement.style.opacity = c.disabled ? '.5' : ''; });
+  $('#rTodos').onchange = () => document.querySelectorAll('.rf').forEach(c => { c.disabled = $('#rTodos').checked || (!sup && !mf.includes('*') && !mf.includes(c.value)); });
+  $('#rTodos').onchange();
   $('#tbRoles').innerHTML = roles.map(r => `<tr><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
     <td>${esc(r.rango_pm||'—')}</td><td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
-    <td style="white-space:nowrap">${(r.protegido && !esSuperadmin(yo)) ? '<span class="muted">Solo Administrador</span>' : `<button class="ghost sm" data-re="${r.id}">Editar</button>${r.protegido?'':`<button class="ghost sm" data-rd="${r.id}">Eliminar</button>`}`}</td></tr>`).join('');
+    <td style="white-space:nowrap">${(!rolAsignable(r)) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `<button class="ghost sm" data-re="${r.id}">Editar</button>${r.protegido?'':`<button class="ghost sm" data-rd="${r.id}">Eliminar</button>`}`}</td></tr>`).join('');
   document.querySelectorAll('[data-re]').forEach(b => b.onclick = () => editarRol(roles.find(r => r.id===b.dataset.re)));
   document.querySelectorAll('[data-rd]').forEach(b => b.onclick = async () => {
     if(!confirm('¿Eliminar este rol? Los usuarios que lo tengan quedarán sin rol.')) return;
@@ -239,7 +253,7 @@ function editarRol(r){
   $('#rTodos').checked = r.formularios.includes('*'); $('#rTodos').onchange();
   document.querySelectorAll('.rf').forEach(c => c.checked = r.formularios.includes(c.value)); msg('r','');
 }
-function limpiarRol(){ $('#fRol').reset(); $('#tituloRol').textContent='Nuevo rol'; $('#rGuardar').textContent='Crear'; $('#rId').disabled=false; document.querySelectorAll('.rf').forEach(c=>c.disabled=false); msg('r',''); }
+function limpiarRol(){ $('#fRol').reset(); $('#tituloRol').textContent='Nuevo rol'; $('#rGuardar').textContent='Crear'; $('#rId').disabled=false; $('#rTodos').onchange(); msg('r',''); }
 $('#rCancelar').onclick = limpiarRol;
 $('#fRol').onsubmit = async e => {
   e.preventDefault(); msg('r','');
