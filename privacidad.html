@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Aviso de privacidad y uso · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  main{max-width:760px;margin:0 auto;padding:30px 20px 50px}
+  .cabecera{text-align:center;margin-bottom:22px}
+  .cabecera h1{margin:0;color:var(--gold);font-size:28px}
+  .cabecera p{color:var(--muted);margin:8px 0 0;font-size:14px}
+  section{background:var(--panel);border:1px solid #2b3a40;border-radius:10px;padding:16px 20px;margin-bottom:12px}
+  section h2{margin:0 0 8px;color:var(--gold);font-size:15px;letter-spacing:2px;text-transform:uppercase}
+  section p,section li{color:#d7dde0;line-height:1.5;margin:6px 0}
+  section ul{margin:4px 0 4px 20px;padding:0}
+  a{color:var(--gold)}
+  .volver{display:inline-block;margin-top:10px;color:var(--muted);text-decoration:none}
+</style>
+</head>
+<body>
+<main>
+  <div class="cabecera">
+    <p class="unidad">Army de Wasco · Policía Militar</p>
+    <h1>Aviso de privacidad y uso</h1>
+    <p>Última actualización: 16 de octubre de 2026</p>
+  </div>
+
+  <section><h2>Qué es este sitio</h2>
+    <p>Herramienta interna de la unidad Policía Militar del Ejército de Wasco, una facción del juego <b>One State</b>. Sirve para elaborar reportes de la facción (bajas, reclutamiento) y consultar el reglamento. No es un servicio comercial ni está abierto al público: las cuentas las crea un administrador de la unidad.</p>
+  </section>
+
+  <section><h2>Qué datos se guardan</h2>
+    <ul>
+      <li><b>Cuenta:</b> nombre de usuario, nombre de personaje (rol), rango militar, rol dentro de la plataforma y estado de la cuenta. No se pide correo electrónico real ni datos de identificación.</li>
+      <li><b>Reportes:</b> el contenido que diligencias (fecha, nombres de personajes, motivos, notas) y las capturas de pantalla del juego que adjuntas, junto con el folio, tu usuario y la fecha de creación.</li>
+      <li><b>Registro de auditoría:</b> quién creó, modificó o eliminó qué y cuándo (cuentas, roles, reportes). Se conserva durante <b>30 días</b> y luego se elimina automáticamente.</li>
+      <li><b>Datos técnicos:</b> los proveedores que alojan el sitio registran direcciones IP y datos del navegador en sus registros de seguridad.</li>
+    </ul>
+  </section>
+
+  <section><h2>Para qué se usan</h2>
+    <p>Únicamente para el funcionamiento de la unidad: identificarte al iniciar sesión, controlar quién puede hacer qué, llevar el historial de reportes de la facción y garantizar que los reportes no sean alterados. No se usan con fines comerciales, no se venden ni se comparten con terceros ajenos al funcionamiento del sitio.</p>
+  </section>
+
+  <section><h2>Quién puede verlos</h2>
+    <ul>
+      <li>Tú ves tus propios reportes.</li>
+      <li>Los miembros con permisos de gestión (líderes y auxiliares de la unidad) ven el historial de reportes, las cuentas y, si tienen el permiso correspondiente, el registro de auditoría.</li>
+      <li>Los reportes exportados como imagen pueden publicarse en los canales de Discord de la facción, según las normas de esta.</li>
+    </ul>
+  </section>
+
+  <section><h2>Proveedores que procesan los datos</h2>
+    <ul>
+      <li><b>Supabase</b> — base de datos, autenticación y almacenamiento de imágenes.</li>
+      <li><b>GitHub Pages</b> — alojamiento del sitio.</li>
+      <li><b>Cloudflare</b> — dominio y verificación anti-bots (Turnstile) en el inicio de sesión.</li>
+    </ul>
+    <p>Cada uno aplica sus propias políticas de privacidad y seguridad.</p>
+  </section>
+
+  <section><h2>Cookies y almacenamiento</h2>
+    <p>El sitio no usa cookies de rastreo, analítica ni publicidad. Solo guarda en tu navegador el token de sesión necesario para mantenerte conectado; se elimina al cerrar sesión.</p>
+  </section>
+
+  <section><h2>Tus derechos</h2>
+    <p>Puedes conocer, actualizar o pedir la eliminación de tu cuenta y tus datos en cualquier momento, solicitándolo a un administrador de la unidad por los canales de Discord de la facción. Al eliminar una cuenta, los reportes ya sellados se conservan como parte del historial de la facción, pues son registros de la unidad y no datos personales del autor.</p>
+  </section>
+
+  <section><h2>Condiciones de uso</h2>
+    <ul>
+      <li>La cuenta es personal e intransferible; no compartas tu contraseña.</li>
+      <li>Los reportes se sellan en el servidor con folio, usuario y fecha; una vez creados no pueden modificarse.</li>
+      <li>El uso del sitio está sujeto al reglamento de la facción. Un administrador puede desactivar cuentas por incumplimiento.</li>
+      <li>Toda acción administrativa queda registrada en la auditoría.</li>
+    </ul>
+  </section>
+
+  <a class="volver" href="login.html">← Volver al inicio de sesión</a>
+</main>
+</body>
+</html>

@@ -62,6 +62,7 @@ export function barraUsuario(yo){
     ${esAdminDeAlgo(yo) ? `<a href="${RAIZ}admin/" style="color:#f0c24d;text-decoration:none">Administración</a>` : ''}
     <a href="${RAIZ}reglamento.html" style="color:#9aa7ad;text-decoration:none">Reglamento</a>
     <a href="${RAIZ}cuenta.html" style="color:#9aa7ad;text-decoration:none">Mi cuenta</a>
+    <a href="${RAIZ}privacidad.html" style="color:#9aa7ad;text-decoration:none;font-size:12px">Privacidad</a>
     <a href="#" id="btnSalir" style="color:#9aa7ad;text-decoration:none">Salir</a>`;
   b.querySelector('#btnSalir').onclick = e => { e.preventDefault(); cerrarSesion(); };
   document.body.prepend(b);
