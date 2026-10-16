@@ -27,7 +27,7 @@
   .primary{background:var(--gold);color:#1a1200}
   .secondary{background:#243239;color:var(--text)}
   .ghost{background:transparent;color:var(--muted);border:1px solid #2b3a40;padding:6px 10px;font-size:12px}
-  .photos{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+  .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
   .thumb{position:relative;aspect-ratio:1;background:#0a1114;border:1px dashed #2b3a40;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#45565d;font-size:12px}
   .thumb img{width:100%;height:100%;object-fit:cover}
   .thumb b{position:absolute;top:2px;left:5px;color:var(--gold);text-shadow:0 0 3px #000}
@@ -43,7 +43,7 @@
 <header>
   <a href="../../" style="color:#9aa7ad;text-decoration:none;font-size:13px">&larr; Volver a Reportes</a>
   <h1>Reporte de Reclutamiento · Army de Wasco · Policía Militar</h1>
-  <p>Llena los campos, adjunta la evidencia (1 a 10 fotos) y exporta el formato como imagen en alta resolución (la primera foto va en el recuadro; todas se repiten en grande debajo). Todo se procesa en tu navegador; nada se sube a ningún servidor.</p>
+  <p>Llena los campos, adjunta la foto de evidencia y exporta el formato como imagen en alta resolución (la foto va en el recuadro y se repite en grande debajo). Todo se procesa en tu navegador; nada se sube a ningún servidor.</p>
 </header>
 <main>
   <section>
@@ -83,10 +83,10 @@
       </fieldset>
 
       <fieldset>
-        <legend>Prueba / evidencia (mínimo 1, máximo 10)</legend>
-        <input id="fotos" type="file" accept="image/*" multiple style="font-size:13px">
+        <legend>Prueba / evidencia (1 foto)</legend>
+        <input id="fotos" type="file" accept="image/*" style="font-size:13px">
         <div class="photos" id="thumbs"></div>
-        <small id="fotoCount">0 / 10 fotos</small>
+        <small id="fotoCount">Sin foto</small>
       </fieldset>
 
       <div class="err" id="err"></div>
@@ -125,10 +125,8 @@ const tpl=new Image(); tpl.src='plantilla.png?v=3';
 let photos=[];
 
 $('#fotos').addEventListener('change', async e=>{
-  for(const f of [...e.target.files]){
-    if(photos.length>=10){ showErr('Máximo 10 fotos. Se ignoraron las demás.'); break; }
-    const img=await loadFile(f); photos.push({img,name:f.name});
-  }
+  const f=e.target.files[0];
+  if(f){ const img=await loadFile(f); photos=[{img,name:f.name}]; }   // una sola foto: reemplaza la anterior
   e.target.value=''; renderThumbs(); draw();
 });
 function loadFile(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f);const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});}
@@ -136,11 +134,11 @@ function renderThumbs(){
   const t=$('#thumbs'); t.innerHTML='';
   photos.forEach((p,i)=>{
     const d=document.createElement('div'); d.className='thumb';
-    d.innerHTML=`<img src="${p.img.src}" alt=""><b>${i+1}</b><button type="button" title="Quitar">✕</button>`;
+    d.innerHTML=`<img src="${p.img.src}" alt=""><button type="button" title="Quitar">✕</button>`;
     d.querySelector('button').onclick=()=>{photos.splice(i,1);renderThumbs();draw();};
     t.appendChild(d);
   });
-  $('#fotoCount').textContent=`${photos.length} / 10 fotos`;
+  $('#fotoCount').textContent=photos.length?'1 foto adjunta (elige otra para reemplazarla)':'Sin foto';
 }
 
 function getData(){
@@ -158,8 +156,7 @@ function validate(d){
   if(!RANGOS_PM.includes(d.rangoPM)) e.push('• Selecciona el Rango PM de quien reporta.');
   if(!d.ofRangoLibre) e.push('• El rango del oficial es obligatorio.');
   if(!RANGOS_ASIG.includes(d.ofRango)) e.push('• Selecciona el rango asignado PM.');
-  if(photos.length<1) e.push('• Debes adjuntar al menos una foto de evidencia.');
-  if(photos.length>10) e.push('• Máximo 10 fotos.');
+  if(photos.length!==1) e.push('• Debes adjuntar la foto de evidencia.');
   return e;
 }
 function showErr(msg){ $('#err').textContent=msg; }
@@ -238,8 +235,6 @@ function draw(){
     const w=p.img.naturalWidth*s, h=p.img.naturalHeight*s;
     ctx.save(); rr(c.x,c.y,c.w,c.h,8); ctx.clip();
     ctx.drawImage(p.img,c.x+(c.w-w)/2,c.y+(c.h-h)/2,w,h); ctx.restore();
-    if(photos.length>1){ ctx.fillStyle='#000c'; rr(c.x+8,c.y+8,120,22,5); ctx.fill();
-      ctx.fillStyle='#f0c24d'; ctx.font='bold 13px "Roboto Condensed",Arial'; ctx.fillText(`1 de ${photos.length} · ver anexo`,c.x+14,c.y+19); }
   }
 
   // Anexo fotográfico
@@ -250,7 +245,7 @@ function draw(){
     ctx.fillStyle='#f0c24d'; ctx.font='italic bold 24px "Roboto Condensed",Arial';
     ctx.fillText('ANEXO FOTOGRÁFICO · EVIDENCIA DEL RECLUTAMIENTO',24,y+23);
     ctx.fillStyle='#fff'; ctx.font='bold 15px "Roboto Condensed",Arial'; ctx.textAlign='right';
-    ctx.fillText(`${photos.length} foto${photos.length>1?'s':''}${d.fecha?' · '+fmtFecha(d.fecha):''}`,W-24,y+23); ctx.textAlign='left';
+    ctx.fillText(d.fecha?fmtFecha(d.fecha):'',W-24,y+23); ctx.textAlign='left';
     y+=60; let n=0;
     L.rows.forEach(r=>{
       r.items.forEach((it,k)=>{
@@ -258,8 +253,6 @@ function draw(){
         ctx.fillStyle='#0e1b20'; rr(x-4,yy-4,it.w+8,it.h+8,8); ctx.fill();
         ctx.strokeStyle='#c9a43a'; ctx.lineWidth=1.5; rr(x-4,yy-4,it.w+8,it.h+8,8); ctx.stroke();
         ctx.drawImage(it.p.img,x,yy,it.w,it.h);
-        n++; ctx.fillStyle='#000c'; rr(x+8,yy+8,34,24,5); ctx.fill();
-        ctx.fillStyle='#f0c24d'; ctx.font='bold 17px "Roboto Condensed",Arial'; ctx.fillText(`${n}.`,x+15,yy+20);
       });
       y+=r.h+L.gap;
     });

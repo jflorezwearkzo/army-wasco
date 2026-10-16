@@ -19,7 +19,7 @@ reportes/
 | Reporte | Ruta | Descripción |
 |---|---|---|
 | Reporte de Bajas | `reportes/bajas/` | Llena el formato con fecha, emisor, hasta 10 abatidos y de 1 a 10 fotos; exporta PNG en alta resolución con anexo fotográfico. |
-| Reporte de Reclutamiento | `reportes/reclutamiento/` | Fecha, emisor (rango + Rango PM: Auxiliar/Co-líder/Líder PM), oficial reclutado con rango y rango asignado PM (Oficial/Auxiliar PM/Co-Líder), notas y 1 a 10 fotos de evidencia; exporta PNG en alta resolución con anexo. |
+| Reporte de Reclutamiento | `reportes/reclutamiento/` | Fecha, emisor (rango + Rango PM: Auxiliar/Co-líder/Líder PM), oficial reclutado con rango y rango asignado PM (Oficial/Auxiliar PM/Co-Líder), notas y 1 foto de evidencia; exporta PNG en alta resolución con la foto a todo el ancho debajo. |
 
 ## Agregar un reporte nuevo
 
