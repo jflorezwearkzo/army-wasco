@@ -84,6 +84,9 @@
   <select class="movil" id="navMovil" aria-label="Sección"></select>
   <div class="layout">
 <nav class="lateral" id="nav">
+  <div class="grp">Policía Militar</div>
+  <a href="#patrullaje" data-sec="patrullaje"><span>🚔</span>Patrullaje</a>
+  <a href="#macros-pm" data-sec="macros-pm"><span>📻</span>Macros PM</a>
   <div class="grp">Reglas</div>
   <a href="#ejercito" data-sec="ejercito"><span>⚔️</span>Reglamento del Ejército</a>
   <a href="#servidor" data-sec="servidor"><span>💬</span>Servidor (Discord)</a>
@@ -97,11 +100,42 @@
   <a href="#ascensos" data-sec="ascensos"><span>📈</span>Ascensos</a>
   <a href="#permisos" data-sec="permisos"><span>📝</span>Permisos</a>
   <div class="grp">Macros</div>
-  <a href="#macros" data-sec="macros"><span>⌨️</span>Macros</a>
+  <a href="#macros" data-sec="macros"><span>⌨️</span>Macros del Ejército</a>
   <div class="grp">Manual</div>
   <a href="#docs" data-sec="docs"><span>📚</span>Manual (PDF)</a>
 </nav>
 <div class="contenido">
+<section class="sec-panel" id="sec-patrullaje" hidden>
+<h2 class="sec" id="patrullaje">Procedimiento de patrullaje<small>Procedimiento propio de la Policía Militar · preparación y reglas para salir a patrullar</small></h2>
+  <div class="bloque"><h3>Preparación</h3><ol>
+    <li>Ser miembro de <b>PM</b>.</li>
+    <li>Tener <b>autorización</b> del Líder de la unidad, Co-Líder o Auxiliares.</li>
+    <li>Salir con <b>mínimo 2 miembros</b> de la unidad.</li>
+    <li><b>No pasar los límites</b> de patrullaje.</li>
+    <li>Patrullar con <b>camioneta nivel 15 full negra</b>.</li>
+    <li>Prender <b>intermitentes</b> (luces de emergencia).</li>
+    <li>Mandar la macro de <b>fuera de base</b>.</li>
+    <li>Mandar las respectivas <b>macros de advertencia</b>; si no acata las indicaciones, mandar la <b>última macro</b> y abatir.</li>
+  </ol></div>
+  <div class="sistema">
+    <h2>Sanciones de patrullaje</h2>
+    <p style="margin:0 0 12px;color:#d7dde0">Para patrullar es necesario cumplir con todas las reglas anteriores. De no ser así, recibirás una advertencia.</p>
+    <div class="f"><div><b>3 advertencias</b>= expulsión de la unidad</div></div>
+  </div>
+  <div class="bloque"><h3>⚠️ Salir a patrullar</h3><div class="macros"><code><b>/flobby</b> [PM] INICIANDO PROCEDIMIENTO ANTI-DISTURBIOS</code></div></div>
+  <div class="bloque"><h3>⚠️ Novedades · mandar cada 20 minutos</h3><div class="macros"><code><b>/flobby</b> [PM] ALREDEDORES SIN NOVEDAD!! 😎</code></div></div>
+  <div class="bloque"><h3>⚠️ En caso de abatir a alguien</h3><div class="macros"><code><b>/me</b> [PM] PROCEDIMIENTO ANTIDISTURBIOS!!!</code></div></div>
+</section>
+<section class="sec-panel" id="sec-macros-pm" hidden>
+<h2 class="sec" id="macros-pm">Macros de Policía Militar<small>Macros exclusivas de la unidad PM</small></h2>
+  <div class="bloque"><div class="macros"><code><b>/me</b> PRESENTA SU MÁXIMO RESPETO AL SR/SRA [Tu rango] [NOMBRE] [POLICÍA MILITAR], REPORTÁNDOSE FORMALMENTE.</code>
+<code><b>/flobby</b> 10-4 [PM] (Copiado, orden recibida) 😎</code>
+<code><b>/flobby</b> 10-8 [PM] [Tu rango] en servicio.</code>
+<code><b>/flobby</b> 10-7 [PM] [Tu rango] fuera de servicio.</code>
+<code><b>/me</b> ¡¡EJÉRCITO EN EL TOP!! 😎PM😎</code>
+<code><b>/flobby</b> 10-34 [PM] Delta 1. Perímetro asegurado, sin presencia de intrusos.</code>
+<code><b>/flobby</b> 10-34 [PM] Delta 2. Perímetro asegurado, sin presencia de intrusos.</code></div></div>
+</section>
 <section class="sec-panel" id="sec-ejercito" hidden>
 <h2 class="sec" id="ejercito">Reglamento del Ejército<small>Reglas y castigos para los soldados. Ser soldado requiere paciencia y conocimiento del juego de rol.</small></h2>
   <ol class="reglas">
@@ -290,7 +324,7 @@ Motivo: [DETALLAR ACTIVIDAD A REALIZAR]
 Tiempo: [HORAS, DÍAS O SEMANAS QUE SOLICITA]</div></div>
 </section>
 <section class="sec-panel" id="sec-macros" hidden>
-<h2 class="sec" id="macros">Macros<small>Deben utilizarse en todas las interacciones de RP</small></h2>
+<h2 class="sec" id="macros">Macros del Ejército<small>Deben utilizarse en todas las interacciones de RP</small></h2>
   <div class="bloque"><div class="macros"><code><b>/me</b> PRESENTA SU MÁXIMO RESPETO AL SR/SRA [RECLUTA] [NOMBRE], REPORTÁNDOSE FORMALMENTE.</code>
 <code><b>/do</b> ¡Taser! ¡Taser! Descarga eléctrica aplicada al individuo para su inmovilización y control de la situación.</code>
 <code><b>/do</b> ¡Fuego! Se responde en defensa propia o de personas en riesgo cercano.</code>
@@ -328,6 +362,6 @@ Tiempo: [HORAS, DÍAS O SEMANAS QUE SOLICITA]</div></div>
 </div>
   </div>
 </main>
-<script type="module" src="js/app-reglamento.js?v=24fbbc89"></script>
+<script type="module" src="js/app-reglamento.js?v=d231906c"></script>
 </body>
 </html>
