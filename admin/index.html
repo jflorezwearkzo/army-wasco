@@ -128,10 +128,10 @@
       <h3>Historial de reportes</h3>
       <div class="fila" style="margin-bottom:12px">
         <div><label>Formulario</label><select id="hForm"><option value="">Todos</option></select></div>
-        <div><label>Usuario</label><input id="hUsuario" placeholder="filtrar por usuario"></div>
-        <div><label>Desde</label><input id="hDesde" type="date"></div>
-        <div><label>Hasta</label><input id="hHasta" type="date"></div>
-        <div><button class="secondary" id="hBuscar" style="width:100%">Buscar</button></div>
+        <div><label>Usuario</label><input id="hUsuario" list="hUsuarios" placeholder="escribe para filtrar" autocomplete="off"><datalist id="hUsuarios"></datalist></div>
+        <div><label>Desde</label><select id="hDesde"><option value="">Cualquiera</option></select></div>
+        <div><label>Hasta</label><select id="hHasta"><option value="">Cualquiera</option></select></div>
+        <div><button type="button" class="ghost" id="hLimpiar" style="width:100%">Limpiar filtros</button></div>
       </div>
       <table><thead><tr><th>#</th><th>Fecha</th><th>Formulario</th><th>Usuario</th><th>Resumen</th><th>Registrado</th><th>Imagen</th><th></th></tr></thead><tbody id="tbHist"></tbody></table>
       <div class="err" id="hErr"></div>
@@ -340,9 +340,20 @@ $('#fForm').onsubmit = async e => {
 async function cargarHist(){
   await cargarCatalogos();
   $('#hForm').innerHTML = '<option value="">Todos</option>' + formularios.map(f => `<option value="${esc(f.id)}">${esc(f.titulo)}</option>`).join('');
+  // Opciones a partir de lo que existe en el historial
+  const { data } = await sb.from('reportes_vista').select('fecha,usuario').limit(2000);
+  const fechas = [...new Set((data||[]).map(r => r.fecha).filter(Boolean))].sort();
+  const fmtF = iso => iso.split('-').reverse().join('-');
+  const ops = fechas.map(f => `<option value="${f}">${fmtF(f)}</option>`).join('');
+  $('#hDesde').innerHTML = '<option value="">Cualquiera</option>' + ops;
+  $('#hHasta').innerHTML = '<option value="">Cualquiera</option>' + ops;
+  const usuarios = [...new Set((data||[]).map(r => r.usuario).filter(Boolean))].sort();
+  $('#hUsuarios').innerHTML = usuarios.map(u => `<option value="${esc(u)}">`).join('');
   buscarHist();
 }
-$('#hBuscar').onclick = buscarHist;
+['#hForm','#hDesde','#hHasta'].forEach(s => $(s).onchange = buscarHist);
+let tHist; $('#hUsuario').oninput = () => { clearTimeout(tHist); tHist = setTimeout(buscarHist, 250); };
+$('#hLimpiar').onclick = () => { $('#hForm').value=''; $('#hUsuario').value=''; $('#hDesde').value=''; $('#hHasta').value=''; buscarHist(); };
 async function buscarHist(){
   let q = sb.from('reportes_vista').select('*').order('creado_en', { ascending:false }).limit(300);
   if($('#hForm').value) q = q.eq('formulario_id', $('#hForm').value);
