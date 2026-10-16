@@ -10,7 +10,7 @@ create table if not exists public.roles (
   nombre      text not null,
   descripcion text default '',
   permisos    jsonb not null default '{}'::jsonb,
-  -- permisos: usuarios, asignar_roles, reset_password, crear_roles, crear_reportes, gestion_reportes, historial (bool)
+  -- permisos: usuarios, asignar_roles, reset_password, crear_roles, crear_reportes, gestion_reportes, historial, eliminar_historial (bool)
   formularios text[] not null default '{}',     -- ids de formularios permitidos; '{*}' = todos
   protegido   boolean not null default false,   -- el rol admin no se puede borrar
   rango_pm    text,                              -- Rango PM que heredan los usuarios del rol
@@ -72,7 +72,7 @@ alter table public.reportes add column if not exists folio_v2 text generated alw
 -- ---------- Datos iniciales ----------
 insert into public.roles (id, nombre, descripcion, permisos, formularios, protegido, rango_pm) values
   ('admin',   'Administrador', 'Control total del sitio',
-     '{"usuarios":true,"asignar_roles":true,"reset_password":true,"crear_roles":true,"crear_reportes":true,"gestion_reportes":true,"historial":true}', '{*}', true, 'Líder PM'),
+     '{"usuarios":true,"asignar_roles":true,"reset_password":true,"crear_roles":true,"crear_reportes":true,"gestion_reportes":true,"historial":true,"eliminar_historial":true}', '{*}', true, 'Líder PM'),
   ('usuario', 'Usuario',       'Solo llena reportes',
      '{}', '{*}', false, 'Auxiliar PM')
 on conflict (id) do nothing;
@@ -297,7 +297,7 @@ create policy reportes_select_own on public.reportes for select using (usuario_i
 drop policy if exists reportes_select_all on public.reportes;
 create policy reportes_select_all on public.reportes for select using (public.tengo_permiso('historial'));
 drop policy if exists reportes_delete on public.reportes;
-create policy reportes_delete on public.reportes for delete using (public.tengo_permiso('historial'));
+create policy reportes_delete on public.reportes for delete using (public.tengo_permiso('eliminar_historial'));
 
 -- ---------- Storage: bucket privado "reportes" ----------
 insert into storage.buckets (id, name, public) values ('reportes', 'reportes', false)
@@ -313,7 +313,7 @@ create policy reportes_storage_select on storage.objects for select
          (storage.foldername(name))[1] = auth.uid()::text or public.tengo_permiso('historial')));
 drop policy if exists reportes_storage_delete on storage.objects;
 create policy reportes_storage_delete on storage.objects for delete
-  using (bucket_id = 'reportes' and public.tengo_permiso('historial'));
+  using (bucket_id = 'reportes' and public.tengo_permiso('eliminar_historial'));
 
 -- ---------- Integridad de reportes ----------
 -- Al insertar, el servidor sella usuario, nombre, rango y Rango PM desde el perfil/rol (ignora lo que mande el navegador)

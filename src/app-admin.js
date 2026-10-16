@@ -5,14 +5,14 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','historial'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','historial','eliminar_historial'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', historial:'Historial' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', historial:'Ver historial', eliminar_historial:'Eliminar historial' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
   ['roles',       'Roles',       ['crear_roles']],
   ['formularios', 'Formularios', ['crear_reportes','gestion_reportes']],
-  ['historial',   'Historial',   ['historial']],
+  ['historial',   'Historial',   ['historial','eliminar_historial']],
 ];
 let roles = [], formularios = [], rangosPM = [];
 
@@ -277,7 +277,7 @@ async function buscarHist(){
     <td>${esc(r.usuario||'—')}<br><span class="muted">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td>
     <td class="muted">${new Date(r.creado_en).toLocaleString('es-CO')}</td>
     <td>${r.imagen_path ? `<button class="ghost sm" data-hv="${esc(r.imagen_path)}" data-n="reporte-${esc(r.folio||r.id)}.png">Ver</button>` : '—'}</td>
-    <td><button class="ghost sm" data-hd="${r.id}" data-p="${esc(r.imagen_path||'')}">Eliminar</button></td></tr>`).join('') || '<tr><td colspan=8 class="muted">Sin reportes</td></tr>';
+    <td>${tiene(yo,'eliminar_historial') ? `<button class="ghost sm" data-hd="${r.id}" data-p="${esc(r.imagen_path||'')}">Eliminar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=8 class="muted">Sin reportes</td></tr>';
   document.querySelectorAll('[data-hv]').forEach(b => b.onclick = async () => {
     try{ const u = await urlImagen(b.dataset.hv); $('#dlgImg').src = u; $('#dlgDl').href = u; $('#dlgDl').download = b.dataset.n; $('#dlg').showModal(); }
     catch(x){ alert(x.message); }

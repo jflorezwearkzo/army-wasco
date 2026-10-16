@@ -32,7 +32,8 @@ Un rol es un conjunto de permisos más la lista de formularios a los que da acce
 | Creación de roles | Crear/editar/eliminar roles (incluido su Rango PM) y administrar el catálogo de Rangos PM |
 | Creación de reportes | Registrar formularios nuevos en el catálogo |
 | Gestión de reportes | Editar, ocultar/mostrar y eliminar formularios del catálogo |
-| Ver historial de todos | Ver, descargar y eliminar cualquier reporte guardado |
+| Ver historial | Ver y descargar cualquier reporte guardado |
+| Eliminar historial | Eliminar reportes del historial (incluida su imagen) |
 | Acceso a formularios | "Todos" o una selección; sin acceso, el formulario no aparece ni se puede abrir |
 
 Roles iniciales: **Administrador** (todo) y **Usuario** (solo llena reportes). Se pueden crear los que hagan falta desde el panel.
