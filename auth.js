@@ -81,6 +81,13 @@ export async function urlImagen(path){
   return data.signedUrl;
 }
 
+// Favicon dinámico: un emoji como icono de pestaña
+export function faviconEmoji(emoji){
+  if(!emoji) return;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0b1216"/><rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#c9a43a" stroke-width="2"/><text x="32" y="44" text-anchor="middle" font-size="36">${emoji}</text></svg>`;
+  let l=document.querySelector('link[rel="icon"]'); if(!l){ l=document.createElement('link'); l.rel='icon'; document.head.appendChild(l); }
+  l.type='image/svg+xml'; l.href='data:image/svg+xml,'+encodeURIComponent(svg);
+}
 export function hoyISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 export function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function traducir(m){
