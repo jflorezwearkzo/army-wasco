@@ -75,12 +75,7 @@
           <label>Rango PM (lo heredan los usuarios de este rol en los reportes)</label>
           <select id="rRangoPM"><option value="">— Sin Rango PM —</option></select>
           <label>Permisos</label>
-          <div class="chips">
-            <label><input type="checkbox" id="pUsuarios"> Gestión de usuarios</label>
-            <label><input type="checkbox" id="pRoles"> Asignación y creación de roles</label>
-            <label><input type="checkbox" id="pFormularios"> Creación / gestión de reportes</label>
-            <label><input type="checkbox" id="pHistorial"> Ver historial de todos</label>
-          </div>
+          <div class="chips" id="rPermisos"></div>
           <label>Acceso a formularios</label>
           <div class="chips" id="rForms"></div>
           <div class="fila" style="margin-top:14px"><button class="primary" id="rGuardar">Crear</button><button type="button" class="ghost" id="rCancelar">Cancelar</button></div>
@@ -144,6 +139,16 @@
     </div>
   </section>
 </main>
+<dialog id="dlgPass" style="padding:22px;min-width:320px">
+  <h3 style="margin:0 0 6px;color:var(--gold)">Restablecer contraseña</h3>
+  <p class="muted" id="rpUsuario" style="margin:0 0 10px"></p>
+  <form id="fReset">
+    <label>Nueva contraseña (mínimo 8)</label><input id="rpPass" type="password" minlength="8" required autocomplete="new-password">
+    <label>Repetir</label><input id="rpPass2" type="password" minlength="8" required autocomplete="new-password">
+    <div class="fila" style="margin-top:14px"><button class="primary" id="rpOk">Restablecer</button><button type="button" class="ghost" onclick="dlgPass.close()">Cancelar</button></div>
+    <div class="err" id="rpErr"></div>
+  </form>
+</dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button class="ghost" onclick="dlg.close()">Cerrar</button></div></dialog>
 
 <script type="module">
@@ -153,14 +158,22 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
-const PERMS = ['usuarios','roles','formularios','historial'];
-const NOMBRE_PERM = { usuarios:'Usuarios', roles:'Roles', formularios:'Formularios', historial:'Historial' };
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','historial'];
+const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', historial:'Historial' };
+const TABS = [
+  ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
+  ['roles',       'Roles',       ['crear_roles']],
+  ['formularios', 'Formularios', ['crear_reportes','gestion_reportes']],
+  ['historial',   'Historial',   ['historial']],
+];
 let roles = [], formularios = [], rangosPM = [];
 
 // ---------- Pestañas según permisos ----------
-const tabs = PERMS.filter(p => tiene(yo, p));
+const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id);
 if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
-$('#tabs').innerHTML = tabs.map(p => `<button data-t="${p}">${NOMBRE_PERM[p]}</button>`).join('');
+$('#rPermisos').innerHTML = PERMS.map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('');
+$('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre]) => `<button data-t="${id}">${nombre}</button>`).join('');
 function abrir(t){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
@@ -196,15 +209,19 @@ async function cargarUsuarios(){
   $('#uRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option>${esc(r)}</option>`).join('');
   const rolesAsignables = roles.filter(rolAsignable);
   $('#uRol').innerHTML = '<option value="">— Sin rol —</option>' + rolesAsignables.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
-  $('#uRol').disabled = !tiene(yo,'roles'); $('#uRol').title = tiene(yo,'roles') ? '' : 'Necesitas el permiso de roles para asignar roles';
+  $('#uRol').disabled = !tiene(yo,'asignar_roles'); $('#uRol').title = tiene(yo,'asignar_roles') ? '' : 'Necesitas el permiso de asignación de roles';
+  ['#uNombre','#uRango','#uActivo'].forEach(s => $(s).disabled = !tiene(yo,'usuarios'));
+  $('#uGuardar').style.display = (tiene(yo,'usuarios') || tiene(yo,'asignar_roles')) ? '' : 'none';
   $('#tbUsuarios').innerHTML = data.map(u => {
     const r = roles.find(x => x.id===u.rol_id);
     return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}</td>
       <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
-      <td style="white-space:nowrap">${(r && !rolAsignable(r) && u.id!==yo.id) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `<button class="ghost sm" data-e="${u.id}">Editar</button>
-      <button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button>`}</td></tr>`;
+      <td style="white-space:nowrap">${(r && !rolAsignable(r) && u.id!==yo.id) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `${(tiene(yo,'usuarios')||tiene(yo,'asignar_roles')) ? `<button class="ghost sm" data-e="${u.id}">Editar</button>` : ''}
+      ${tiene(yo,'usuarios') ? `<button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button>` : ''}
+      ${(tiene(yo,'reset_password') && u.id!==yo.id) ? `<button class="ghost sm" data-rp="${u.id}" data-u="${esc(u.usuario)}">Contraseña</button>` : ''}`}</td></tr>`;
   }).join('') || '<tr><td colspan=5 class="muted">Sin usuarios</td></tr>';
   document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => editarUsuario(data.find(u => u.id===b.dataset.e)));
+  document.querySelectorAll('[data-rp]').forEach(b => b.onclick = () => resetearPassword(b.dataset.rp, b.dataset.u));
   document.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
     if(b.dataset.a===yo.id && b.dataset.v==='0'){ alert('No puedes desactivar tu propia cuenta.'); return; }
     const { error } = await sb.from('perfiles').update({ activo: b.dataset.v==='1' }).eq('id', b.dataset.a);
@@ -227,9 +244,10 @@ $('#fUsuario').onsubmit = async e => {
   const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rango=$('#uRango').value||null, rol=$('#uRol').value, activo=$('#uActivo').checked;
   try{
     if(id){
-      const cambios = { nombre, rango, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol || null;
+      const cambios = {}; if(tiene(yo,'usuarios')) Object.assign(cambios, { nombre, rango, activo }); if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
       const { error } = await sb.from('perfiles').update(cambios).eq('id', id); if(error) throw error;
           } else {
+      if(!tiene(yo,'usuarios')) throw new Error('No tienes permiso para crear usuarios.');
       const pass=$('#uPass').value; if(pass.length<8) throw new Error('La contraseña inicial debe tener al menos 8 caracteres.');
       // Cliente secundario para no reemplazar la sesión del administrador
       const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:false, autoRefreshToken:false } });
@@ -238,7 +256,7 @@ $('#fUsuario').onsubmit = async e => {
       await tmp.auth.signOut().catch(()=>{});
       if(!data.user) throw new Error('Supabase no devolvió el usuario. ¿Está desactivado "Confirm email"?');
       // El trigger creó el perfil inactivo con rol "usuario"; ahora lo ajustamos
-      const cambios = { nombre, rango, activo }; if(tiene(yo,'roles')) cambios.rol_id = rol || null;
+      const cambios = { nombre, rango, activo }; if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
       // pequeño reintento: el trigger puede tardar unos ms
       let ok=false; for(let i=0;i<5 && !ok;i++){ const r = await sb.from('perfiles').update(cambios).eq('id', data.user.id).select('id'); ok = !r.error && r.data && r.data.length; if(!ok) await new Promise(r=>setTimeout(r,400)); }
       if(!ok) throw new Error('El usuario se creó pero no se pudo activar; edítalo desde la lista.');
@@ -248,12 +266,27 @@ $('#fUsuario').onsubmit = async e => {
   }catch(x){ msg('u', x.message || String(x)); }
 };
 
+let rpObjetivo=null;
+function resetearPassword(id, usuario){ rpObjetivo=id; $('#rpUsuario').textContent='Usuario: '+usuario; $('#fReset').reset(); $('#rpErr').textContent=''; $('#dlgPass').showModal(); }
+$('#fReset').onsubmit = async e => {
+  e.preventDefault(); const err=$('#rpErr'); err.textContent='';
+  const a=$('#rpPass').value, b=$('#rpPass2').value; if(a!==b){ err.textContent='Las contraseñas no coinciden.'; return; }
+  const btn=$('#rpOk'); btn.disabled=true;
+  try{
+    const { data, error } = await sb.functions.invoke('reset-password', { body:{ usuario_id: rpObjetivo, password: a } });
+    if(error){ let m=error.message; try{ const j=await error.context.json(); if(j.error) m=j.error; }catch{} throw new Error(m); }
+    if(data && data.error) throw new Error(data.error);
+    $('#dlgPass').close(); msg('u','Contraseña restablecida.', true);
+  }catch(x){ err.textContent=x.message; }
+  btn.disabled=false;
+};
+
 // ====================== ROLES ======================
 async function cargarRoles(){
   await cargarCatalogos();
   const sel = $('#rRangoPM'), cur = sel.value;
   sel.innerHTML = '<option value="">— Sin Rango PM —</option>' + rangosPM.map(r => `<option>${esc(r.nombre)}</option>`).join(''); sel.value = cur;
-  $('#cajaRangosPM').style.display = tiene(yo,'roles') ? '' : 'none';
+  $('#cajaRangosPM').style.display = tiene(yo,'crear_roles') ? '' : 'none';
   $('#tbRangosPM').innerHTML = rangosPM.map(r => `<tr><td><b>${esc(r.nombre)}</b></td><td>${r.orden}</td>
     <td class="muted">${esc(roles.filter(x => x.rango_pm===r.nombre).map(x => x.nombre).join(', ') || '—')}</td>
     <td style="white-space:nowrap"><button class="ghost sm" data-pme="${esc(r.nombre)}">Editar</button><button class="ghost sm" data-pmd="${esc(r.nombre)}">Eliminar</button></td></tr>`).join('') || '<tr><td colspan=4 class="muted">Sin rangos PM</td></tr>';
@@ -267,7 +300,7 @@ async function cargarRoles(){
     formularios.map(f => `<label><input type="checkbox" value="${esc(f.id)}" class="rf"> ${esc(f.titulo)}</label>`).join('');
   const mf = yo.rol.formularios || [], mp = yo.rol.permisos || {}, sup = esSuperadmin(yo);
   $('#rTodos').disabled = !sup && !mf.includes('*');
-  PERMS.forEach(p => { const c = $('#p'+p[0].toUpperCase()+p.slice(1)); c.disabled = !sup && !mp[p]; c.parentElement.title = c.disabled ? 'No tienes este permiso' : ''; c.parentElement.style.opacity = c.disabled ? '.5' : ''; });
+  document.querySelectorAll('.rp').forEach(c => { c.disabled = !sup && !mp[c.value]; c.parentElement.title = c.disabled ? 'No tienes este permiso' : ''; c.parentElement.style.opacity = c.disabled ? '.5' : ''; });
   $('#rTodos').onchange = () => document.querySelectorAll('.rf').forEach(c => { c.disabled = $('#rTodos').checked || (!sup && !mf.includes('*') && !mf.includes(c.value)); });
   $('#rTodos').onchange();
   $('#tbRoles').innerHTML = roles.map(r => `<tr><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
@@ -282,7 +315,7 @@ async function cargarRoles(){
 function editarRol(r){
   $('#tituloRol').textContent='Editar rol'; $('#rGuardar').textContent='Guardar';
   $('#rId').value=r.id; $('#rId').disabled=true; $('#rNombre').value=r.nombre; $('#rDesc').value=r.descripcion||''; $('#rRangoPM').value=r.rango_pm||'';
-  PERMS.forEach(p => $('#p'+p[0].toUpperCase()+p.slice(1)).checked = !!(r.permisos||{})[p]);
+  document.querySelectorAll('.rp').forEach(c => c.checked = !!(r.permisos||{})[c.value]);
   $('#rTodos').checked = r.formularios.includes('*'); $('#rTodos').onchange();
   document.querySelectorAll('.rf').forEach(c => c.checked = r.formularios.includes(c.value)); msg('r','');
 }
@@ -291,9 +324,9 @@ $('#rCancelar').onclick = limpiarRol;
 $('#fRol').onsubmit = async e => {
   e.preventDefault(); msg('r','');
   const rol = { id:$('#rId').value.trim().toLowerCase(), nombre:$('#rNombre').value.trim(), descripcion:$('#rDesc').value.trim(), rango_pm:$('#rRangoPM').value||null,
-    permisos: Object.fromEntries(PERMS.map(p => [p, $('#p'+p[0].toUpperCase()+p.slice(1)).checked])),
+    permisos: Object.fromEntries([...document.querySelectorAll('.rp')].map(c => [c.value, c.checked])),
     formularios: $('#rTodos').checked ? ['*'] : [...document.querySelectorAll('.rf:checked')].map(c => c.value) };
-  if(rol.id==='admin' && !rol.permisos.roles){ msg('r','El rol admin debe conservar el permiso de roles.'); return; }
+  if(rol.id==='admin' && !(rol.permisos.crear_roles && rol.permisos.asignar_roles)){ msg('r','El rol admin debe conservar los permisos de roles.'); return; }
   const { error } = await sb.from('roles').upsert(rol); if(error){ msg('r', error.message); return; }
   limpiarRol(); msg('r','Rol guardado.', true); cargarRoles();
 };
@@ -314,12 +347,13 @@ $('#fRangoPM').onsubmit = async e => {
 // ====================== FORMULARIOS ======================
 async function cargarForms(){
   await cargarCatalogos();
+  $('#fForm').parentElement.style.display = (tiene(yo,'crear_reportes')||tiene(yo,'gestion_reportes')) ? '' : 'none';
   $('#tbForms').innerHTML = formularios.map(f => `<tr><td style="font-size:22px">${esc(f.icono||'')}</td><td><b>${esc(f.titulo)}</b><br><span class="muted">${esc(f.id)}</span></td>
     <td><a href="../${esc(f.ruta)}" target="_blank">${esc(f.ruta)}</a></td><td>${f.orden}</td>
     <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span></td>
-    <td style="white-space:nowrap"><button class="ghost sm" data-fe="${f.id}">Editar</button>
+    <td style="white-space:nowrap">${tiene(yo,'gestion_reportes') ? `<button class="ghost sm" data-fe="${f.id}">Editar</button>
     <button class="ghost sm" data-fa="${f.id}" data-v="${f.activo?0:1}">${f.activo?'Ocultar':'Mostrar'}</button>
-    <button class="ghost sm" data-fd="${f.id}">Eliminar</button></td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
+    <button class="ghost sm" data-fd="${f.id}">Eliminar</button>` : '<span class="muted">Solo lectura</span>'}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
   document.querySelectorAll('[data-fe]').forEach(b => b.onclick = () => editarForm(formularios.find(f => f.id===b.dataset.fe)));
   document.querySelectorAll('[data-fa]').forEach(b => b.onclick = async () => { const { error } = await sb.from('formularios').update({ activo: b.dataset.v==='1' }).eq('id', b.dataset.fa); if(error) alert(error.message); cargarForms(); });
   document.querySelectorAll('[data-fd]').forEach(b => b.onclick = async () => {
@@ -336,6 +370,7 @@ function limpiarForm(){ $('#fForm').reset(); $('#tituloForm').textContent='Nuevo
 $('#fCancelar').onclick = limpiarForm;
 $('#fForm').onsubmit = async e => {
   e.preventDefault(); msg('f','');
+  if($('#fId').disabled ? !tiene(yo,'gestion_reportes') : !tiene(yo,'crear_reportes')){ msg('f', $('#fId').disabled ? 'No tienes permiso de gestión de reportes.' : 'No tienes permiso de creación de reportes.'); return; }
   const f = { id:$('#fId').value.trim().toLowerCase(), titulo:$('#fTitulo').value.trim(), descripcion:$('#fDesc').value.trim(), icono:$('#fIcono').value.trim(),
     orden:parseInt($('#fOrden').value)||100, ruta:$('#fRuta').value.trim(), activo:$('#fActivo').checked };
   const { error } = await sb.from('formularios').upsert(f); if(error){ msg('f', error.message); return; }

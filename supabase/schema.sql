@@ -10,7 +10,7 @@ create table if not exists public.roles (
   nombre      text not null,
   descripcion text default '',
   permisos    jsonb not null default '{}'::jsonb,
-  -- permisos: {"usuarios":bool, "roles":bool, "formularios":bool, "historial":bool}
+  -- permisos: usuarios, asignar_roles, reset_password, crear_roles, crear_reportes, gestion_reportes, historial (bool)
   formularios text[] not null default '{}',     -- ids de formularios permitidos; '{*}' = todos
   protegido   boolean not null default false,   -- el rol admin no se puede borrar
   rango_pm    text,                              -- Rango PM que heredan los usuarios del rol
@@ -70,9 +70,9 @@ create table if not exists public.reportes (
 -- ---------- Datos iniciales ----------
 insert into public.roles (id, nombre, descripcion, permisos, formularios, protegido, rango_pm) values
   ('admin',   'Administrador', 'Control total del sitio',
-     '{"usuarios":true,"roles":true,"formularios":true,"historial":true}', '{*}', true, 'Líder PM'),
+     '{"usuarios":true,"asignar_roles":true,"reset_password":true,"crear_roles":true,"crear_reportes":true,"gestion_reportes":true,"historial":true}', '{*}', true, 'Líder PM'),
   ('usuario', 'Usuario',       'Solo llena reportes',
-     '{"usuarios":false,"roles":false,"formularios":false,"historial":false}', '{*}', false, 'Auxiliar PM')
+     '{}', '{*}', false, 'Auxiliar PM')
 on conflict (id) do nothing;
 
 insert into public.formularios (id, titulo, descripcion, ruta, icono, orden) values
@@ -171,8 +171,13 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare
   rol_viejo_prot boolean; rol_nuevo_prot boolean;
 begin
-  if tg_op = 'UPDATE' and new.rol_id is distinct from old.rol_id and not public.tengo_permiso('roles') then
+  if tg_op = 'UPDATE' and new.rol_id is distinct from old.rol_id and not public.tengo_permiso('asignar_roles') then
     raise exception 'No tienes permiso para asignar roles';
+  end if;
+  if tg_op = 'UPDATE' and (new.nombre is distinct from old.nombre or new.rango is distinct from old.rango
+      or new.activo is distinct from old.activo or new.usuario is distinct from old.usuario)
+     and not public.tengo_permiso('usuarios') then
+    raise exception 'No tienes permiso para gestionar usuarios';
   end if;
   select coalesce(protegido,false) into rol_viejo_prot from public.roles where id = old.rol_id;
   if tg_op <> 'DELETE' then
@@ -249,33 +254,37 @@ alter table public.rangos_pm   enable row level security;
 drop policy if exists rangos_pm_select on public.rangos_pm;
 create policy rangos_pm_select on public.rangos_pm for select using (public.mi_perfil_activo());
 drop policy if exists rangos_pm_write on public.rangos_pm;
-create policy rangos_pm_write on public.rangos_pm for all using (public.tengo_permiso('roles')) with check (public.tengo_permiso('roles'));
+create policy rangos_pm_write on public.rangos_pm for all using (public.tengo_permiso('crear_roles')) with check (public.tengo_permiso('crear_roles'));
 
 -- roles: todos los activos leen; solo permiso "roles" escribe
 drop policy if exists roles_select on public.roles;
 create policy roles_select on public.roles for select using (public.mi_perfil_activo());
 drop policy if exists roles_write on public.roles;
 create policy roles_write on public.roles for all
-  using (public.tengo_permiso('roles')) with check (public.tengo_permiso('roles'));
+  using (public.tengo_permiso('crear_roles')) with check (public.tengo_permiso('crear_roles'));
 
 -- perfiles: cada quien ve el suyo; permiso "usuarios" ve y edita todos
 drop policy if exists perfiles_self on public.perfiles;
 create policy perfiles_self on public.perfiles for select using (id = auth.uid());
 drop policy if exists perfiles_admin_select on public.perfiles;
-create policy perfiles_admin_select on public.perfiles for select using (public.tengo_permiso('usuarios'));
+create policy perfiles_admin_select on public.perfiles for select
+  using (public.tengo_permiso('usuarios') or public.tengo_permiso('asignar_roles') or public.tengo_permiso('reset_password'));
 drop policy if exists perfiles_admin_update on public.perfiles;
 create policy perfiles_admin_update on public.perfiles for update
-  using (public.tengo_permiso('usuarios')) with check (public.tengo_permiso('usuarios'));
+  using (public.tengo_permiso('usuarios') or public.tengo_permiso('asignar_roles'))
+  with check (public.tengo_permiso('usuarios') or public.tengo_permiso('asignar_roles'));
 drop policy if exists perfiles_admin_delete on public.perfiles;
 create policy perfiles_admin_delete on public.perfiles for delete using (public.tengo_permiso('usuarios'));
 
 -- formularios: activos leen los activos (o todos si tienen permiso); permiso "formularios" escribe
 drop policy if exists formularios_select on public.formularios;
 create policy formularios_select on public.formularios for select
-  using (public.mi_perfil_activo() and (activo or public.tengo_permiso('formularios')));
+  using (public.mi_perfil_activo() and (activo or public.tengo_permiso('gestion_reportes') or public.tengo_permiso('crear_reportes')));
 drop policy if exists formularios_write on public.formularios;
 create policy formularios_write on public.formularios for all
-  using (public.tengo_permiso('formularios')) with check (public.tengo_permiso('formularios'));
+  using (public.tengo_permiso('gestion_reportes')) with check (public.tengo_permiso('gestion_reportes') or public.tengo_permiso('crear_reportes'));
+drop policy if exists formularios_insert on public.formularios;
+create policy formularios_insert on public.formularios for insert with check (public.tengo_permiso('crear_reportes'));
 
 -- reportes: inserto los míos si puedo usar ese formulario; veo los míos; "historial" ve todos
 drop policy if exists reportes_insert on public.reportes;
@@ -303,6 +312,22 @@ create policy reportes_storage_select on storage.objects for select
 drop policy if exists reportes_storage_delete on storage.objects;
 create policy reportes_storage_delete on storage.objects for delete
   using (bucket_id = 'reportes' and public.tengo_permiso('historial'));
+
+-- ¿Puedo restablecer la contraseña de este usuario? (la usa la Edge Function reset-password)
+create or replace function public.puedo_resetear(objetivo uuid)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+declare r_id text; prot boolean;
+begin
+  if auth.uid() is null or objetivo = auth.uid() then return false; end if;
+  if not public.tengo_permiso('reset_password') then return false; end if;
+  select pf.rol_id, coalesce(r.protegido,false) into r_id, prot
+    from public.perfiles pf left join public.roles r on r.id = pf.rol_id where pf.id = objetivo;
+  if not found then return false; end if;
+  if prot and not public.soy_superadmin() then return false; end if;
+  return public.rol_dentro_de_mis_permisos(r_id);
+end $$;
+revoke execute on function public.puedo_resetear(uuid) from anon, public;
+grant execute on function public.puedo_resetear(uuid) to authenticated;
 
 -- ---------- Vista cómoda para el historial ----------
 create or replace view public.reportes_vista with (security_invoker = true) as

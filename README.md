@@ -15,6 +15,7 @@ auth.js, config.js    Cliente Supabase, sesión, permisos, guardado del historia
 estilos.css           Estilos compartidos
 reportes/<id>/        Cada formulario (index.html + plantilla.png)
 supabase/schema.sql   Esquema de la base de datos (idempotente)
+supabase/functions/   Edge Functions (reset-password)
 ```
 
 ## Roles y permisos
@@ -24,8 +25,11 @@ Un rol es un conjunto de permisos más la lista de formularios a los que da acce
 | Permiso | Qué permite |
 |---|---|
 | Gestión de usuarios | Crear usuarios, activarlos/desactivarlos, editar su nombre y asignar su rango militar |
-| Asignación y creación de roles | Crear/editar/eliminar roles (incluido su Rango PM), administrar el catálogo de Rangos PM y asignar rol a los usuarios |
-| Creación / gestión de reportes | Registrar formularios en el catálogo, ocultarlos o mostrarlos en el inicio |
+| Asignación de roles | Cambiar el rol de un usuario (solo roles que quepan en los permisos de quien asigna) |
+| Restablecer contraseñas | Poner una contraseña nueva a usuarios de igual o menor nivel de permisos (nunca a Administradores, salvo que uno lo sea). Lo ejecuta la Edge Function `reset-password`, que verifica el permiso en la base de datos antes de usar la clave de servicio |
+| Creación de roles | Crear/editar/eliminar roles (incluido su Rango PM) y administrar el catálogo de Rangos PM |
+| Creación de reportes | Registrar formularios nuevos en el catálogo |
+| Gestión de reportes | Editar, ocultar/mostrar y eliminar formularios del catálogo |
 | Ver historial de todos | Ver, descargar y eliminar cualquier reporte guardado |
 | Acceso a formularios | "Todos" o una selección; sin acceso, el formulario no aparece ni se puede abrir |
 
@@ -55,4 +59,4 @@ Las reglas se aplican en la base de datos (RLS), no solo en la interfaz.
 - Proyecto `army-wasco`; esquema aplicado desde `supabase/schema.sql`.
 - `config.js` contiene la URL del proyecto y la clave pública (publishable), que es segura de exponer.
 - Authentication → Providers → Email: **"Confirm email" desactivado** (los usuarios no tienen correo real; se usan `usuario@armywasco.local`).
-- Restablecer una contraseña olvidada: Supabase → Authentication → Users → usuario → Reset password.
+- Restablecer una contraseña olvidada: desde el panel (botón "Contraseña", permiso Restablecer contraseñas) o en Supabase → Authentication → Users.
