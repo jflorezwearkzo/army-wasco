@@ -23,7 +23,8 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); } catch { return json(400, { error: "Cuerpo inválido" }); }
   const { usuario_id, password } = body;
   if (!usuario_id || !password) return json(400, { error: "Faltan datos" });
-  if (password.length < 8) return json(400, { error: "La contraseña debe tener al menos 8 caracteres" });
+  if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password))
+    return json(400, { error: "La contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo" });
 
   const url = Deno.env.get("SUPABASE_URL")!;
   const anon = Deno.env.get("SUPABASE_ANON_KEY")!;

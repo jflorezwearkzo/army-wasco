@@ -101,9 +101,21 @@ export function faviconEmoji(emoji){
   l.type='image/svg+xml'; l.href='data:image/svg+xml,'+encodeURIComponent(svg);
 }
 export function hoyISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-export function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function traducir(m){
+// Regla de contraseñas (debe coincidir con Supabase → Auth → Email): mín. 8, mayúscula, minúscula, dígito y símbolo
+export const REGLA_PASSWORD = 'Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.';
+export function validarPassword(p){
+  if(!p || p.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+  if(!/[a-z]/.test(p) || !/[A-Z]/.test(p) || !/[0-9]/.test(p) || !/[^A-Za-z0-9]/.test(p)) return 'La contraseña debe incluir mayúscula, minúscula, número y símbolo.';
+  return '';
+}
+export function traducirAuth(m){
+  m = String(m||'');
   if(/invalid login credentials/i.test(m)) return 'Usuario o contraseña incorrectos.';
-  if(/rate limit/i.test(m)) return 'Demasiados intentos. Espera un momento.';
+  if(/weak.?password|should contain|password.*(length|characters)/i.test(m)) return 'Contraseña débil: ' + REGLA_PASSWORD;
+  if(/incorrect.*current password|current password/i.test(m)) return 'La contraseña actual no es correcta.';
+  if(/rate limit|too many/i.test(m)) return 'Demasiados intentos. Espera un momento.';
+  if(/same.*password|different from the old/i.test(m)) return 'La contraseña nueva debe ser distinta de la actual.';
   return m;
 }
+export function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const traducir = traducirAuth;

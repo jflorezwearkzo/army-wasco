@@ -73,4 +73,5 @@ Cada alta, cambio o baja en usuarios, roles, Rangos PM, formularios y reportes, 
 - Proyecto `army-wasco`; esquema aplicado desde `supabase/schema.sql`.
 - `config.js` contiene la URL del proyecto y la clave pública (publishable), que es segura de exponer.
 - Authentication → Providers → Email: **"Confirm email" desactivado** (los usuarios no tienen correo real; se usan `usuario@armywasco.local`).
+- Contraseñas: requisitos de complejidad (mayúscula, minúscula, número y símbolo; la página exige además mínimo 8) y **"Require current password when updating"** activado: "Mi cuenta" pide la contraseña actual.
 - Restablecer una contraseña olvidada: desde el panel (botón "Contraseña", permiso Restablecer contraseñas) o en Supabase → Authentication → Users.

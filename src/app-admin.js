@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
@@ -96,11 +96,11 @@ $('#fUsuario').onsubmit = async e => {
       const { error } = await sb.from('perfiles').update(cambios).eq('id', id); if(error) throw error;
           } else {
       if(!tiene(yo,'usuarios')) throw new Error('No tienes permiso para crear usuarios.');
-      const pass=$('#uPass').value; if(pass.length<8) throw new Error('La contraseña inicial debe tener al menos 8 caracteres.');
+      const pass=$('#uPass').value; { const v=validarPassword(pass); if(v) throw new Error('Contraseña inicial: '+v); }
       // Cliente secundario para no reemplazar la sesión del administrador
       const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:false, autoRefreshToken:false } });
       const { data, error } = await tmp.auth.signUp({ email: emailDe(usuario), password: pass, options:{ data:{ usuario, nombre } } });
-      if(error) throw error;
+      if(error) throw new Error(traducirAuth(error.message));
       await tmp.auth.signOut().catch(()=>{});
       if(!data.user) throw new Error('Supabase no devolvió el usuario. ¿Está desactivado "Confirm email"?');
       // El trigger creó el perfil inactivo con rol "usuario"; ahora lo ajustamos
@@ -119,6 +119,7 @@ function resetearPassword(id, usuario){ rpObjetivo=id; $('#rpUsuario').textConte
 $('#fReset').onsubmit = async e => {
   e.preventDefault(); const err=$('#rpErr'); err.textContent='';
   const a=$('#rpPass').value, b=$('#rpPass2').value; if(a!==b){ err.textContent='Las contraseñas no coinciden.'; return; }
+  { const v=validarPassword(a); if(v){ err.textContent=v; return; } }
   const btn=$('#rpOk'); btn.disabled=true;
   try{
     const { data, error } = await sb.functions.invoke('reset-password', { body:{ usuario_id: rpObjetivo, password: a } });

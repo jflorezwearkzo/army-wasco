@@ -18,13 +18,15 @@
   <div class="caja" style="margin-top:16px">
     <h3 style="margin-top:0">Cambiar contraseña</h3>
     <form id="f">
-      <label for="p1">Nueva contraseña (mínimo 8 caracteres)</label><input id="p1" type="password" minlength="8" required autocomplete="new-password">
+      <label for="p0">Contraseña actual</label><input id="p0" type="password" required autocomplete="current-password">
+      <label for="p1">Nueva contraseña</label><input id="p1" type="password" minlength="8" required autocomplete="new-password">
+      <small class="muted">Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</small>
       <label for="p2">Repite la contraseña</label><input id="p2" type="password" minlength="8" required autocomplete="new-password">
       <button class="primary" style="margin-top:14px">Guardar</button>
       <div class="err" id="err"></div><div class="ok" id="ok"></div>
     </form>
   </div>
 </main>
-<script type="module" src="js/app-cuenta.js?v=99b802ff"></script>
+<script type="module" src="js/app-cuenta.js?v=4ddbe080"></script>
 </body>
 </html>
