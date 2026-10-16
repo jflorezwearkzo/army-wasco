@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Ingresar · Policía Militar</title>
@@ -31,18 +32,6 @@
   </form>
   <p class="muted" style="font-size:12px">¿Sin cuenta? Pídesela al administrador.</p>
 </div>
-<script type="module">
-  import { iniciarSesion, cargarYo, configurado, RAIZ } from './auth.js';
-  const err=document.getElementById('err'), b=document.getElementById('b');
-  const next=new URLSearchParams(location.search).get('next');
-  const destino=()=> (next && next.startsWith(RAIZ)) ? next : RAIZ;
-  if(!configurado) err.textContent='Falta configurar config.js con las claves de Supabase.';
-  else { const yo=await cargarYo(); if(yo && yo.activo) location.replace(destino()); }
-  document.getElementById('f').onsubmit=async e=>{
-    e.preventDefault(); err.textContent=''; b.disabled=true; b.textContent='Ingresando…';
-    try{ await iniciarSesion(document.getElementById('u').value, document.getElementById('p').value); location.replace(destino()); }
-    catch(x){ err.textContent=x.message; b.disabled=false; b.textContent='Ingresar'; }
-  };
-</script>
+<script type="module" src="js/app-login.js"></script>
 </body>
 </html>

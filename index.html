@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Policía Militar · Reportes</title>
@@ -47,23 +48,6 @@
 </main>
 <footer>Un equipo · Una misión · Un solo Army</footer>
 
-<script type="module">
-  import { requerir, barraUsuario, puedeFormulario, sb, esc } from './auth.js';
-  const yo = await requerir(); barraUsuario(yo);
-  const fmt = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; };
-  const el = document.getElementById('lista');
-  const { data: formularios, error } = await sb.from('formularios').select('*').eq('activo', true).order('orden');
-  if(error){ el.innerHTML = `<p class="empty">No se pudo cargar la lista de reportes: ${esc(error.message)}</p>`; }
-  else {
-    const visibles = (formularios||[]).filter(f => puedeFormulario(yo, f.id));
-    if(!visibles.length) el.innerHTML = '<p class="empty">No tienes formularios asignados. Pide acceso al administrador.</p>';
-    else el.innerHTML = visibles.map(r => `<a class="card" href="${esc(r.ruta)}">
-          <div class="ico">${esc(r.icono || '📋')}</div>
-          <h2>${esc(r.titulo)}</h2>
-          <p>${esc(r.descripcion || '')}</p>
-          <div class="meta"><span>${r.creado_en ? 'Desde ' + fmt(r.creado_en.slice(0,10)) : ''}</span><span class="tag">Disponible</span></div>
-        </a>`).join('');
-  }
-</script>
+<script type="module" src="js/app-index.js"></script>
 </body>
 </html>

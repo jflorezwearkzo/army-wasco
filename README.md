@@ -11,7 +11,9 @@ index.html            Inicio: lista los formularios que el rol del usuario puede
 login.html            Ingreso con usuario y contraseña
 cuenta.html           Mi cuenta: cambiar contraseña
 admin/index.html      Panel de administración (pestañas según permisos)
-auth.js, config.js    Cliente Supabase, sesión, permisos, guardado del historial
+src/                  Código JavaScript legible (auth.js, config.js y el script de cada página)
+js/                   Código publicado: ofuscado a partir de src/ (no editar a mano)
+build.mjs             Construcción: npm install && npm run build  (regenera js/ desde src/)
 estilos.css           Estilos compartidos
 reportes/<id>/        Cada formulario (index.html + plantilla.png)
 supabase/schema.sql   Esquema de la base de datos (idempotente)
@@ -40,6 +42,12 @@ Las reglas se aplican en la base de datos (RLS), no solo en la interfaz.
 **Super administrador:** el rol Administrador está protegido. Solo un Administrador puede editar, desactivar o degradar a otro Administrador, nombrar nuevos Administradores o modificar el rol Administrador. Un rol con "Gestión de usuarios" puede crear y gestionar a todos los demás usuarios, pero no a los Administradores.
 
 **Delegación acotada:** quien no es Administrador solo puede crear o editar roles con permisos y formularios que él mismo tiene, y solo puede asignar roles que quepan dentro de sus permisos. Los usuarios nuevos nacen sin rol; el gestor les asigna uno.
+
+## Protección del lado del cliente
+
+- **CSP** (Content-Security-Policy en cada página): solo se ejecutan scripts del propio sitio y de cdn.jsdelivr.net, y solo se conecta a Supabase; bloquea scripts inyectados (XSS) y scripts incrustados.
+- **Ofuscación**: `js/` se genera con javascript-obfuscator a partir de `src/`. Dificulta leer el código; no impide modificarlo. La seguridad real está en el servidor (RLS, triggers, sello de reportes).
+- Flujo de cambio: editar en `src/` → `npm run build` → commit de `src/` y `js/`.
 
 ## Flujo
 
