@@ -349,13 +349,23 @@ async function cargarHist(){
   // Rango de fechas y lista de usuarios a partir de lo que existe en el historial
   const { data } = await sb.from('reportes_vista').select('fecha,usuario,usuario_nombre,usuario_rango').limit(2000);
   const fechas = (data||[]).map(r => r.fecha).filter(Boolean).sort();
-  ['#hDesde','#hHasta'].forEach(s => { $(s).min = fechas[0] || ''; $(s).max = fechas[fechas.length-1] || ''; });
+  rangoHist = { min: fechas[0] || '', max: fechas[fechas.length-1] || '' };
+  ['#hDesde','#hHasta'].forEach(s => { $(s).min = rangoHist.min; $(s).max = rangoHist.max; });
+  ajustarFechas();
   const seen = {}; (data||[]).forEach(r => { if(r.usuario && !seen[r.usuario]) seen[r.usuario] = [r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '); });
   usuariosHist = Object.entries(seen).map(([u,n]) => ({u,n})).sort((a,b) => a.u.localeCompare(b.u));
   buscarHist();
 }
 let usuariosHist = [];
-['#hForm','#hDesde','#hHasta'].forEach(s => $(s).onchange = buscarHist);
+let rangoHist = { min:'', max:'' };
+// "Hasta" no puede ser anterior a "Desde" (y viceversa): se ajustan los límites del calendario
+function ajustarFechas(){
+  const de=$('#hDesde'), ha=$('#hHasta');
+  ha.min = de.value || rangoHist.min; de.max = ha.value || rangoHist.max;
+  if(de.value && ha.value && ha.value < de.value) ha.value = de.value;
+}
+$('#hForm').onchange = buscarHist;
+['#hDesde','#hHasta'].forEach(s => $(s).onchange = () => { ajustarFechas(); buscarHist(); });
 ['#hDesde','#hHasta'].forEach(s => $(s).onclick = () => { try{ $(s).showPicker(); }catch(e){} });
 let tHist;
 function mostrarSugs(){
@@ -370,7 +380,7 @@ $('#hUsuario').oninput = () => { mostrarSugs(); clearTimeout(tHist); tHist = set
 $('#hUsuario').onfocus = mostrarSugs;
 $('#hUsuario').onblur = () => setTimeout(() => $('#hSugs').style.display='none', 150);
 $('#hUsuario').onkeydown = e => { if(e.key==='Escape') $('#hSugs').style.display='none'; };
-$('#hLimpiar').onclick = () => { $('#hForm').value=''; $('#hUsuario').value=''; $('#hDesde').value=''; $('#hHasta').value=''; buscarHist(); };
+$('#hLimpiar').onclick = () => { $('#hForm').value=''; $('#hUsuario').value=''; $('#hDesde').value=''; $('#hHasta').value=''; ajustarFechas(); buscarHist(); };
 async function buscarHist(){
   let q = sb.from('reportes_vista').select('*').order('creado_en', { ascending:false }).limit(300);
   if($('#hForm').value) q = q.eq('formulario_id', $('#hForm').value);
