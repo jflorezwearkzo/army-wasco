@@ -16,6 +16,15 @@
   <h1 style="color:var(--gold)">Mi cuenta</h1>
   <div class="caja" id="info"></div>
   <div class="caja" style="margin-top:16px">
+    <h3 style="margin-top:0">Mis reportes</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <select id="mForm" style="width:auto"><option value="">Todos los formularios</option></select>
+      <input id="mBuscar" type="text" placeholder="Buscar por folio o resumen" style="width:auto;flex:1;min-width:160px">
+      <span class="muted" id="mTotal"></span>
+    </div>
+    <div style="overflow:auto"><table><thead><tr><th>Folio</th><th>Fecha</th><th>Formulario</th><th>Resumen</th><th>Registrado</th><th>Imagen</th></tr></thead><tbody id="tbMis"></tbody></table></div>
+  </div>
+  <div class="caja" style="margin-top:16px">
     <h3 style="margin-top:0">Cambiar contraseña</h3>
     <form id="f">
       <label for="p0">Contraseña actual</label><input id="p0" type="password" required autocomplete="current-password">
@@ -27,6 +36,6 @@
     </form>
   </div>
 </main>
-<script type="module" src="js/app-cuenta.js?v=e6b00607"></script>
+<script type="module" src="js/app-cuenta.js?v=defd1b87"></script>
 </body>
 </html>
