@@ -17,6 +17,14 @@
   nav button.on{background:var(--panel);color:var(--gold);border:1px solid #1c272c;border-bottom-color:var(--panel);margin-bottom:-1px}
   section{display:none} section.on{display:block}
   .dos{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .kpi{background:#0a1114;border:1px solid #2b3a40;border-radius:8px;padding:10px 12px}
+  .kpi b{display:block;font-size:26px;color:var(--gold)}
+  .kpi span{font-size:12px;color:var(--muted)}
+  .barras{display:flex;align-items:flex-end;gap:3px;height:140px;border-bottom:1px solid #2b3a40;padding-bottom:2px}
+  .barras div{flex:1;background:var(--gold);min-width:4px;position:relative;border-radius:2px 2px 0 0}
+  .barras div:hover::after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#000c;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap}
+  #t-resumen h4{margin:0 0 6px;color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:1px}
   @media(max-width:950px){.dos{grid-template-columns:1fr}}
   .caja h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:14px;letter-spacing:1px}
   img.mini{height:48px;border-radius:4px;border:1px solid #2b3a40}
@@ -149,6 +157,22 @@
     </div>
   </section>
   <!-- ===================== AUDITORÍA ===================== -->
+  <section id="t-resumen">
+    <div class="caja">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">Resumen de actividad
+        <span style="display:flex;gap:8px;align-items:center;font-weight:400;font-size:13px"><label style="margin:0">Desde</label><input id="rDesde" type="date" style="width:auto"><label style="margin:0">Hasta</label><input id="rHasta" type="date" style="width:auto"><button type="button" class="secondary sm" id="rActualizar">Actualizar</button></span></h3>
+      <div class="kpis" id="rKpis"></div>
+      <div class="dos" style="grid-template-columns:1fr 1fr;margin-top:14px">
+        <div><h4>Reportes por día</h4><div class="barras" id="rDias"></div></div>
+        <div><h4>Por formulario</h4><table><thead><tr><th>Formulario</th><th>Reportes</th><th>%</th></tr></thead><tbody id="rPorForm"></tbody></table></div>
+      </div>
+      <div class="dos" style="grid-template-columns:1fr 1fr;margin-top:14px">
+        <div><h4>Actividad por usuario</h4><table><thead><tr><th>Usuario</th><th>Reportes</th><th>Último</th></tr></thead><tbody id="rUsuarios"></tbody></table></div>
+        <div><h4>Patrullajes por integrante</h4><p class="muted" style="margin:0 0 6px;font-size:12px">Cuenta en cuántos patrullajes aparece cada nombre (Fin de Día y Toma de Territorio).</p><table><thead><tr><th>Integrante</th><th>Patrullajes</th></tr></thead><tbody id="rIntegrantes"></tbody></table></div>
+      </div>
+      <p class="muted" id="rNota" style="font-size:12px"></p>
+    </div>
+  </section>
   <section id="t-auditoria">
     <div class="caja">
       <h3 style="display:flex;justify-content:space-between;align-items:center">Auditoría <button type="button" class="ghost sm" id="aCsv" title="Descarga lo que está filtrado (hazlo antes de que se borre a los 30 días)">⬇ Exportar CSV</button></h3>
@@ -176,6 +200,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=440939a9"></script>
+<script type="module" src="../js/app-admin.js?v=00c46282"></script>
 </body>
 </html>
