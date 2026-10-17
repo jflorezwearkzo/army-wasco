@@ -10,7 +10,6 @@ $('#nPat').innerHTML=Array.from({length:MAX_PAT},(_,i)=>`<option value="${i+1}">
 // ---------- Catálogos para los desplegables con búsqueda ----------
 let INTEGRANTES=[];                                        // [{usuario,nombre,rango}]
 sb.rpc('listar_integrantes').then(({data})=>{ INTEGRANTES=(data||[]).map(p=>({...p, texto:[p.rango,p.nombre||p.usuario].filter(Boolean).join(' ')})); });
-let foliosTimer=null;
 async function buscarFolios(q){ const {data}=await sb.rpc('buscar_folios',{q}); return data||[]; }
 
 // ---------- Páginas (un patrullaje = una página/imagen) ----------
@@ -29,10 +28,12 @@ function sugerencias(input, buscar, pintar, elegir){
     const items=await buscar(input.value.trim());
     if(!items.length){ cerrar(); return; }
     ul.innerHTML=items.map((it,i)=>`<li data-i="${i}">${pintar(it)}</li>`).join('');
-    ul.querySelectorAll('li').forEach(li=>li.onmousedown=e=>{ e.preventDefault(); elegir(items[+li.dataset.i]); cerrar(); input.dispatchEvent(new Event('input',{bubbles:true})); });
+    ul.querySelectorAll('li').forEach(li=>li.onmousedown=e=>{ e.preventDefault(); elegir(items[+li.dataset.i]); cerrar(); input.dataset.elegido='1'; input.dispatchEvent(new Event('input',{bubbles:true})); input.blur(); });
     ul.style.display='block';
   };
-  input.addEventListener('focus',mostrar); input.addEventListener('input',()=>{ clearTimeout(foliosTimer); foliosTimer=setTimeout(mostrar,150); });
+  let timer=null;
+  input.addEventListener('focus',mostrar);
+  input.addEventListener('input',()=>{ if(input.dataset.elegido){ delete input.dataset.elegido; return; } clearTimeout(timer); timer=setTimeout(mostrar,150); });
   input.addEventListener('blur',cerrar);
 }
 function crearPagina(i){
