@@ -452,3 +452,33 @@ create or replace view public.reportes_vista with (security_invoker = true) as
 --       update public.perfiles set rol_id='admin', activo=true, nombre='Administrador'
 --       where id = (select id from auth.users where email='admin@armywasco.local');
 -- =====================================================================
+
+-- ---------- Reporte de Fin de Día · Patrullaje PM ----------
+insert into public.formularios (id, titulo, descripcion, ruta, icono, orden) values
+('patrullaje','Reporte de Fin de Día · Patrullaje PM','Cierre del día de patrullaje: una página por patrullaje con horario, integrantes, novedades, código de reporte y evidencia de salida y regreso.','reportes/patrullaje/','🚔',30)
+on conflict (id) do nothing;
+
+-- Desplegables con búsqueda del formulario de patrullaje (cualquier usuario activo)
+create or replace function public.listar_integrantes()
+returns table(usuario text, nombre text, rango text)
+language sql security definer stable set search_path=public as $$
+  select p.usuario, p.nombre, p.rango from public.perfiles p
+  where p.activo and coalesce(public.mi_perfil_activo(), false)
+  order by p.rango nulls last, p.nombre;
+$$;
+revoke all on function public.listar_integrantes() from public;
+grant execute on function public.listar_integrantes() to authenticated;
+
+create or replace function public.buscar_folios(q text default '')
+returns table(folio text, formulario text, fecha date, usuario_nombre text, resumen text)
+language sql security definer stable set search_path=public as $$
+  select r.folio_v2, f.titulo, r.fecha, coalesce(p.nombre,p.usuario), r.resumen
+  from public.reportes r
+  left join public.formularios f on f.id=r.formulario_id
+  left join public.perfiles p on p.id=r.usuario_id
+  where coalesce(public.mi_perfil_activo(), false)
+    and (q = '' or r.folio_v2 ilike '%'||q||'%' or r.resumen ilike '%'||q||'%')
+  order by r.id desc limit 30;
+$$;
+revoke all on function public.buscar_folios(text) from public;
+grant execute on function public.buscar_folios(text) to authenticated;

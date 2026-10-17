@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<title>Reporte de Fin de Día · Patrullaje PM — Policía Militar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b1216;--panel:#101c21;--line:#c9a43a;--gold:#f0c24d;--text:#f3f3f3;--muted:#9aa7ad;--err:#ff6b6b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif;}
+  header{padding:18px 20px 8px;border-bottom:1px solid #223;}
+  header h1{margin:0;font-size:26px;letter-spacing:1px;color:var(--gold);text-transform:uppercase}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  main{display:grid;grid-template-columns:420px 1fr;gap:20px;padding:20px;max-width:1500px;margin:0 auto}
+  @media (max-width:1000px){main{grid-template-columns:1fr}}
+  fieldset{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 16px;background:var(--panel)}
+  legend{color:var(--gold);font-weight:700;padding:0 6px;text-transform:uppercase;font-size:14px}
+  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+  input[type=text],input[type=date],select,textarea{width:100%;padding:8px 10px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
+  textarea{resize:vertical;min-height:70px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  input[type=date]{color-scheme:dark;cursor:pointer}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) sepia(1) saturate(5) hue-rotate(5deg);cursor:pointer;opacity:.9}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  button{cursor:pointer;border:0;border-radius:6px;padding:10px 16px;font-family:inherit;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.5px}
+  .primary{background:var(--gold);color:#1a1200}
+  .secondary{background:#243239;color:var(--text)}
+  .ghost{background:transparent;color:var(--muted);border:1px solid #2b3a40;padding:6px 10px;font-size:12px}
+  .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+  .thumb{position:relative;aspect-ratio:1;background:#0a1114;border:1px dashed #2b3a40;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#45565d;font-size:12px}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb b{position:absolute;top:2px;left:5px;color:var(--gold);text-shadow:0 0 3px #000}
+  .thumb button{position:absolute;top:2px;right:2px;padding:0 6px;font-size:12px;background:#000a;color:#fff;border-radius:4px}
+  .err{color:var(--err);font-size:14px;min-height:20px;margin-top:8px;white-space:pre-line}
+  .preview{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .preview h2{margin:0 0 10px;font-size:15px;color:var(--gold);text-transform:uppercase}
+  canvas{width:100%;height:auto;display:block;border-radius:4px;background:#000}
+  small{color:var(--muted)}
+  .pag{border:1px solid #2b3a40;border-radius:8px;padding:10px 12px;margin:10px 0;background:#0a1114}
+  .pag h3{margin:0 0 6px;color:var(--gold);font-size:14px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+  .fila{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .hora{display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center}
+  .hora span{color:var(--muted)}
+  input[type=number]{width:100%;padding:8px 10px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
+  .sug{position:relative}
+  .sug ul{position:absolute;left:0;right:0;top:100%;z-index:20;margin:0;padding:0;list-style:none;background:#101c21;border:1px solid var(--gold);border-radius:6px;max-height:200px;overflow:auto;display:none}
+  .sug ul li{padding:7px 10px;cursor:pointer;font-size:14px;border-bottom:1px solid #1c272c}
+  .sug ul li b{color:var(--gold)}
+  .sug ul li small{display:block}
+  .sug ul li:hover{background:#1a2a32}
+  .fotos2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .fotos2 .thumb{aspect-ratio:4/3}
+  .fotos2 label{margin-top:0}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .tabs button{padding:5px 10px;font-size:12px;background:#243239;color:var(--text)}
+  .tabs button.act{background:var(--gold);color:#1a1200}
+  .ok{color:#7fd38a}
+</style>
+</head>
+<body>
+<header>
+  <a href="../../" style="color:#9aa7ad;text-decoration:none;font-size:13px">&larr; Volver a Reportes</a>
+  <h1>Reporte de Fin de Día · Patrullaje PM · Army de Wasco · Policía Militar</h1>
+  <p>Indica cuántos patrullajes hubo en el día: se genera una página (imagen) por cada patrullaje, cada una con su propio folio.</p>
+</header>
+<main>
+  <section>
+    <form id="form">
+      <fieldset>
+        <legend>Datos del reporte</legend>
+        <label for="fecha">Fecha *</label>
+        <input id="fecha" type="date" required>
+        <label for="nombre">Nombre del responsable *</label>
+        <input id="nombre" type="text" maxlength="40" required>
+        <label for="rango">Rango *</label>
+        <input id="rango" type="text" maxlength="30" required>
+        <label for="nPat">Patrullajes realizados en el día * <small>(no aparece en el reporte; genera una página por patrullaje)</small></label>
+        <select id="nPat"></select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Registro de patrullajes</legend>
+        <div id="paginas"></div>
+      </fieldset>
+
+      <div class="err" id="err"></div>
+      <div class="btns">
+        <button class="primary" id="btnExport">Exportar imágenes</button>
+        <button class="secondary" id="btnPreview">Actualizar vista previa</button>
+        <button class="ghost" id="btnReset" type="button">Limpiar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="preview">
+    <h2>Vista previa</h2>
+    <div class="tabs" id="tabs"></div>
+    <canvas id="cv" width="2048" height="1144"></canvas>
+  </section>
+</main>
+<template id="tplPag">
+  <div class="pag" data-i="">
+    <h3>Patrullaje N° <span class="num"></span></h3>
+    <label>Hora inicio / fin (formato militar) *</label>
+    <div class="fila">
+      <div class="hora"><select class="hIniH"></select><span>:</span><select class="hIniM"></select></div>
+      <div class="hora"><select class="hFinH"></select><span>:</span><select class="hFinM"></select></div>
+    </div>
+    <label>Integrantes (máximo 3) *</label>
+    <div class="sug"><input type="text" class="int" data-k="0" maxlength="40" placeholder="1. Escribe para buscar…" autocomplete="off"><ul></ul></div>
+    <div class="sug" style="margin-top:6px"><input type="text" class="int" data-k="1" maxlength="40" placeholder="2. (opcional)" autocomplete="off"><ul></ul></div>
+    <div class="sug" style="margin-top:6px"><input type="text" class="int" data-k="2" maxlength="40" placeholder="3. (opcional)" autocomplete="off"><ul></ul></div>
+    <div class="fila">
+      <div><label>Novedades / Bajas *</label><select class="nov"><option value="NO">NO</option><option value="SÍ">SÍ</option></select></div>
+      <div><label>Cantidad</label><input type="number" class="novN" min="0" max="99" value="0" disabled></div>
+    </div>
+    <label>Código de reporte <small>(folio de un reporte existente)</small></label>
+    <div class="sug"><input type="text" class="cod" maxlength="20" placeholder="Busca por folio, p. ej. PM-0000…" autocomplete="off"><ul></ul></div>
+    <label>Evidencia fotográfica *</label>
+    <div class="fotos2">
+      <div><label>Salida de patrulla</label><input type="file" class="fSal" accept="image/*" style="font-size:12px;width:100%"><div class="thumb tSal">Sin foto</div></div>
+      <div><label>Regreso de patrulla</label><input type="file" class="fReg" accept="image/*" style="font-size:12px;width:100%"><div class="thumb tReg">Sin foto</div></div>
+    </div>
+    <label>Observaciones adicionales</label>
+    <textarea class="obs" maxlength="400" placeholder="Notas o acontecimientos relevantes del patrullaje"></textarea>
+  </div>
+</template>
+<script type="module" src="../../js/form-patrullaje.js?v=281bd08e"></script>
+</body>
+</html>
