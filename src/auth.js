@@ -159,3 +159,34 @@ export function traducirAuth(m){
 }
 export function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const traducir = traducirAuth;
+
+// ---------- Borradores (se guardan en el navegador; las fotos no) ----------
+// uso: const borr = borrador({ clave:'bajas', yo, form:document.getElementById('form'), antes(v){...}, despues(){ draw(); } });
+//      al exportar con éxito: borr.limpiar()
+export function borrador({ clave, yo, form, antes=null, despues=null, dias=7 }){
+  const K = `borrador:${clave}:${yo.id}`;
+  const claveEl = el => { if(el.id) return '#'+el.id; const cont=el.closest('[data-i],[data-id],.campo,.veh'); let base=''; if(cont){ base = cont.dataset.i!=null ? 'i'+cont.dataset.i : cont.dataset.id ? 'd'+cont.dataset.id : cont.classList.contains('veh') ? 'v'+[...form.querySelectorAll('.veh')].indexOf(cont) : ''; }
+    const cls=(el.className||'').split(' ')[0]; const sel=el.tagName+(cls?'.'+cls:''); const sibs=[...(cont||form).querySelectorAll(sel)]; return `${base}|${sel}|${sibs.indexOf(el)}`; };
+  const elementos = () => [...form.querySelectorAll('input,select,textarea')].filter(e => e.type!=='file' && e.type!=='button' && e.type!=='submit');
+  let timer=null, pausado=false;
+  const guardar = () => { if(pausado) return; clearTimeout(timer); timer=setTimeout(()=>{ const v={}; let hay=false; for(const e of elementos()){ const k=claveEl(e); const val = e.type==='checkbox' ? e.checked : e.value; v[k]=val; if(!e.readOnly && !e.disabled && (e.type==='checkbox' ? e.checked : String(val||'').trim())) hay=true; }
+    try{ if(hay) localStorage.setItem(K, JSON.stringify({ t:Date.now(), v })); }catch(e){} }, 600); };
+  form.addEventListener('input',guardar); form.addEventListener('change',guardar);
+  const limpiar = () => { pausado=true; clearTimeout(timer); try{ localStorage.removeItem(K); }catch(e){} setTimeout(()=>{ pausado=false; }, 1500); };
+  const aplicar = v => { for(let pasada=0; pasada<4; pasada++){ let cambios=0;
+      for(const e of elementos()){ const k=claveEl(e); if(!(k in v)) continue; const val=v[k];
+        if(e.type==='checkbox'){ if(e.checked!==!!val){ e.checked=!!val; cambios++; e.dispatchEvent(new Event('change',{bubbles:true})); } }
+        else if(String(e.value)!==String(val)){ e.value=val; cambios++; if(e.tagName==='SELECT'||e.type==='number'||e.type==='date') e.dispatchEvent(new Event('change',{bubbles:true})); e.dispatchEvent(new Event('input',{bubbles:true})); } }
+      if(!cambios) break; } };
+  // Banner
+  let guardado=null; try{ const raw=localStorage.getItem(K); if(raw){ guardado=JSON.parse(raw); if(Date.now()-guardado.t > dias*864e5){ guardado=null; localStorage.removeItem(K); } } }catch(e){}
+  if(guardado && guardado.v){
+    const b=document.createElement('div'); b.style.cssText='background:#2a1f10;border:1px solid #6b5420;border-radius:8px;padding:10px 14px;margin:0 0 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px;color:#f3f3f3';
+    b.innerHTML=`<span>📝 Tienes un borrador sin exportar del <b>${new Date(guardado.t).toLocaleString('es-CO')}</b> (las fotos hay que adjuntarlas de nuevo).</span><button type="button" class="primary" style="padding:6px 12px;font-size:13px">Continuar</button><button type="button" class="ghost" style="padding:6px 10px;font-size:12px">Descartar</button>`;
+    const [bc, bd] = b.querySelectorAll('button');
+    bc.onclick = () => { pausado=true; try{ if(antes) antes(guardado.v); aplicar(guardado.v); }finally{ pausado=false; } if(despues) despues(); b.remove(); };
+    bd.onclick = () => { limpiar(); b.remove(); };
+    form.prepend(b);
+  }
+  return { limpiar, guardar };
+}

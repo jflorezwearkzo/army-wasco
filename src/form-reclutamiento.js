@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, hoyISO, faviconEmoji, sb, RANGOS } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, hoyISO, faviconEmoji, sb, RANGOS } from './auth.js';
 const YO = await requerir({ formulario:'reclutamiento' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','reclutamiento').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 // Fecha de hoy (editable); nombre, rango y Rango PM vienen del perfil/rol y quedan bloqueados
@@ -11,6 +11,7 @@ function precargar(){
   bloquear('rangoPM', YO.rol.rango_pm);
 }
 precargar();
+const BORR = borrador({ clave:'reclutamiento', yo:YO, form:document.getElementById('form'), despues:()=>{ try{ draw(); }catch(e){} } });
 // ---------- Coordenadas sobre la plantilla (1024 x 572) ----------
 const T = {
   panel: '#0e1b20',
@@ -200,10 +201,10 @@ $('#btnExport').onclick=async()=>{
     const a=document.createElement('a'); a.download=`reporte-reclutamiento-${FOLIO}-${fmtFecha(d.fecha)}.png`; a.href=URL.createObjectURL(blob); a.click();
     // 3) Adjuntar al historial
     await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'reclutamiento', pngBlob:blob });
-    const dc=await notificarDiscord(reg.id);
+    BORR.limpiar(); const dc=await notificarDiscord(reg.id);
     $('#err').style.color='#7fd38a'; showErr(`Reporte ${FOLIO} exportado y guardado en el historial.`+textoDiscord(dc));
   }catch(x){ $('#err').style.color=''; showErr('No se pudo completar: '+x.message); }
   FOLIO=null; SELLO=null;
   btn.disabled=false; btn.textContent='Exportar imagen';
 };
-$('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); precargar(); draw(); };
+$('#btnReset').onclick=()=>{ BORR.limpiar(); $('#form').reset(); photos=[]; renderThumbs(); showErr(''); precargar(); draw(); };

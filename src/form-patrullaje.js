@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, hoyISO, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, hoyISO, faviconEmoji, sb, esc } from './auth.js';
 const YO = await requerir({ formulario:'patrullaje' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','patrullaje').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 
@@ -203,6 +203,7 @@ function draw(i=ACTUAL){
 }
 
 precargar(); ajustarPaginas();
+const BORR = borrador({ clave:'patrullaje', yo:YO, form:document.getElementById('form'), despues:()=>{ tabs(); try{ draw(); }catch(e){} } });
 tpl.onload=()=>draw();
 document.fonts && document.fonts.ready.then(()=>draw());
 $('#form').addEventListener('submit',e=>e.preventDefault());
@@ -231,8 +232,8 @@ $('#btnExport').onclick=async()=>{
       hechos.push(FOLIO); FOLIO=null; SELLO=null;
       if(i<paginas.length-1) await espera(700);   // el navegador necesita un respiro entre descargas
     }
-    showErr(`${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:''),true);
+    BORR.limpiar(); showErr(`${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:''),true);
   }catch(x){ FOLIO=null; SELLO=null; showErr((hechos.length?`Se exportaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
   draw(); btn.disabled=false; btn.textContent='Exportar imágenes';
 };
-$('#btnReset').onclick=()=>{ $('#form').reset(); paginas.splice(0).forEach(p=>p.el.remove()); ACTUAL=0; showErr(''); precargar(); $('#nPat').value='1'; ajustarPaginas(); };
+$('#btnReset').onclick=()=>{ BORR.limpiar(); $('#form').reset(); paginas.splice(0).forEach(p=>p.el.remove()); ACTUAL=0; showErr(''); precargar(); $('#nPat').value='1'; ajustarPaginas(); };

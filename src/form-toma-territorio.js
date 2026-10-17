@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, hoyISO, faviconEmoji, sb, RANGOS, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, hoyISO, faviconEmoji, sb, RANGOS, esc } from './auth.js';
 const FORM='toma-territorio';
 const YO = await requerir({ formulario:FORM }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id',FORM).maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
@@ -188,6 +188,9 @@ function draw(){
 }
 
 precargar();
+const BORR = borrador({ clave:'toma-territorio', yo:YO, form:document.getElementById('form'),
+  antes:v=>{ const n=Math.max(0,...Object.keys(v).map(k=>k.match(/^v(\d+)\|SELECT\.vTipo/)).filter(Boolean).map(m=>+m[1]))+1; while($('#vehiculos').children.length<n) filaVehiculo(); },
+  despues:()=>{ actualizarTotal(); try{ draw(); }catch(e){} } });
 tpl.onload=draw;
 document.fonts && document.fonts.ready.then(draw);
 $('#form').addEventListener('submit',e=>e.preventDefault());
@@ -209,10 +212,10 @@ $('#btnExport').onclick=async()=>{
     const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
     const a=document.createElement('a'); a.download=`reporte-toma-territorio-${FOLIO}-${d.fecha}.png`; a.href=URL.createObjectURL(blob); a.click();
     await adjuntarImagen({ yo:YO, id:reg.id, formularioId:FORM, pngBlob:blob });
-    const dc=await notificarDiscord(reg.id);
+    BORR.limpiar(); const dc=await notificarDiscord(reg.id);
     showErr(`Reporte ${FOLIO} exportado y guardado en el historial.`+textoDiscord(dc),true);
   }catch(x){ showErr('No se pudo completar: '+x.message); }
   FOLIO=null; SELLO=null; draw();
   btn.disabled=false; btn.textContent='Exportar imagen';
 };
-$('#btnReset').onclick=()=>{ $('#form').reset(); photos=[]; renderThumbs(); showErr(''); document.querySelectorAll('.tRes').forEach(i=>i.value=''); precargar(); draw(); };
+$('#btnReset').onclick=()=>{ BORR.limpiar(); $('#form').reset(); photos=[]; renderThumbs(); showErr(''); document.querySelectorAll('.tRes').forEach(i=>i.value=''); precargar(); draw(); };

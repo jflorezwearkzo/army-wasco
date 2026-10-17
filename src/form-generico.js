@@ -1,5 +1,5 @@
 // Formulario genérico: carga la definición JSON del formulario (?id=...) y la ejecuta con el motor de plantillas.
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, faviconEmoji, sb, esc } from './auth.js';
 import { construirFormulario, validar, dibujar, cargarFondo, cargarImagen, resumenDe, fmtFecha } from './plantilla.js';
 
 const ID = new URLSearchParams(location.search).get('id') || '';
@@ -31,6 +31,7 @@ function draw(){ if(!form) return; const v=form.leer(); dibujar(cv, DEF, FONDO, 
 function showErr(msg,ok){ const el=$('#err'); el.textContent=msg; el.className='err'+(ok?' ok':''); }
 
 FONDO = await cargarFondo(DEF); draw();
+const BORR = borrador({ clave:'plantilla:'+ID, yo:YO, form:document.getElementById('form'), despues:()=>draw() });
 document.fonts && document.fonts.ready.then(draw);
 $('#form').addEventListener('submit',e=>e.preventDefault());
 $('#btnPreview').onclick=draw;
@@ -47,9 +48,9 @@ $('#btnExport').onclick=async()=>{
     const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
     const a=document.createElement('a'); a.download=`reporte-${ID}-${reg.folio}-${fecha}.png`; a.href=URL.createObjectURL(blob); a.click();
     await adjuntarImagen({ yo:YO, id:reg.id, formularioId:ID, pngBlob:blob });
-    const dc=await notificarDiscord(reg.id);
+    BORR.limpiar(); const dc=await notificarDiscord(reg.id);
     showErr(`Reporte ${reg.folio} exportado y guardado en el historial.`+textoDiscord(dc), true);
   }catch(x){ showErr('No se pudo completar: '+x.message); }
   SELLO=null; draw(); btn.disabled=false; btn.textContent='Exportar imagen';
 };
-$('#btnReset').onclick=()=>{ location.reload(); };
+$('#btnReset').onclick=()=>{ BORR.limpiar(); location.reload(); };
