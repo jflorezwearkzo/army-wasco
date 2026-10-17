@@ -42,7 +42,9 @@ function crearPagina(i){
   for(const c of ['hIniM','hFinM']) opciones(el.querySelector('.'+c),60);
   const pg={el, fotos:{sal:null,reg:null}};
   // Integrantes: búsqueda sobre los miembros activos
-  el.querySelectorAll('.int').forEach(inp=>sugerencias(inp,
+  // El integrante 1 es siempre quien hace el reporte (bloqueado)
+  { const i1=el.querySelector('.int[data-k="0"]'); i1.value=[YO.rango, YO.nombre||YO.usuario].filter(Boolean).join(' '); i1.readOnly=true; i1.tabIndex=-1; i1.style.opacity='.75'; i1.title='Eres quien reporta'; i1.placeholder='1.'; }
+  el.querySelectorAll('.int:not([data-k="0"])').forEach(inp=>sugerencias(inp,
     async q=>{ q=q.toLowerCase(); return INTEGRANTES.filter(p=>!q||p.texto.toLowerCase().includes(q)||p.usuario.toLowerCase().includes(q)).slice(0,12); },
     p=>`<b>${esc(p.texto)}</b><small>@${esc(p.usuario)}</small>`,
     p=>{ inp.value=p.texto; }));
