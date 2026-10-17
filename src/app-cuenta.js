@@ -1,4 +1,4 @@
-  import { requerir, barraUsuario, sb, esc, nombreCompleto, validarPassword, traducirAuth, REGLA_PASSWORD, urlImagen } from './auth.js';
+  import { requerir, barraUsuario, cerrarSesion, sb, esc, nombreCompleto, validarPassword, traducirAuth, REGLA_PASSWORD, urlImagen } from './auth.js';
   const yo=await requerir(); barraUsuario(yo);
   const NP={usuarios:'Gestión de usuarios',asignar_roles:'Asignación de roles',reset_password:'Restablecer contraseñas',crear_roles:'Creación de roles',crear_reportes:'Creación de reportes',gestion_reportes:'Gestión de reportes',disenar_formularios:'Creación de formularios (diseñador)',historial:'Ver historial',eliminar_historial:'Eliminar historial',auditoria:'Ver auditoría'};
   const perms=Object.entries(yo.rol.permisos||{}).filter(([k,v])=>v).map(([k])=>NP[k]||k).join(', ')||'ninguno';
@@ -35,3 +35,5 @@
   }
   document.getElementById('mForm').onchange=pintarMis; document.getElementById('mBuscar').oninput=pintarMis;
   cargarMis();
+
+  document.getElementById('btnTodas').onclick=()=>{ if(confirm('¿Cerrar la sesión en todos tus dispositivos? Tendrás que volver a ingresar en cada uno.')) cerrarSesion(true); };

@@ -19,10 +19,22 @@ export async function iniciarSesion(usuario, password, captchaToken){
   const { error } = await sb.auth.signInWithPassword({ email: emailDe(usuario), password, options: opciones });
   if(error) throw new Error(traducir(error.message));
   const yo = await cargarYo();
-  if(!yo || !yo.activo){ await sb.auth.signOut(); throw new Error('Tu cuenta aún no está activa. Pide al administrador que la active.'); }
-  return yo;
+  if(!yo || !yo.activo){ try{ await sb.rpc('registrar_intento_inactivo'); }catch(e){} await sb.auth.signOut(); throw new Error('Tu cuenta aún no está activa. Pide al administrador que la active.'); }
+  marcarActividad(); return yo;
 }
-export async function cerrarSesion(){ await sb.auth.signOut(); location.href = RAIZ + 'login.html'; }
+export async function cerrarSesion(todas=false){ try{ localStorage.removeItem(K_ACT); }catch(e){} await sb.auth.signOut(todas ? { scope:'global' } : undefined); location.href = RAIZ + 'login.html' + (todas ? '?motivo=todas' : ''); }
+// ---------- Cierre de sesión por inactividad ----------
+export const INACTIVIDAD_MIN = 120;                 // minutos sin actividad -> cierra sesión
+const K_ACT = 'pm_ultima_actividad';
+export function marcarActividad(){ try{ localStorage.setItem(K_ACT, String(Date.now())); }catch(e){} }
+function vigilarInactividad(){
+  const limite = INACTIVIDAD_MIN*60*1000;
+  const revisar = async () => { let t=0; try{ t=+localStorage.getItem(K_ACT)||0; }catch(e){} if(t && Date.now()-t > limite){ try{ localStorage.removeItem(K_ACT); }catch(e){} await sb.auth.signOut(); location.replace(RAIZ + 'login.html?motivo=inactividad&next=' + encodeURIComponent(location.href)); } };
+  let ultimo=0; const act=()=>{ const n=Date.now(); if(n-ultimo>30000){ ultimo=n; marcarActividad(); } };
+  ['pointerdown','keydown','scroll','touchstart','input'].forEach(ev => document.addEventListener(ev, act, { passive:true }));
+  if(!localStorage.getItem(K_ACT)) marcarActividad();
+  revisar(); setInterval(revisar, 60000); document.addEventListener('visibilitychange', () => { if(!document.hidden) revisar(); });
+}
 
 // Devuelve {id, usuario, nombre, activo, rol:{id,nombre,permisos,formularios}} o null
 export async function cargarYo(){
@@ -44,6 +56,7 @@ export async function requerir({ permiso=null, formulario=null } = {}){
   if(!configurado){ document.body.innerHTML = aviso('Falta configurar <code>config.js</code> con la URL y la clave pública de Supabase.'); throw new Error('sin config'); }
   const yo = await cargarYo();
   if(!yo || !yo.activo){ location.replace(RAIZ + 'login.html?next=' + encodeURIComponent(location.href)); throw new Error('sin sesión'); }
+  vigilarInactividad();
   if(permiso && !tiene(yo, permiso)){ document.body.innerHTML = aviso('No tienes permiso para ver esta sección.'); throw new Error('sin permiso'); }
   if(formulario && !puedeFormulario(yo, formulario)){ document.body.innerHTML = aviso('Tu rol no tiene acceso a este formulario.'); throw new Error('sin acceso'); }
   return yo;

@@ -50,6 +50,7 @@ const msg = (id, t, ok=false) => { $('#'+id+'Err').textContent = ok?'':t; $('#'+
 
 // ====================== USUARIOS ======================
 async function cargarUsuarios(){
+  if(tiene(yo,'auditoria')){ sb.from('auditoria').select('usuario,en').eq('accion','login_inactivo').gte('en', new Date(Date.now()-7*864e5).toISOString()).order('id',{ascending:false}).limit(50).then(({data})=>{ const av=$('#avisoInactivos'); if(!data||!data.length){ av.style.display='none'; return; } const qu=[...new Set(data.map(r=>r.usuario))]; av.style.display=''; av.innerHTML=`⚠️ <b>${data.length}</b> intento(s) de acceso con cuentas inactivas en los últimos 7 días: ${qu.map(esc).join(', ')}. <span class="muted">(Detalle en Auditoría › Usuarios)</span>`; }); }
   const { data, error } = await sb.from('perfiles').select('*').order('usuario');
   if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=5 class="err">${esc(error.message)}</td></tr>`; return; }
   $('#uRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option>${esc(r)}</option>`).join('');
@@ -247,6 +248,16 @@ $('#fForm').onsubmit = async e => {
   limpiarForm(); msg('f','Formulario guardado.', true); cargarForms();
 };
 
+// ====================== CSV ======================
+let HIST_DATA = [], AUD_DATA = [];
+function descargarCsv(nombre, columnas, filas){
+  const esc_ = v => { const t = v===null||v===undefined ? '' : (typeof v==='object' ? JSON.stringify(v) : String(v)); return /[",\n;]/.test(t) ? '"' + t.replace(/"/g,'""') + '"' : t; };
+  const csv = '\ufeff' + [columnas.map(c=>c[0]).join(';'), ...filas.map(r => columnas.map(c => esc_(typeof c[1]==='function' ? c[1](r) : r[c[1]])).join(';'))].join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' })); a.download = `${nombre}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+$('#hCsv').onclick = () => descargarCsv('historial', [['Folio','folio'],['Fecha','fecha'],['Formulario','formulario'],['Usuario','usuario'],['Nombre',r=>[r.usuario_rango,r.usuario_nombre].filter(Boolean).join(' ')],['Resumen','resumen'],['Registrado',r=>r.creado_en?new Date(r.creado_en).toLocaleString('es-CO'):''],['Imagen','imagen_path'],['Datos','datos']], HIST_DATA);
+$('#aCsv').onclick = () => descargarCsv('auditoria', [['Cuándo',r=>new Date(r.en).toLocaleString('es-CO')],['Quién','usuario'],['Acción','accion'],['Tabla','tabla'],['Registro','registro'],['Detalle','detalle']], AUD_DATA);
+
 // ====================== HISTORIAL ======================
 async function cargarHist(){
   await cargarCatalogos();
@@ -295,7 +306,7 @@ async function buscarHist(){
   if($('#hHasta').value) q = q.lte('fecha', $('#hHasta').value);
   const { data, error } = await q;
   if(error){ $('#hErr').textContent = error.message; return; }
-  $('#hErr').textContent='';
+  $('#hErr').textContent=''; HIST_DATA = data;
   const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
   $('#tbHist').innerHTML = data.map(r => `<tr><td><b>${esc(r.folio||r.id)}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||r.formulario_id||'—')}</td>
     <td>${esc(r.usuario||'—')}<br><span class="muted">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td>
@@ -325,7 +336,7 @@ async function buscarAud(){
   if($('#aUsuario').value.trim()) q = q.ilike('usuario', `%${$('#aUsuario').value.trim()}%`);
   const { data, error } = await q;
   if(error){ $('#aErr').textContent = error.message; return; }
-  $('#aErr').textContent = '';
+  $('#aErr').textContent = ''; AUD_DATA = data;
   const resumen = r => {
     if(r.accion==='update') return Object.entries(r.detalle||{}).map(([k,v]) => `${k}: ${fmtV(v.antes)} → ${fmtV(v.despues)}`).join(' · ');
     const d = r.detalle||{}; return Object.entries(d).filter(([k]) => !['id','creado_en','sellado_en'].includes(k)).slice(0,6).map(([k,v]) => `${k}: ${fmtV(v)}`).join(' · ');

@@ -41,6 +41,7 @@
     <div class="dos">
       <div class="caja">
         <h3>Usuarios</h3>
+        <div id="avisoInactivos" style="display:none;background:#2a1f10;border:1px solid #6b5420;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px"></div>
         <table><thead><tr><th>Usuario</th><th>Rango y nombre</th><th>Rol</th><th>Estado</th><th>En formularios</th><th></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
       </div>
       <div class="caja">
@@ -135,7 +136,7 @@
   <!-- ===================== HISTORIAL ===================== -->
   <section id="t-historial">
     <div class="caja">
-      <h3>Historial de reportes</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center">Historial de reportes <button type="button" class="ghost sm" id="hCsv" title="Descarga lo que está filtrado">⬇ Exportar CSV</button></h3>
       <div class="fila" style="margin-bottom:12px">
         <div><label>Formulario</label><select id="hForm"><option value="">Todos</option></select></div>
         <div style="position:relative"><label>Usuario</label><input id="hUsuario" placeholder="escribe para filtrar" autocomplete="off"><div class="sugs" id="hSugs"></div></div>
@@ -150,7 +151,7 @@
   <!-- ===================== AUDITORÍA ===================== -->
   <section id="t-auditoria">
     <div class="caja">
-      <h3>Auditoría</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center">Auditoría <button type="button" class="ghost sm" id="aCsv" title="Descarga lo que está filtrado (hazlo antes de que se borre a los 30 días)">⬇ Exportar CSV</button></h3>
       <p class="muted" style="margin-top:0;font-size:13px">Registro inalterable de acciones (lo escribe la base de datos; nadie puede borrarlo ni editarlo). Se conserva 30 días.</p>
       <div class="fila" style="margin-bottom:12px">
         <div><label>Tipo</label><select id="aTabla"><option value="">Todos</option><option value="perfiles">Usuarios</option><option value="roles">Roles</option><option value="rangos_pm">Rangos PM</option><option value="formularios">Formularios</option><option value="reportes">Reportes</option><option value="auth">Contraseñas</option></select></div>
@@ -175,6 +176,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=302a44a1"></script>
+<script type="module" src="../js/app-admin.js?v=440939a9"></script>
 </body>
 </html>

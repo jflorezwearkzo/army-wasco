@@ -1,6 +1,7 @@
   import { iniciarSesion, cargarYo, configurado, RAIZ, TURNSTILE_SITE_KEY } from './auth.js';
   const err=document.getElementById('err'), b=document.getElementById('b');
   const next=new URLSearchParams(location.search).get('next');
+  { const m=new URLSearchParams(location.search).get('motivo'); if(m==='inactividad') err.textContent='Tu sesión se cerró por inactividad (más de 2 horas). Vuelve a ingresar.'; if(m==='todas') err.textContent='Cerraste la sesión en todos tus dispositivos.'; }
   const destino=()=> (next && next.startsWith(RAIZ)) ? next : RAIZ;
   if(!configurado) err.textContent='Falta configurar config.js con las claves de Supabase.';
   else { const yo=await cargarYo(); if(yo && yo.activo) location.replace(destino()); }

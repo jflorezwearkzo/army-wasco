@@ -518,3 +518,16 @@ create policy fd_write  on public.formularios_discord for all using (public.teng
 alter table public.reportes add column if not exists discord_enviado_en timestamptz;
 -- validar_update_reporte: el rol de servicio (auth.uid() is null) solo puede escribir discord_enviado_en (ver función en producción)
 -- Edge Function: supabase/functions/notificar-discord (verify_jwt=false; valida la sesión del llamante)
+
+-- ---------- Intentos de acceso con cuenta inactiva (quedan en auditoría como login_inactivo) ----------
+create or replace function public.registrar_intento_inactivo() returns void language plpgsql security definer set search_path=public as $$
+declare u text;
+begin
+  if auth.uid() is null then return; end if;
+  select usuario into u from public.perfiles where id=auth.uid();
+  if exists (select 1 from public.perfiles where id=auth.uid() and activo) then return; end if;
+  if exists (select 1 from public.auditoria where usuario_id=auth.uid() and accion='login_inactivo' and en > now() - interval '1 minute') then return; end if;
+  insert into public.auditoria (usuario_id, usuario, accion, tabla, registro, detalle) values (auth.uid(), coalesce(u,'(sin perfil)'), 'login_inactivo', 'perfiles', auth.uid()::text, jsonb_build_object('motivo','intento de acceso con cuenta inactiva'));
+end $$;
+revoke all on function public.registrar_intento_inactivo() from public;
+grant execute on function public.registrar_intento_inactivo() to authenticated;
