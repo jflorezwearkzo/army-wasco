@@ -84,3 +84,17 @@ El alta de usuarios desde el panel usa la Edge Function `crear-usuario` (clave d
 - Authentication → Providers → Email: **"Confirm email" desactivado** (los usuarios no tienen correo real; se usan `usuario@armywasco.local`).
 - Contraseñas: requisitos de complejidad (mayúscula, minúscula, número y símbolo; la página exige además mínimo 8) y **"Require current password when updating"** activado: "Mi cuenta" pide la contraseña actual.
 - Restablecer una contraseña olvidada: desde el panel (botón "Contraseña", permiso Restablecer contraseñas) o en Supabase → Authentication → Users.
+
+
+## Diseñador de formularios (plantillas personalizables)
+
+Panel › Formularios › **Abrir el diseñador**. Flujo:
+
+1. **Nuevo formulario**: identificador, título, icono, orden, descripción.
+2. **Subir fondo**: la imagen del formato (se normaliza a PNG de 2048 px y se guarda en el bucket público `plantillas`). La base de dibujo es 1024 px de ancho; la exportación es a 2×.
+3. **Agregar campos** y acomodarlos arrastrando las cajas (esquina verde = tamaño; flechas = ajuste fino; Shift+flecha = 10 px). Tipos: texto, texto largo, fecha, hora militar, número, desplegable, sí/no, rango, persona (buscador), lista de personas 1–N (buscador, sin repetidos), lista de textos 1–N, foto en recuadro.
+   Por campo: obligatorio, bloqueado, valor por defecto (hoy, mi nombre, mi rango, mi Rango PM, mi usuario, mi rango y nombre, o texto fijo), "en resumen" (aparece en el historial), estilo (tamaño, color, fondo de caja, alineación, columnas, prefijo dentro de la imagen, formato de fecha).
+4. **Anexo fotográfico**: mínimo y máximo de fotos (0 = sin anexo) y título.
+5. **Vista previa** con datos de ejemplo y **Guardar** (crear requiere `crear_reportes`; editar, `gestion_reportes`). Cada guardado sube `version`; los reportes guardan `datos.plantilla_version`.
+
+El formulario queda en `reportes/plantilla/?id=<id>` y se comporta como los demás (permisos por rol, folio y sello del servidor, historial, auditoría). Los cuatro formularios originales siguen en código; pueden recrearse en el diseñador si se quiere editarlos sin programar.

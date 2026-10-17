@@ -490,3 +490,12 @@ grant execute on function public.buscar_folios(text) to authenticated;
 insert into public.formularios (id, titulo, descripcion, ruta, icono, orden) values
 ('toma-territorio','Reporte de Operaciones · Toma de Territorio (AK)','Resultado de la toma de los tres territorios AK (Almacén, Paseo de la Fama, Torre de Control), integrantes del convoy, vehículos, firmas y anexo fotográfico.','reportes/toma-territorio/','🛡️',40)
 on conflict (id) do nothing;
+
+-- ---------- Diseñador de formularios (plantillas personalizables) ----------
+alter table public.formularios add column if not exists definicion jsonb;      -- definición JSON (fondo, campos, anexo)
+alter table public.formularios add column if not exists version integer not null default 1;
+insert into storage.buckets (id, name, public) values ('plantillas','plantillas', true) on conflict (id) do nothing;
+create policy plantillas_read   on storage.objects for select using (bucket_id='plantillas');
+create policy plantillas_insert on storage.objects for insert with check (bucket_id='plantillas' and (public.tengo_permiso('crear_reportes') or public.tengo_permiso('gestion_reportes')));
+create policy plantillas_update on storage.objects for update using (bucket_id='plantillas' and public.tengo_permiso('gestion_reportes'));
+create policy plantillas_delete on storage.objects for delete using (bucket_id='plantillas' and public.tengo_permiso('gestion_reportes'));

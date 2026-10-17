@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<title>Diseñador de formularios · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilos.css">
+<style>
+  :root{--bg:#0b1216;--panel:#101c21;--line:#c9a43a;--gold:#f0c24d;--text:#f3f3f3;--muted:#9aa7ad;--err:#ff6b6b}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif}
+  header{padding:14px 20px 8px;border-bottom:1px solid #223;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;color:var(--gold);text-transform:uppercase;letter-spacing:1px}
+  header a{color:var(--muted);text-decoration:none;font-size:13px}
+  main{display:grid;grid-template-columns:1fr 360px;gap:16px;padding:16px;max-width:1700px;margin:0 auto}
+  @media (max-width:1000px){main{grid-template-columns:1fr}}
+  .caja{background:var(--panel);border:1px solid #2b3a40;border-radius:8px;padding:12px}
+  .caja h2{margin:0 0 8px;font-size:13px;color:var(--gold);text-transform:uppercase;letter-spacing:1px}
+  label{display:block;font-size:12px;color:var(--muted);margin:6px 0 2px}
+  input,select,textarea{width:100%;padding:6px 8px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:14px;box-sizing:border-box}
+  input[type=checkbox]{width:auto}
+  input[type=color]{padding:0;height:30px}
+  .fila{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .fila3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  button{cursor:pointer;border:0;border-radius:6px;padding:8px 12px;font-family:inherit;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.4px}
+  .primary{background:var(--gold);color:#1a1200}.secondary{background:#243239;color:var(--text)}.ghost{background:transparent;color:var(--muted);border:1px solid #2b3a40;padding:5px 9px;font-size:12px}.danger{background:#5a1f1f;color:#fff}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  #escenario{position:relative;width:100%;background:#000;border:1px solid var(--line);border-radius:6px;overflow:hidden;user-select:none;touch-action:none}
+  #escenario img{display:block;width:100%;height:auto;pointer-events:none}
+  #escenario .vacio{padding:60px 20px;text-align:center;color:var(--muted)}
+  .box{position:absolute;border:1.5px dashed rgba(240,194,77,.85);background:rgba(240,194,77,.10);cursor:move;box-sizing:border-box;font-size:11px;color:#fff;overflow:hidden;white-space:nowrap;padding:1px 3px;text-shadow:0 0 2px #000}
+  .box.sel{border:2px solid #7fd38a;background:rgba(127,211,138,.15);z-index:5}
+  .box .rs{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;background:#7fd38a;cursor:nwse-resize}
+  .box.foto{background:rgba(80,160,255,.15);border-color:rgba(80,160,255,.9)}
+  #lista{list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;border:1px solid #2b3a40;border-radius:6px}
+  #lista li{padding:6px 8px;border-bottom:1px solid #1c272c;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px}
+  #lista li.sel{background:#1a2a32;color:var(--gold)}
+  #lista li small{color:var(--muted)}
+  .msg{font-size:13px;min-height:18px;margin-top:6px;white-space:pre-line}.msg.err{color:var(--err)}.msg.ok{color:#7fd38a}
+  .ayuda{font-size:12px;color:var(--muted);margin:4px 0 8px}
+  #modal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  #modal.on{display:flex}
+  #modal div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;max-width:1100px;width:100%;max-height:95vh;overflow:auto}
+  #modal canvas{width:100%;height:auto;display:block}
+  .prop{display:none}.prop.on{display:block}
+</style>
+</head>
+<body>
+<header>
+  <a href="./">&larr; Panel</a>
+  <h1>Diseñador de formularios</h1>
+  <select id="selForm" style="width:auto;min-width:260px"></select>
+  <button class="ghost" id="btnNuevo" type="button">+ Nuevo formulario</button>
+  <span style="margin-left:auto"></span>
+  <button class="secondary" id="btnPreview" type="button">Vista previa</button>
+  <button class="primary" id="btnGuardar" type="button">Guardar</button>
+</header>
+<main>
+  <section>
+    <div class="caja">
+      <h2>Plantilla <small style="color:var(--muted);text-transform:none;letter-spacing:0">· arrastra las cajas para moverlas; esquina verde para cambiar el tamaño; flechas del teclado para ajustar</small></h2>
+      <div id="escenario"><div class="vacio">Sube la imagen de fondo del formato para empezar.</div></div>
+      <div class="btns">
+        <label class="ghost" style="display:inline-block;cursor:pointer;margin:0">Subir / cambiar fondo <input id="fondo" type="file" accept="image/*" style="display:none"></label>
+        <select id="tipoNuevo" style="width:auto"></select>
+        <button class="secondary" id="btnAdd" type="button">+ Agregar campo</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </div>
+  </section>
+  <aside>
+    <div class="caja">
+      <h2>Formulario</h2>
+      <label>Identificador <small>(sin espacios; no se puede cambiar después)</small></label><input id="fId" pattern="[a-z0-9_\-]{2,30}">
+      <label>Título</label><input id="fTitulo">
+      <label>Descripción</label><textarea id="fDesc" rows="2"></textarea>
+      <div class="fila3"><div><label>Icono</label><input id="fIcono" value="📋"></div><div><label>Orden</label><input id="fOrden" type="number" value="100"></div><div><label>Visible</label><select id="fActivo"><option value="1">Sí</option><option value="0">No</option></select></div></div>
+      <div class="fila"><div><label>Fotos de anexo (mín)</label><input id="fMin" type="number" min="0" max="10" value="0"></div><div><label>Fotos de anexo (máx)</label><input id="fMax" type="number" min="0" max="10" value="10"></div></div>
+      <label>Título del anexo</label><input id="fAnexo" value="ANEXO FOTOGRÁFICO">
+    </div>
+    <div class="caja" style="margin-top:12px">
+      <h2>Campos</h2>
+      <ul id="lista"></ul>
+      <div class="prop" id="prop">
+        <div class="fila"><div><label>Etiqueta</label><input id="pEtiqueta"></div><div><label>Tipo</label><select id="pTipo"></select></div></div>
+        <div class="fila"><div><label>Valor por defecto</label><select id="pDefecto"></select></div><div><label>Texto por defecto</label><input id="pDefectoTxt" placeholder="(si no es automático)"></div></div>
+        <div class="fila3"><label><input type="checkbox" id="pReq"> Obligatorio</label><label><input type="checkbox" id="pBloq"> Bloqueado</label><label><input type="checkbox" id="pRes"> En resumen</label></div>
+        <div id="pOpcionesW"><label>Opciones (una por línea)</label><textarea id="pOpciones" rows="3"></textarea></div>
+        <div class="fila" id="pListaW"><div><label>Mínimo</label><input id="pMin" type="number" min="1" max="60" value="1"></div><div><label>Máximo</label><input id="pMax" type="number" min="1" max="60" value="3"></div></div>
+        <h2 style="margin-top:10px">Posición y estilo</h2>
+        <div class="fila3"><div><label>X</label><input id="pX" type="number"></div><div><label>Y</label><input id="pY" type="number"></div><div><label>Ancho</label><input id="pW" type="number"></div></div>
+        <div class="fila3"><div><label>Alto</label><input id="pH" type="number"></div><div><label>Tamaño letra</label><input id="pTam" type="number" min="8" max="60"></div><div><label>Columnas</label><input id="pCols" type="number" min="1" max="6" value="1"></div></div>
+        <div class="fila3"><div><label>Color texto</label><input id="pColor" type="color" value="#f0c24d"></div><div><label>Fondo caja</label><input id="pFondo" type="color" value="#0e1b20"></div><div><label>&nbsp;</label><label style="margin:0"><input type="checkbox" id="pSinFondo"> Sin fondo</label></div></div>
+        <div class="fila"><div><label>Alineación</label><select id="pAlinear"><option value="left">Izquierda</option><option value="center">Centro</option><option value="right">Derecha</option></select></div><div><label>Formato de fecha</label><select id="pFormato"><option value="dd-mm-aaaa">DD-MM-AAAA</option><option value="dd/mm/aaaa">DD/MM/AAAA</option><option value="aaaa-mm-dd">AAAA-MM-DD</option></select></div></div>
+        <div class="fila"><div><label>Prefijo dentro de la imagen</label><input id="pPrefijo" placeholder="p. ej. Nombre:"></div><div><label>Color del prefijo</label><input id="pPrefijoColor" type="color" value="#ffffff"></div></div>
+        <label><input type="checkbox" id="pNegrita" checked> Negrita</label>
+        <div class="btns"><button class="ghost" id="btnDup" type="button">Duplicar</button><button class="danger" id="btnDel" type="button">Eliminar campo</button></div>
+      </div>
+    </div>
+  </aside>
+</main>
+<div id="modal"><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="color:var(--gold)">Vista previa con datos de ejemplo</b><button class="ghost" id="btnCerrar" type="button">Cerrar</button></div><canvas id="cv"></canvas></div></div>
+<script type="module" src="../js/app-disenador.js?v=51de177e"></script>
+</body>
+</html>

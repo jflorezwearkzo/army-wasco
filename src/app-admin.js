@@ -201,8 +201,8 @@ async function cargarForms(){
   $('#fForm').parentElement.style.display = (tiene(yo,'crear_reportes')||tiene(yo,'gestion_reportes')) ? '' : 'none';
   $('#tbForms').innerHTML = formularios.map(f => `<tr><td style="font-size:22px">${esc(f.icono||'')}</td><td><b>${esc(f.titulo)}</b><br><span class="muted">${esc(f.id)}</span></td>
     <td><a href="../${esc(f.ruta)}" target="_blank">${esc(f.ruta)}</a></td><td>${f.orden}</td>
-    <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span></td>
-    <td style="white-space:nowrap">${tiene(yo,'gestion_reportes') ? `<button class="ghost sm" data-fe="${f.id}">Editar</button>
+    <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span>${f.definicion ? ` <span class="tag" title="Creado con el diseñador">Plantilla v${f.version||1}</span>` : ''}</td>
+    <td style="white-space:nowrap">${f.definicion ? `<a class="ghost sm" href="disenador.html?id=${esc(f.id)}" style="text-decoration:none;display:inline-block">Diseñar</a> ` : ''}${tiene(yo,'gestion_reportes') ? `<button class="ghost sm" data-fe="${f.id}">Editar</button>
     <button class="ghost sm" data-fa="${f.id}" data-v="${f.activo?0:1}">${f.activo?'Ocultar':'Mostrar'}</button>
     <button class="ghost sm" data-fd="${f.id}">Eliminar</button>` : '<span class="muted">Solo lectura</span>'}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
   document.querySelectorAll('[data-fe]').forEach(b => b.onclick = () => editarForm(formularios.find(f => f.id===b.dataset.fe)));
