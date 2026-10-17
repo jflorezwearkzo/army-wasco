@@ -1,5 +1,5 @@
 // Formulario genérico: carga la definición JSON del formulario (?id=...) y la ejecuta con el motor de plantillas.
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, faviconEmoji, sb, esc } from './auth.js';
 import { construirFormulario, validar, dibujar, cargarFondo, cargarImagen, resumenDe, fmtFecha } from './plantilla.js';
 
 const ID = new URLSearchParams(location.search).get('id') || '';
@@ -54,3 +54,5 @@ $('#btnExport').onclick=async()=>{
   SELLO=null; draw(); btn.disabled=false; btn.textContent='Exportar imagen';
 };
 $('#btnReset').onclick=()=>{ BORR.limpiar(); location.reload(); };
+
+mejorasMovil();

@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, hoyISO, faviconEmoji, sb, RANGOS, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, hoyISO, faviconEmoji, sb, RANGOS, esc } from './auth.js';
 const FORM='toma-territorio';
 const YO = await requerir({ formulario:FORM }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id',FORM).maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
@@ -219,3 +219,5 @@ $('#btnExport').onclick=async()=>{
   btn.disabled=false; btn.textContent='Exportar imagen';
 };
 $('#btnReset').onclick=()=>{ BORR.limpiar(); $('#form').reset(); photos=[]; renderThumbs(); showErr(''); document.querySelectorAll('.tRes').forEach(i=>i.value=''); precargar(); draw(); };
+
+mejorasMovil();

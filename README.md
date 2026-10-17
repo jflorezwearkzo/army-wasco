@@ -119,3 +119,7 @@ Todos los formularios guardan automáticamente lo escrito en el navegador (`loca
 ## Resumen (estadísticas)
 
 Pestaña **Resumen** del panel (permiso ver historial): periodo configurable (30 días por defecto), KPIs (reportes, por día, usuarios activos, bajas reportadas, patrullajes, AKs tomados), reportes por día, por formulario, actividad por usuario y patrullajes por integrante (nombres que aparecen en Fin de Día y Toma de Territorio). Se calcula en el navegador a partir de `reportes_vista` (máximo 3000 reportes por consulta).
+
+## Móvil
+
+En pantallas angostas los formularios muestran una barra fija abajo con **Vista previa** (baja a la imagen) y **Exportar** (y lleva al mensaje de error si falta algo). Junto a cada selector de fotos hay un botón **📷 Cámara** que abre la cámara del celular directamente (los selectores normales siguen permitiendo elegir de la galería).

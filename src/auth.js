@@ -203,3 +203,32 @@ export function borrador({ clave, yo, form, antes=null, despues=null, dias=7 }){
   }
   return { limpiar, guardar };
 }
+
+// ---------- Mejoras para móvil en los formularios ----------
+// Barra flotante (Vista previa / Exportar) en pantallas angostas y botón de cámara junto a cada selector de fotos.
+export function mejorasMovil(){
+  if(document.getElementById('pmMovilCss')) return;
+  const s=document.createElement('style'); s.id='pmMovilCss';
+  s.textContent=`
+  .pm-flot{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#07100fee;border-top:1px solid #c9a43a;padding:8px 12px;gap:8px;backdrop-filter:blur(4px)}
+  .pm-flot button{flex:1;padding:10px 8px;font-size:14px}
+  .pm-cam{margin-left:6px;padding:6px 10px;font-size:12px;background:#243239;color:#f3f3f3;border:0;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700;text-transform:uppercase}
+  @media (max-width:1000px){ .pm-flot{display:flex} body{padding-bottom:64px} }`;
+  document.head.appendChild(s);
+  const exportar=document.getElementById('btnExport'), preview=document.querySelector('.preview');
+  if(exportar && preview){
+    const bar=document.createElement('div'); bar.className='pm-flot';
+    bar.innerHTML='<button type="button" class="secondary">👁 Vista previa</button><button type="button" class="primary">⬇ Exportar</button>';
+    const [bp,be]=bar.querySelectorAll('button');
+    bp.onclick=()=>{ const b=document.getElementById('btnPreview'); if(b) b.click(); preview.scrollIntoView({behavior:'smooth',block:'start'}); };
+    be.onclick=()=>{ exportar.click(); setTimeout(()=>{ const e=document.getElementById('err'); if(e && e.textContent.trim()) e.scrollIntoView({behavior:'smooth',block:'center'}); },400); };
+    document.body.appendChild(bar);
+  }
+  const decorar=inp=>{ if(inp.dataset.cam || inp.type!=='file' || !/image/.test(inp.accept||'')) return; inp.dataset.cam='1';
+    const b=document.createElement('button'); b.type='button'; b.className='pm-cam'; b.textContent='📷 Cámara'; b.title='Tomar la foto con la cámara';
+    b.onclick=()=>{ const t=document.createElement('input'); t.type='file'; t.accept='image/*'; t.capture='environment'; t.style.display='none'; document.body.appendChild(t);
+      t.onchange=()=>{ if(t.files.length){ const dt=new DataTransfer(); for(const f of t.files) dt.items.add(f); inp.files=dt.files; inp.dispatchEvent(new Event('change',{bubbles:true})); } t.remove(); }; t.click(); };
+    inp.insertAdjacentElement('afterend', b); };
+  document.querySelectorAll('input[type=file]').forEach(decorar);
+  new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType!==1) return; if(n.matches && n.matches('input[type=file]')) decorar(n); n.querySelectorAll && n.querySelectorAll('input[type=file]').forEach(decorar); }))).observe(document.body,{childList:true,subtree:true});
+}

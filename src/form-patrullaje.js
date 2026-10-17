@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, hoyISO, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, hoyISO, faviconEmoji, sb, esc } from './auth.js';
 const YO = await requerir({ formulario:'patrullaje' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','patrullaje').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 
@@ -237,3 +237,5 @@ $('#btnExport').onclick=async()=>{
   draw(); btn.disabled=false; btn.textContent='Exportar imágenes';
 };
 $('#btnReset').onclick=()=>{ BORR.limpiar(); $('#form').reset(); paginas.splice(0).forEach(p=>p.el.remove()); ACTUAL=0; showErr(''); precargar(); $('#nPat').value='1'; ajustarPaginas(); };
+
+mejorasMovil();

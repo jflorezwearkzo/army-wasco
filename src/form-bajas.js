@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, hoyISO, faviconEmoji, sb } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, hoyISO, faviconEmoji, sb } from './auth.js';
 const YO = await requerir({ formulario:'bajas' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','bajas').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 // Fecha de hoy (editable); nombre, rango y Rango PM vienen del perfil/rol y quedan bloqueados
@@ -227,3 +227,5 @@ $('#btnExport').onclick=async()=>{
   btn.disabled=false; btn.textContent='Exportar imagen';
 };
 $('#btnReset').onclick=()=>{ BORR.limpiar(); $('#form').reset(); photos=[]; renderThumbs(); showErr(''); precargar(); draw(); };
+
+mejorasMovil();
