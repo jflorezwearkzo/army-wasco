@@ -485,3 +485,8 @@ language sql security definer stable set search_path=public as $$
 $$;
 revoke all on function public.buscar_folios(text) from public;
 grant execute on function public.buscar_folios(text) to authenticated;
+
+-- ---------- Reporte de Operaciones · Toma de Territorio (AK) ----------
+insert into public.formularios (id, titulo, descripcion, ruta, icono, orden) values
+('toma-territorio','Reporte de Operaciones · Toma de Territorio (AK)','Resultado de la toma de los tres territorios AK (Almacén, Paseo de la Fama, Torre de Control), integrantes del convoy, vehículos, firmas y anexo fotográfico.','reportes/toma-territorio/','🛡️',40)
+on conflict (id) do nothing;

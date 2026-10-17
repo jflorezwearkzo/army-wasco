@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<title>Reporte de Operaciones · Toma de Territorio (AK) — Policía Militar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b1216;--panel:#101c21;--line:#c9a43a;--gold:#f0c24d;--text:#f3f3f3;--muted:#9aa7ad;--err:#ff6b6b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif;}
+  header{padding:18px 20px 8px;border-bottom:1px solid #223;}
+  header h1{margin:0;font-size:26px;letter-spacing:1px;color:var(--gold);text-transform:uppercase}
+  header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  main{display:grid;grid-template-columns:420px 1fr;gap:20px;padding:20px;max-width:1500px;margin:0 auto}
+  @media (max-width:1000px){main{grid-template-columns:1fr}}
+  fieldset{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:0 0 16px;background:var(--panel)}
+  legend{color:var(--gold);font-weight:700;padding:0 6px;text-transform:uppercase;font-size:14px}
+  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 3px}
+  input[type=text],input[type=date],select,textarea{width:100%;padding:8px 10px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
+  textarea{resize:vertical;min-height:70px}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  input[type=date]{color-scheme:dark;cursor:pointer}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) sepia(1) saturate(5) hue-rotate(5deg);cursor:pointer;opacity:.9}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  button{cursor:pointer;border:0;border-radius:6px;padding:10px 16px;font-family:inherit;font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.5px}
+  .primary{background:var(--gold);color:#1a1200}
+  .secondary{background:#243239;color:var(--text)}
+  .ghost{background:transparent;color:var(--muted);border:1px solid #2b3a40;padding:6px 10px;font-size:12px}
+  .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+  .thumb{position:relative;aspect-ratio:1;background:#0a1114;border:1px dashed #2b3a40;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#45565d;font-size:12px}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb b{position:absolute;top:2px;left:5px;color:var(--gold);text-shadow:0 0 3px #000}
+  .thumb button{position:absolute;top:2px;right:2px;padding:0 6px;font-size:12px;background:#000a;color:#fff;border-radius:4px}
+  .err{color:var(--err);font-size:14px;min-height:20px;margin-top:8px;white-space:pre-line}
+  .preview{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+  .preview h2{margin:0 0 10px;font-size:15px;color:var(--gold);text-transform:uppercase}
+  canvas{width:100%;height:auto;display:block;border-radius:4px;background:#000}
+  small{color:var(--muted)}
+  .pag{border:1px solid #2b3a40;border-radius:8px;padding:10px 12px;margin:10px 0;background:#0a1114}
+  .pag h3{margin:0 0 6px;color:var(--gold);font-size:14px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+  .fila{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .hora{display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center}
+  .hora span{color:var(--muted)}
+  input[type=number]{width:100%;padding:8px 10px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
+  .sug{position:relative}
+  .sug ul{position:absolute;left:0;right:0;top:100%;z-index:20;margin:0;padding:0;list-style:none;background:#101c21;border:1px solid var(--gold);border-radius:6px;max-height:200px;overflow:auto;display:none}
+  .sug ul li{padding:7px 10px;cursor:pointer;font-size:14px;border-bottom:1px solid #1c272c}
+  .sug ul li b{color:var(--gold)}
+  .sug ul li small{display:block}
+  .sug ul li:hover{background:#1a2a32}
+  .fotos2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .fotos2 .thumb{aspect-ratio:4/3}
+  .fotos2 label{margin-top:0}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .tabs button{padding:5px 10px;font-size:12px;background:#243239;color:var(--text)}
+  .tabs button.act{background:var(--gold);color:#1a1200}
+  .ok{color:#7fd38a}
+  .terr{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin:6px 0}
+  .terr label{margin:0;display:flex;align-items:center;gap:6px;color:var(--text);font-size:14px;white-space:nowrap}
+  .veh{display:grid;grid-template-columns:1fr 90px auto;gap:6px;align-items:center;margin:6px 0}
+  .ints{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+  .ints input{padding:6px 8px;font-size:14px}
+  @media (max-width:520px){.ints{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <a href="../../" style="color:#9aa7ad;text-decoration:none;font-size:13px">&larr; Volver a Reportes</a>
+  <h1>Reporte de Operaciones · Toma de Territorio (AK) · Ejército Wasco</h1>
+  <p>Llena los datos de la operación, los integrantes del convoy y adjunta las fotos de evidencia; se exporta como imagen con el anexo fotográfico debajo.</p>
+</header>
+<main>
+  <section>
+    <form id="form">
+      <fieldset>
+        <legend>Operación</legend>
+        <label for="fecha">Fecha *</label>
+        <input id="fecha" type="date" required>
+        <label for="objetivo">Objetivo de la operación *</label>
+        <input id="objetivo" type="text" maxlength="110" placeholder="p. ej. Asegurar puntos AK." required>
+      </fieldset>
+
+      <fieldset>
+        <legend>Resultados</legend>
+        <div id="territorios"></div>
+        <div class="fila" style="margin-top:8px">
+          <div><label>Total territorios (AKs) tomados</label><input id="total" type="text" readonly tabindex="-1" style="opacity:.75"></div>
+          <div><label for="estado">Estado / Novedades *</label><select id="estado" required><option value="">— Selecciona —</option><option>Sin novedad</option><option>Toma parcial</option><option>Fallido</option></select></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Integrantes</legend>
+        <label for="nInt">Número de integrantes *</label>
+        <select id="nInt"></select>
+        <div class="ints" id="ints"></div>
+        <small>El integrante 1 eres tú (responsable). Los demás se escriben a mano: pueden ser de Policía Militar o no.</small>
+      </fieldset>
+
+      <fieldset>
+        <legend>Vehículos</legend>
+        <div id="vehiculos"></div>
+        <button type="button" class="ghost" id="addVeh">+ Agregar tipo de vehículo</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Firmas</legend>
+        <label for="nombre">Responsable *</label>
+        <input id="nombre" type="text" maxlength="40" required>
+        <label for="rango">Rango del responsable *</label>
+        <input id="rango" type="text" maxlength="30" required>
+        <label for="supNombre">Supervisor *</label>
+        <input id="supNombre" type="text" maxlength="40" required placeholder="Nombre del supervisor">
+        <label for="supRango">Rango del supervisor *</label>
+        <select id="supRango" required><option value="">— Selecciona —</option></select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Anexo fotográfico (1 a 10 fotos) *</legend>
+        <input id="fotos" type="file" accept="image/*" multiple style="font-size:13px">
+        <div class="photos" id="thumbs"></div>
+        <small id="fotoCount">Sin fotos</small>
+      </fieldset>
+
+      <div class="err" id="err"></div>
+      <div class="btns">
+        <button class="primary" id="btnExport">Exportar imagen</button>
+        <button class="secondary" id="btnPreview">Actualizar vista previa</button>
+        <button class="ghost" id="btnReset" type="button">Limpiar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="preview">
+    <h2>Vista previa</h2>
+    <canvas id="cv" width="2048" height="1536"></canvas>
+  </section>
+</main>
+<script type="module" src="../../js/form-toma-territorio.js?v=74c1a063"></script>
+</body>
+</html>
