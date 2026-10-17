@@ -21,14 +21,18 @@ async function cargarCatalogo(selId){
 }
 $('#selForm').addEventListener('change',()=>{ if($('#selForm').value) abrir($('#selForm').value); });
 $('#btnNuevo').onclick=()=>nuevo();
-function nuevo(){ FORM=null; ESNUEVO=true; DEF=definicionNueva(); FONDO=null; SEL=null; $('#fId').value=''; $('#fId').disabled=false; $('#fTitulo').value=''; $('#fDesc').value=''; $('#fIcono').value='📋'; $('#fOrden').value=100; $('#fActivo').value='1'; $('#fMin').value=0; $('#fMax').value=10; $('#fAnexo').value='ANEXO FOTOGRÁFICO'; $('#selForm').value=''; render(); msg(''); }
+function nuevo(){ FORM=null; ESNUEVO=true; DEF=definicionNueva(); FONDO=null; SEL=null; $('#fMulti').checked=false; $('#fMultiEtq').value='Patrullaje'; $('#fMultiMax').value=10; multiUI(); $('#fId').value=''; $('#fId').disabled=false; $('#fTitulo').value=''; $('#fDesc').value=''; $('#fIcono').value='📋'; $('#fOrden').value=100; $('#fActivo').value='1'; $('#fMin').value=0; $('#fMax').value=10; $('#fAnexo').value='ANEXO FOTOGRÁFICO'; $('#selForm').value=''; render(); msg(''); }
 async function abrir(id){
   const { data:f, error } = await sb.from('formularios').select('*').eq('id',id).maybeSingle(); if(error||!f){ msg(error?error.message:'No existe'); return; }
   FORM=f; ESNUEVO=false; DEF=f.definicion||definicionNueva(); DEF.campos=DEF.campos||[]; DEF.fotos=DEF.fotos||{min:0,max:10,titulo:'ANEXO FOTOGRÁFICO'};
   $('#fId').value=f.id; $('#fId').disabled=true; $('#fTitulo').value=f.titulo; $('#fDesc').value=f.descripcion||''; $('#fIcono').value=f.icono||'📋'; $('#fOrden').value=f.orden; $('#fActivo').value=f.activo?'1':'0';
   $('#fMin').value=DEF.fotos.min||0; $('#fMax').value=DEF.fotos.max??10; $('#fAnexo').value=DEF.fotos.titulo||'ANEXO FOTOGRÁFICO';
+  const pgs=DEF.paginas||{}; $('#fMulti').checked=!!pgs.activo; $('#fMultiEtq').value=pgs.etiqueta||'Patrullaje'; $('#fMultiMax').value=pgs.max||10; multiUI();
   FONDO=await cargarFondo(DEF); SEL=null; render(); msg('');
 }
+
+function multiUI(){ const on=$('#fMulti').checked; $('#fMultiW').style.display=on?'':'none'; $('#pPorPagW').style.display=on?'':'none'; }
+$('#fMulti').addEventListener('change',multiUI);
 
 // ---------- Fondo ----------
 $('#fondo').addEventListener('change', async e=>{
@@ -76,12 +80,12 @@ document.addEventListener('keydown',e=>{ const c=sel(); if(!c||['INPUT','TEXTARE
 const sel=()=>DEF.campos.find(c=>c.id===SEL);
 function seleccionar(id){ SEL=id; esc_.querySelectorAll('.box').forEach(b=>b.classList.toggle('sel',b.dataset.id===id)); lista(); props(); }
 $('#btnAdd').onclick=()=>{ if(!DEF.fondo){ msg('Sube primero el fondo.'); return; } const c=campoNuevo($('#tipoNuevo').value, DEF.campos.length+1); if(c.tipo==='foto'){ c.caja.w=220; c.caja.h=150; c.estilo.fondo='transparent'; } if(c.tipo==='parrafo'){ c.caja.h=90; } if(c.tipo==='personas'||c.tipo==='lista'||c.tipo==='casillas'){ c.caja.h=70; } if(c.tipo==='casillas'){ c.opciones=['Opción 1','Opción 2','Opción 3']; c.conTexto=true; } if(c.tipo==='formula'){ c.req=false; } if(c.tipo==='fecha') c.defecto='hoy'; DEF.campos.push(c); SEL=c.id; render(); };
-function lista(){ $('#lista').innerHTML=DEF.campos.map(c=>`<li data-id="${c.id}" class="${c.id===SEL?'sel':''}"><span>${esc(c.etiqueta)}</span><small>${esc(TIPOS[c.tipo]?TIPOS[c.tipo].nombre.split(' ')[0]:c.tipo)}</small></li>`).join('')||'<li><small>Sin campos todavía</small></li>'; $('#lista').querySelectorAll('li[data-id]').forEach(li=>li.onclick=()=>seleccionar(li.dataset.id)); }
+function lista(){ $('#lista').innerHTML=DEF.campos.map(c=>`<li data-id="${c.id}" class="${c.id===SEL?'sel':''}"><span>${esc(c.etiqueta)}${c.porPagina?' <small title="Se repite por página">⧉</small>':''}</span><small>${esc(TIPOS[c.tipo]?TIPOS[c.tipo].nombre.split(' ')[0]:c.tipo)}</small></li>`).join('')||'<li><small>Sin campos todavía</small></li>'; $('#lista').querySelectorAll('li[data-id]').forEach(li=>li.onclick=()=>seleccionar(li.dataset.id)); }
 let llenando=false;
 function props(todo=true){
   const c=sel(); $('#prop').classList.toggle('on',!!c); if(!c) return; llenando=true;
   if(todo){ $('#pEtiqueta').value=c.etiqueta; $('#pTipo').value=c.tipo; const auto=c.defecto in DEFECTOS; $('#pDefecto').value=auto?c.defecto:'__txt'; $('#pDefectoTxt').value=auto?'':c.defecto; $('#pDefectoTxt').style.display=auto?'none':'';
-    $('#pReq').checked=!!c.req; $('#pBloq').checked=!!c.bloqueado; $('#pRes').checked=!!c.resumen; $('#pOpciones').value=(c.opciones||[]).join('\n'); $('#pMin').value=c.min||1; $('#pMax').value=c.max||3;
+    $('#pReq').checked=!!c.req; $('#pBloq').checked=!!c.bloqueado; $('#pRes').checked=!!c.resumen; $('#pPorPag').checked=!!c.porPagina; $('#pOpciones').value=(c.opciones||[]).join('\n'); $('#pMin').value=c.min||1; $('#pMax').value=c.max||3;
     $('#pOpcionesW').style.display=(c.tipo==='opcion'||c.tipo==='casillas')?'':'none'; $('#pCasW').style.display=c.tipo==='casillas'?'':'none'; $('#pConTexto').checked=!!c.conTexto; $('#pTextoDef').value=c.textoDef||'';
     $('#pListaW').style.display=(c.tipo==='personas'||c.tipo==='lista')?'':'none';
     const otros=DEF.campos.filter(x=>x.id!==c.id); const opts=(filtro,sel0,vacio='— Ninguno —')=>`<option value="">${vacio}</option>`+otros.filter(filtro).map(x=>`<option value="${x.id}"${x.id===sel0?' selected':''}>${esc(x.etiqueta)}</option>`).join('');
@@ -99,7 +103,7 @@ $('#prop').addEventListener('input',aplicar); $('#prop').addEventListener('chang
 function aplicar(){ if(llenando) return; const c=sel(); if(!c) return;
   c.etiqueta=$('#pEtiqueta').value; const t=$('#pTipo').value; if(t!==c.tipo){ c.tipo=t; props(); }
   const d=$('#pDefecto').value; $('#pDefectoTxt').style.display=d==='__txt'?'':'none'; c.defecto=d==='__txt'?$('#pDefectoTxt').value:d;
-  c.req=$('#pReq').checked; c.bloqueado=$('#pBloq').checked; c.resumen=$('#pRes').checked; c.opciones=$('#pOpciones').value.split('\n').map(s=>s.trim()).filter(Boolean); c.min=+$('#pMin').value||1; c.max=+$('#pMax').value||3;
+  c.req=$('#pReq').checked; c.bloqueado=$('#pBloq').checked; c.resumen=$('#pRes').checked; c.porPagina=$('#pPorPag').checked; c.opciones=$('#pOpciones').value.split('\n').map(s=>s.trim()).filter(Boolean); c.min=+$('#pMin').value||1; c.max=+$('#pMax').value||3;
   c.conTexto=$('#pConTexto').checked; c.textoDef=$('#pTextoDef').value;
   c.formula={ op:$('#pOp').value, origen:$('#pOrigen').value, origenes:[...$('#pOrigenes').selectedOptions].map(o=>o.value), sep:$('#pSep').value, prefijo:$('#pCodPrefijo').value.trim()||'DOC' };
   c.reglas={ habilitarCampo:$('#pHabCampo').value, habilitarValor:$('#pHabValor').value.trim(), reqCampo:$('#pReqCampo').value, reqValor:$('#pReqValor').value.trim(), posteriorA:$('#pPostCampo').value };
@@ -111,7 +115,7 @@ $('#btnDup').onclick=()=>{ const c=sel(); if(!c) return; const n=JSON.parse(JSON
 
 // ---------- Vista previa ----------
 function ejemplo(c){ switch(c.tipo){ case 'fecha': return new Date().toISOString().slice(0,10); case 'hora': return '14:30'; case 'numero': return '3'; case 'sino': return 'SÍ'; case 'rango': return RANGOS[2]; case 'opcion': return (c.opciones||[])[0]||'Opción'; case 'persona': return 'Capitán Nombre Apellido'; case 'personas': return Array.from({length:Math.min(+c.max||3,4)},(_,i)=>`Teniente Integrante ${i+1}`); case 'lista': return Array.from({length:Math.min(+c.max||3,3)},(_,i)=>`Elemento ${i+1}`); case 'casillas': return (c.opciones||[]).map((o,i)=>({nombre:o,on:i%3!==2,texto:c.conTexto?(i%3!==2?(c.textoDef||'Logrado'):'Fallido'):''})); case 'formula': return ''; case 'parrafo': return 'Texto de ejemplo para ver cómo se acomoda el párrafo dentro de la caja, con varias líneas si hace falta.'; default: return c.defecto in DEFECTOS ? (c.defecto==='mi_nombre'?'Nombre Apellido':c.defecto==='mi_rango'?'Capitán':c.defecto==='mi_rango_pm'?'Auxiliar PM':c.defecto==='mi_rango_nombre'?'Capitán Nombre Apellido':c.defecto==='mi_usuario'?'usuario':'') || c.etiqueta : (c.defecto||c.etiqueta); } }
-$('#btnPreview').onclick=()=>{ if(!DEF.fondo){ msg('Sube primero el fondo.'); return; } const v={}; for(const c of DEF.campos) v[c.id]=ejemplo(c); for(const c of DEF.campos) if(c.tipo==='formula') v[c.id]=calcular(DEF,c,v);
+$('#btnPreview').onclick=()=>{ if(!DEF.fondo){ msg('Sube primero el fondo.'); return; } const v={__pagina:1,__paginas:3}; for(const c of DEF.campos) v[c.id]=ejemplo(c); for(const c of DEF.campos) if(c.tipo==='formula') v[c.id]=calcular(DEF,c,v);
   const fc=DEF.campos.find(c=>c.tipo==='fecha'); dibujar($('#cv'), DEF, FONDO, v, {}, [], { folio:'PM-000000', texto:'usuario · '+new Date().toLocaleString('es-CO') }, { fechaAnexo: fc?fmtFecha(v[fc.id],fc.estilo.formato):'' }); $('#modal').classList.add('on'); };
 $('#btnCerrar').onclick=()=>$('#modal').classList.remove('on');
 
@@ -123,6 +127,8 @@ $('#btnGuardar').onclick=async()=>{
   if(!DEF.fondo){ msg('Sube el fondo del formato.'); return; }
   if(!tiene(yo,'disenar_formularios')){ msg('No tienes permiso de creación de formularios.'); return; }
   DEF.fotos={ min:Math.max(0,+$('#fMin').value||0), max:Math.max(0,Math.min(10,+$('#fMax').value||0)), titulo:$('#fAnexo').value.trim()||'ANEXO FOTOGRÁFICO' };
+  DEF.paginas={ activo:$('#fMulti').checked, etiqueta:$('#fMultiEtq').value.trim()||'Página', max:Math.max(1,Math.min(20,+$('#fMultiMax').value||10)) };
+  if(DEF.paginas.activo && !DEF.campos.some(c=>c.porPagina)){ msg('Marcaste varias páginas pero ningún campo se repite por página.'); return; }
   if(DEF.fotos.min>DEF.fotos.max) DEF.fotos.min=DEF.fotos.max;
   const fila={ id, titulo, descripcion:$('#fDesc').value.trim(), icono:$('#fIcono').value.trim()||'📋', orden:parseInt($('#fOrden').value)||100, activo:$('#fActivo').value==='1', ruta:`reportes/plantilla/?id=${id}`, definicion:DEF, version:(FORM&&FORM.version?FORM.version:0)+1 };
   const { error } = ESNUEVO ? await sb.from('formularios').insert(fila) : await sb.from('formularios').update(fila).eq('id',id);
@@ -133,3 +139,18 @@ $('#btnGuardar').onclick=async()=>{
 
 await cargarCatalogo(new URLSearchParams(location.search).get('id'));
 const inicial=new URLSearchParams(location.search).get('id'); if(inicial) abrir(inicial); else nuevo();
+
+// ---------- Duplicar ----------
+$('#btnDuplicar').onclick=async()=>{
+  if(ESNUEVO||!FORM){ msg('Abre primero el formulario que quieres duplicar.'); return; }
+  const id=(prompt('Identificador del nuevo formulario (letras minúsculas, números, guion):', FORM.id+'-copia')||'').trim().toLowerCase();
+  if(!id) return; if(!/^[a-z0-9_\-]{2,30}$/.test(id)){ msg('Identificador inválido.'); return; }
+  const titulo=(prompt('Título del nuevo formulario:', FORM.titulo+' (copia)')||'').trim(); if(!titulo) return;
+  DEF.fotos={ min:Math.max(0,+$('#fMin').value||0), max:Math.max(0,Math.min(10,+$('#fMax').value||0)), titulo:$('#fAnexo').value.trim()||'ANEXO FOTOGRÁFICO' };
+  DEF.paginas={ activo:$('#fMulti').checked, etiqueta:$('#fMultiEtq').value.trim()||'Página', max:Math.max(1,Math.min(20,+$('#fMultiMax').value||10)) };
+  const copia=JSON.parse(JSON.stringify(DEF));
+  const fila={ id, titulo, descripcion:$('#fDesc').value.trim(), icono:$('#fIcono').value.trim()||'📋', orden:(parseInt($('#fOrden').value)||100)+1, activo:false, ruta:`reportes/plantilla/?id=${id}`, definicion:copia, version:1 };
+  const { error } = await sb.from('formularios').insert(fila);
+  if(error){ msg(/duplicate|unique/i.test(error.message)?'Ya existe un formulario con ese identificador.':error.message); return; }
+  await cargarCatalogo(id); await abrir(id); msg(`Copia creada como "${titulo}" (oculta en el inicio hasta que la marques visible). Usa el mismo fondo; súbelo de nuevo si quieres otro.`, true);
+};

@@ -25,17 +25,19 @@ export const OPERACIONES = {
   unir:     'Unir varios campos con un separador',
   codigo:   'Código a partir de una fecha (PREFIJO-AAAA-MMDD)',
   total:    'Marcadas / total de una lista de casillas (p. ej. 2 / 3)',
+  pagina:   'Número de página (01, 02…) en reportes de varias páginas',
+  paginas:  'Página / total (p. ej. 2 / 3)',
 };
 export const DEFECTOS = { '':'— Vacío —', hoy:'Fecha de hoy', mi_nombre:'Mi nombre', mi_rango:'Mi rango', mi_rango_pm:'Mi Rango PM', mi_usuario:'Mi usuario', mi_rango_nombre:'Mi rango y nombre' };
 
 export function campoNuevo(tipo='texto', n=1){
-  return { id:'c'+Date.now().toString(36)+n, tipo, etiqueta:'Campo '+n, req:true, defecto:'', bloqueado:false, opciones:[], min:1, max:3, resumen:false,
+  return { id:'c'+Date.now().toString(36)+n, tipo, etiqueta:'Campo '+n, req:true, defecto:'', bloqueado:false, opciones:[], min:1, max:3, resumen:false, porPagina:false,
     conTexto:false, textoDef:'', formula:{ op:'contar', origen:'', origenes:[], sep:' · ', prefijo:'DOC' },
     reglas:{ habilitarCampo:'', habilitarValor:'', reqCampo:'', reqValor:'', posteriorA:'' },
     caja:{ x:40, y:40+n*30, w:300, h:24 },
     estilo:{ tam:17, negrita:true, color:'#f0c24d', fondo:'#0e1b20', alinear:'left', prefijo:'', prefijoColor:'#ffffff', columnas:0, formato:'dd-mm-aaaa', lineas:0 } };
 }
-export function definicionNueva(){ return { v:2, fondo:null, fotos:{ min:0, max:10, titulo:'ANEXO FOTOGRÁFICO' }, campos:[] }; }
+export function definicionNueva(){ return { v:3, fondo:null, fotos:{ min:0, max:10, titulo:'ANEXO FOTOGRÁFICO' }, paginas:{ activo:false, etiqueta:'Página', max:10 }, campos:[] }; }
 
 // ---------- Valores por defecto a partir del perfil ----------
 export function valorDefecto(campo, yo){
@@ -75,14 +77,17 @@ export function calcular(def, c, valores){
     case 'copiar': return o ? textoDe(o, v) : '';
     case 'unir':   return (f.origenes||[]).map(id=>{ const oc=def.campos.find(x=>x.id===id); return oc?textoDe(oc, valores[id]):''; }).filter(Boolean).join(f.sep||' · ');
     case 'codigo': { if(!o||!v) return ''; const [y,m,d]=String(v).split('-'); return `${f.prefijo||'DOC'}-${y}-${m}${d}`; }
+    case 'pagina': return String(valores.__pagina||1).padStart(2,'0');
+    case 'paginas': return `${valores.__pagina||1} / ${valores.__paginas||1}`;
     default: return '';
   }
 }
 function textoDe(c, v){ if(v==null) return ''; if(c.tipo==='fecha') return fmtFecha(v, c.estilo&&c.estilo.formato); if(c.tipo==='casillas') return v.filter(i=>i.on).map(i=>i.nombre).join(', '); if(Array.isArray(v)) return v.filter(Boolean).join(', '); return String(v); }
 
 // ---------- Construcción del formulario HTML ----------
-export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrantes=()=>[] }={}){
+export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrantes=()=>[], campos=null, otros=()=>({}) }={}){
   cont.innerHTML='';
+  const CAMPOS = campos || def.campos;
   const fotos = {}; const el = {}; const wraps = {};
   const sel = (n, sel0) => `<select>${'<option value="">--</option>'+Array.from({length:n},(_,i)=>`<option${String(i).padStart(2,'0')===sel0?' selected':''}>${String(i).padStart(2,'0')}</option>`).join('')}</select>`;
   function sugerencias(input, buscar, pintar, elegir){
@@ -100,7 +105,7 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
     return integrantes().filter(p=>!usados.includes(p.texto.toLowerCase())&&(!q||p.texto.toLowerCase().includes(q)||p.usuario.toLowerCase().includes(q))).slice(0,12); };
   const pintarPersona = p=>`<b>${esc(p.texto)}</b><small>@${esc(p.usuario)}</small>`;
 
-  for(const c of def.campos){
+  for(const c of CAMPOS){
     const w=document.createElement('div'); w.className='campo'; w.dataset.id=c.id; wraps[c.id]=w;
     const lab=document.createElement('label'); lab.textContent=c.etiqueta+(c.req?' *':''); w.appendChild(lab);
     const v0=valorDefecto(c,yo);
@@ -136,9 +141,9 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
     }
     cont.appendChild(w);
   }
-  function leerCrudo(){
+  function leerPropio(){
     const v={};
-    for(const c of def.campos){ const e=el[c.id]; if(!e) continue;
+    for(const c of CAMPOS){ const e=el[c.id]; if(!e) continue;
       if(c.tipo==='hora'){ v[c.id]=(e[0].value&&e[1].value)?`${e[0].value}:${e[1].value}`:''; }
       else if(c.tipo==='casillas'){ v[c.id]=e.map(f=>({ nombre:f.nombre, on:f.chk.checked, texto:f.txt?f.txt.value.trim():'' })); }
       else if(c.tipo==='formula'){ v[c.id]=''; }
@@ -147,6 +152,7 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
       else v[c.id]=(e.value||'').trim(); }
     return v;
   }
+  function leerCrudo(){ return { ...otros(), ...leerPropio() }; }
   function leer(){
     const v=leerCrudo();
     for(const c of def.campos){ if(!estaActivo(def,v,c)) v[c.id]=Array.isArray(v[c.id])?[]:''; }     // campos inhabilitados no cuentan
@@ -155,13 +161,13 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
   }
   function aplicarReglas(){
     const v=leerCrudo();
-    for(const c of def.campos){ const w=wraps[c.id]; if(!w) return; const on=estaActivo(def,v,c);
+    for(const c of CAMPOS){ const w=wraps[c.id]; if(!w) continue; const on=estaActivo(def,v,c);
       w.classList.toggle('inactivo',!on); w.querySelectorAll('input,select,textarea').forEach(i=>{ if(c.tipo==='formula') return; i.disabled=!on; });
       const lab=w.querySelector('label'); if(lab) lab.textContent=c.etiqueta+(esRequerido(def,v,c)?' *':''); }
   }
   cont.addEventListener('input',()=>{ aplicarReglas(); onChange(); }); cont.addEventListener('change',()=>{ aplicarReglas(); onChange(); });
   aplicarReglas();
-  return { leer, fotos, el };
+  return { leer, leerPropio, fotos, el };
 }
 export function cargarImagen(f){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(f); const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=u; }); }
 

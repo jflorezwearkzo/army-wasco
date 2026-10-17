@@ -54,6 +54,7 @@
   <h1>Diseñador de formularios</h1>
   <select id="selForm" style="width:auto;min-width:260px"></select>
   <button class="ghost" id="btnNuevo" type="button">+ Nuevo formulario</button>
+  <button class="ghost" id="btnDuplicar" type="button" title="Crea una copia de este formulario con otro identificador">⧉ Duplicar</button>
   <span style="margin-left:auto"></span>
   <button class="secondary" id="btnPreview" type="button">Vista previa</button>
   <button class="primary" id="btnGuardar" type="button">Guardar</button>
@@ -80,6 +81,11 @@
       <div class="fila3"><div><label>Icono</label><input id="fIcono" value="📋"></div><div><label>Orden</label><input id="fOrden" type="number" value="100"></div><div><label>Visible</label><select id="fActivo"><option value="1">Sí</option><option value="0">No</option></select></div></div>
       <div class="fila"><div><label>Fotos de anexo (mín)</label><input id="fMin" type="number" min="0" max="10" value="0"></div><div><label>Fotos de anexo (máx)</label><input id="fMax" type="number" min="0" max="10" value="10"></div></div>
       <label>Título del anexo</label><input id="fAnexo" value="ANEXO FOTOGRÁFICO">
+      <div style="margin-top:10px;padding:8px 10px;border:1px solid #2b3a40;border-radius:8px">
+        <label style="margin-top:0"><input type="checkbox" id="fMulti"> Reporte en varias páginas (una imagen por cada una)</label>
+        <div class="fila" id="fMultiW"><div><label>Nombre de cada página</label><input id="fMultiEtq" value="Patrullaje"></div><div><label>Máximo</label><input id="fMultiMax" type="number" min="1" max="20" value="10"></div></div>
+        <p class="ayuda" style="margin:4px 0 0">Marca en cada campo "Se repite por página" para los que cambian entre páginas (hora, integrantes, fotos…). Los demás se llenan una sola vez.</p>
+      </div>
     </div>
     <div class="caja" style="margin-top:12px">
       <h2>Campos</h2>
@@ -88,6 +94,7 @@
         <div class="fila"><div><label>Etiqueta</label><input id="pEtiqueta"></div><div><label>Tipo</label><select id="pTipo"></select></div></div>
         <div class="fila"><div><label>Valor por defecto</label><select id="pDefecto"></select></div><div><label>Texto por defecto</label><input id="pDefectoTxt" placeholder="(si no es automático)"></div></div>
         <div class="fila3"><label><input type="checkbox" id="pReq"> Obligatorio</label><label><input type="checkbox" id="pBloq"> Bloqueado</label><label><input type="checkbox" id="pRes"> En resumen</label></div>
+        <label id="pPorPagW"><input type="checkbox" id="pPorPag"> Se repite por página</label>
         <div id="pOpcionesW"><label>Opciones (una por línea)</label><textarea id="pOpciones" rows="3"></textarea>
           <div id="pCasW" class="fila"><label style="margin:6px 0 0"><input type="checkbox" id="pConTexto"> Con texto por casilla</label><div><label>Texto al marcar</label><input id="pTextoDef" placeholder="p. ej. Control del estado logrado"></div></div></div>
         <div id="pFormulaW">
@@ -114,6 +121,6 @@
   </aside>
 </main>
 <div id="modal"><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="color:var(--gold)">Vista previa con datos de ejemplo</b><button class="ghost" id="btnCerrar" type="button">Cerrar</button></div><canvas id="cv"></canvas></div></div>
-<script type="module" src="../js/app-disenador.js?v=0c801982"></script>
+<script type="module" src="../js/app-disenador.js?v=537f87db"></script>
 </body>
 </html>
