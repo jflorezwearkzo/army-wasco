@@ -499,3 +499,11 @@ create policy plantillas_read   on storage.objects for select using (bucket_id='
 create policy plantillas_insert on storage.objects for insert with check (bucket_id='plantillas' and (public.tengo_permiso('crear_reportes') or public.tengo_permiso('gestion_reportes')));
 create policy plantillas_update on storage.objects for update using (bucket_id='plantillas' and public.tengo_permiso('gestion_reportes'));
 create policy plantillas_delete on storage.objects for delete using (bucket_id='plantillas' and public.tengo_permiso('gestion_reportes'));
+
+-- Permiso "disenar_formularios": crear/editar plantillas en el diseñador y subir fondos
+alter policy formularios_insert on public.formularios with check (public.tengo_permiso('crear_reportes') or public.tengo_permiso('disenar_formularios'));
+alter policy formularios_select on public.formularios using (public.mi_perfil_activo() and (activo or public.tengo_permiso('gestion_reportes') or public.tengo_permiso('crear_reportes') or public.tengo_permiso('disenar_formularios')));
+alter policy formularios_write on public.formularios using (public.tengo_permiso('gestion_reportes') or (public.tengo_permiso('disenar_formularios') and definicion is not null)) with check (public.tengo_permiso('gestion_reportes') or public.tengo_permiso('crear_reportes') or public.tengo_permiso('disenar_formularios'));
+alter policy plantillas_insert on storage.objects with check (bucket_id='plantillas' and public.tengo_permiso('disenar_formularios'));
+alter policy plantillas_update on storage.objects using (bucket_id='plantillas' and public.tengo_permiso('disenar_formularios'));
+alter policy plantillas_delete on storage.objects using (bucket_id='plantillas' and public.tengo_permiso('disenar_formularios'));

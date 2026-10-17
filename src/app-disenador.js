@@ -3,7 +3,7 @@ import { requerir, barraUsuario, tiene, sb, esc, RANGOS } from './auth.js';
 import { ANCHO, TIPOS, DEFECTOS, campoNuevo, definicionNueva, dibujar, cargarFondo, fmtFecha } from './plantilla.js';
 
 const yo = await requerir(); barraUsuario(yo);
-if(!tiene(yo,'crear_reportes') && !tiene(yo,'gestion_reportes')){ document.body.innerHTML='<p style="padding:30px;color:#f3f3f3;font-family:Arial">Necesitas el permiso de creación o gestión de reportes.</p>'; throw new Error('sin permiso'); }
+if(!tiene(yo,'disenar_formularios')){ document.body.innerHTML='<p style="padding:30px;color:#f3f3f3;font-family:Arial">Necesitas el permiso de creación de formularios (diseñador).</p>'; throw new Error('sin permiso'); }
 const $=s=>document.querySelector(s);
 const msg=(t,ok)=>{ const m=$('#msg'); m.textContent=t; m.className='msg '+(ok?'ok':t?'err':''); };
 
@@ -108,8 +108,7 @@ $('#btnGuardar').onclick=async()=>{
   if(!/^[a-z0-9_\-]{2,30}$/.test(id)){ msg('Identificador inválido (2–30 caracteres: letras minúsculas, números, guion).'); return; }
   if(!titulo){ msg('Falta el título.'); return; }
   if(!DEF.fondo){ msg('Sube el fondo del formato.'); return; }
-  if(ESNUEVO && !tiene(yo,'crear_reportes')){ msg('No tienes permiso de creación de reportes.'); return; }
-  if(!ESNUEVO && !tiene(yo,'gestion_reportes')){ msg('No tienes permiso de gestión de reportes.'); return; }
+  if(!tiene(yo,'disenar_formularios')){ msg('No tienes permiso de creación de formularios.'); return; }
   DEF.fotos={ min:Math.max(0,+$('#fMin').value||0), max:Math.max(0,Math.min(10,+$('#fMax').value||0)), titulo:$('#fAnexo').value.trim()||'ANEXO FOTOGRÁFICO' };
   if(DEF.fotos.min>DEF.fotos.max) DEF.fotos.min=DEF.fotos.max;
   const fila={ id, titulo, descripcion:$('#fDesc').value.trim(), icono:$('#fIcono').value.trim()||'📋', orden:parseInt($('#fOrden').value)||100, activo:$('#fActivo').value==='1', ruta:`reportes/plantilla/?id=${id}`, definicion:DEF, version:(FORM&&FORM.version?FORM.version:0)+1 };
