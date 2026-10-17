@@ -33,7 +33,7 @@ export function campoNuevo(tipo='texto', n=1){
     conTexto:false, textoDef:'', formula:{ op:'contar', origen:'', origenes:[], sep:' · ', prefijo:'DOC' },
     reglas:{ habilitarCampo:'', habilitarValor:'', reqCampo:'', reqValor:'', posteriorA:'' },
     caja:{ x:40, y:40+n*30, w:300, h:24 },
-    estilo:{ tam:17, negrita:true, color:'#f0c24d', fondo:'#0e1b20', alinear:'left', prefijo:'', prefijoColor:'#ffffff', columnas:1, formato:'dd-mm-aaaa', lineas:0 } };
+    estilo:{ tam:17, negrita:true, color:'#f0c24d', fondo:'#0e1b20', alinear:'left', prefijo:'', prefijoColor:'#ffffff', columnas:0, formato:'dd-mm-aaaa', lineas:0 } };
 }
 export function definicionNueva(){ return { v:2, fondo:null, fotos:{ min:0, max:10, titulo:'ANEXO FOTOGRÁFICO' }, campos:[] }; }
 
@@ -193,12 +193,22 @@ export function layoutAnexo(fotos, W){
 }
 // Líneas en columnas; columnas=0 -> automático (las que hagan falta para que quepan en el alto de la caja, hasta 6, reduciendo la letra si es necesario)
 function dibujarLineas(ctx, lineas, b, s, px, pintar){
-  const pad=4, maxW=b.w-pad*2-px; let tam=s.tam||17, lh=tam+3; let cols=+s.columnas||0;
-  let rows=Math.max(1,Math.floor((b.h-pad*2)/lh));
-  if(cols<=0){ cols=Math.ceil(lineas.length/rows); while(cols>6 && tam>10){ tam--; lh=tam+3; rows=Math.max(1,Math.floor((b.h-pad*2)/lh)); cols=Math.ceil(lineas.length/rows); } cols=Math.max(1,Math.min(6,cols)); }
-  rows=Math.ceil(lineas.length/cols); const colW=maxW/cols;
+  const pad=4, maxW=b.w-pad*2-px, n=lineas.length; let tam=s.tam||17, lh=tam+3;
+  const filasQueCaben = () => Math.max(1,Math.floor((b.h-pad*2)/lh));
+  let cols=+s.columnas||0, rows=filasQueCaben();
+  if(cols>0 && Math.ceil(n/cols)>rows) cols=0;                         // las columnas fijas no alcanzan: pasa a automático
+  if(cols<=0){
+    cols=Math.ceil(n/rows);
+    while(cols>6 && tam>10){ tam--; lh=tam+3; rows=filasQueCaben(); cols=Math.ceil(n/rows); }   // reduce la letra antes de pasar de 6 columnas
+    cols=Math.max(1,Math.min(6,cols));
+  }
+  rows=Math.ceil(n/cols); const colW=maxW/cols;
+  // Si aun así no cabe, se reduce la letra hasta que quepa (mínimo 8 px); nunca se dibuja fuera de la caja
+  while(rows*lh>b.h-pad*2 && tam>8){ tam--; lh=tam+3; }
+  ctx.save(); ctx.beginPath(); ctx.rect(b.x,b.y,b.w,b.h); ctx.clip();
   ctx.font=`${s.negrita!==false?'bold ':''}${tam}px "Roboto Condensed",Arial`; ctx.textAlign='left';
   lineas.forEach((ln,i)=>{ const col=Math.floor(i/rows), row=i%rows; pintar(ln, b.x+pad+px+col*colW, b.y+pad+tam/2+row*lh, colW-6, tam); });
+  ctx.restore();
 }
 // Dibuja la plantilla completa en cv. fondoImg: Image cargada. valores: leer(). fotosCampo: {id:{img}}. fotosAnexo: [{img}]. sello: {folio, texto} | null
 export function dibujar(cv, def, fondoImg, valores, fotosCampo, fotosAnexo, sello=null, { escala=2, fechaAnexo='' }={}){

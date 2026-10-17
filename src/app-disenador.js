@@ -90,7 +90,7 @@ function props(todo=true){
     const r=c.reglas||{}; $('#pHabCampo').innerHTML=opts(x=>['sino','opcion','casillas','texto','numero','personas','lista'].includes(x.tipo),r.habilitarCampo,'— Siempre —'); $('#pHabValor').value=r.habilitarValor||'';
     $('#pReqCampo').innerHTML=opts(x=>['sino','opcion','casillas','texto','numero'].includes(x.tipo),r.reqCampo,'— Siempre (si es obligatorio) —'); $('#pReqValor').value=r.reqValor||'';
     $('#pPostCampo').innerHTML=opts(x=>x.tipo==='hora'||x.tipo==='fecha',r.posteriorA,'— No aplica —');
-    const s=c.estilo; $('#pTam').value=s.tam; $('#pCols').value=s.columnas??1; $('#pColor').value=s.color; $('#pSinFondo').checked=s.fondo==='transparent'; $('#pFondo').value=s.fondo==='transparent'?'#0e1b20':s.fondo; $('#pAlinear').value=s.alinear||'left'; $('#pFormato').value=s.formato||'dd-mm-aaaa'; $('#pPrefijo').value=s.prefijo||''; $('#pPrefijoColor').value=s.prefijoColor||'#ffffff'; $('#pNegrita').checked=s.negrita!==false; }
+    const s=c.estilo; $('#pTam').value=s.tam; $('#pCols').value=s.columnas??0; $('#pColor').value=s.color; $('#pSinFondo').checked=s.fondo==='transparent'; $('#pFondo').value=s.fondo==='transparent'?'#0e1b20':s.fondo; $('#pAlinear').value=s.alinear||'left'; $('#pFormato').value=s.formato||'dd-mm-aaaa'; $('#pPrefijo').value=s.prefijo||''; $('#pPrefijoColor').value=s.prefijoColor||'#ffffff'; $('#pNegrita').checked=s.negrita!==false; }
   $('#pX').value=c.caja.x; $('#pY').value=c.caja.y; $('#pW').value=c.caja.w; $('#pH').value=c.caja.h; llenando=false;
 }
 function mostrarFormula(){ const op=$('#pOp').value; $('#pOrigenW').style.display=op==='unir'?'none':''; $('#pOrigenesW').style.display=op==='unir'?'':'none'; $('#pCodW').style.display=op==='codigo'?'':'none'; }
