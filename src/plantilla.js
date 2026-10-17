@@ -15,16 +15,27 @@ export const TIPOS = {
   persona:  { nombre:'Persona (buscador de miembros)' },
   personas: { nombre:'Lista de personas (1 a N, con buscador)' },
   lista:    { nombre:'Lista de textos (1 a N)' },
+  casillas: { nombre:'Casillas (lista fija con ✔/✘ y texto)' },
+  formula:  { nombre:'Campo calculado (fórmula)' },
   foto:     { nombre:'Foto en recuadro' },
+};
+export const OPERACIONES = {
+  contar:   'Contar (casillas marcadas o elementos de una lista)',
+  copiar:   'Copiar el valor de otro campo',
+  unir:     'Unir varios campos con un separador',
+  codigo:   'Código a partir de una fecha (PREFIJO-AAAA-MMDD)',
+  total:    'Marcadas / total de una lista de casillas (p. ej. 2 / 3)',
 };
 export const DEFECTOS = { '':'— Vacío —', hoy:'Fecha de hoy', mi_nombre:'Mi nombre', mi_rango:'Mi rango', mi_rango_pm:'Mi Rango PM', mi_usuario:'Mi usuario', mi_rango_nombre:'Mi rango y nombre' };
 
 export function campoNuevo(tipo='texto', n=1){
-  return { id:'c'+Date.now().toString(36)+n, tipo, etiqueta:'Campo '+n, req:true, defecto:'', bloqueado:false, opciones:[], max:3, resumen:false,
+  return { id:'c'+Date.now().toString(36)+n, tipo, etiqueta:'Campo '+n, req:true, defecto:'', bloqueado:false, opciones:[], min:1, max:3, resumen:false,
+    conTexto:false, textoDef:'', formula:{ op:'contar', origen:'', origenes:[], sep:' · ', prefijo:'DOC' },
+    reglas:{ habilitarCampo:'', habilitarValor:'', reqCampo:'', reqValor:'', posteriorA:'' },
     caja:{ x:40, y:40+n*30, w:300, h:24 },
     estilo:{ tam:17, negrita:true, color:'#f0c24d', fondo:'#0e1b20', alinear:'left', prefijo:'', prefijoColor:'#ffffff', columnas:1, formato:'dd-mm-aaaa', lineas:0 } };
 }
-export function definicionNueva(){ return { v:1, fondo:null, fotos:{ min:0, max:10, titulo:'ANEXO FOTOGRÁFICO' }, campos:[] }; }
+export function definicionNueva(){ return { v:2, fondo:null, fotos:{ min:0, max:10, titulo:'ANEXO FOTOGRÁFICO' }, campos:[] }; }
 
 // ---------- Valores por defecto a partir del perfil ----------
 export function valorDefecto(campo, yo){
@@ -40,12 +51,39 @@ export function valorDefecto(campo, yo){
   }
 }
 
+// ---------- Reglas ----------
+const norm = s => String(s==null?'':s).trim().toLowerCase();
+function cumple(def, valores, campoId, valor){
+  if(!campoId) return true;
+  const c=def.campos.find(x=>x.id===campoId); if(!c) return true;
+  const v=valores[campoId];
+  if(c.tipo==='casillas') return Array.isArray(v) && v.some(x=>x.on);          // "si hay alguna casilla marcada"
+  if(Array.isArray(v)) return v.filter(Boolean).length>0;
+  if(valor==null || valor==='') return !!norm(v);
+  return norm(v)===norm(valor);
+}
+export const estaActivo = (def, valores, c) => cumple(def, valores, c.reglas&&c.reglas.habilitarCampo, c.reglas&&c.reglas.habilitarValor);
+const esRequerido = (def, valores, c) => c.req && (!c.reglas||!c.reglas.reqCampo ? true : cumple(def, valores, c.reglas.reqCampo, c.reglas.reqValor));
+
+// ---------- Fórmulas ----------
+export function calcular(def, c, valores){
+  const f=c.formula||{}; const o=def.campos.find(x=>x.id===f.origen); const v=o?valores[o.id]:undefined;
+  const cnt = x => Array.isArray(x) ? (o&&o.tipo==='casillas' ? x.filter(i=>i.on).length : x.filter(Boolean).length) : (x?1:0);
+  switch(f.op){
+    case 'contar': return o ? String(cnt(v)) : '';
+    case 'total':  return o ? `${cnt(v)} / ${o.tipo==='casillas' ? (o.opciones||[]).length : (Array.isArray(v)?v.length:0)}` : '';
+    case 'copiar': return o ? textoDe(o, v) : '';
+    case 'unir':   return (f.origenes||[]).map(id=>{ const oc=def.campos.find(x=>x.id===id); return oc?textoDe(oc, valores[id]):''; }).filter(Boolean).join(f.sep||' · ');
+    case 'codigo': { if(!o||!v) return ''; const [y,m,d]=String(v).split('-'); return `${f.prefijo||'DOC'}-${y}-${m}${d}`; }
+    default: return '';
+  }
+}
+function textoDe(c, v){ if(v==null) return ''; if(c.tipo==='fecha') return fmtFecha(v, c.estilo&&c.estilo.formato); if(c.tipo==='casillas') return v.filter(i=>i.on).map(i=>i.nombre).join(', '); if(Array.isArray(v)) return v.filter(Boolean).join(', '); return String(v); }
+
 // ---------- Construcción del formulario HTML ----------
-// Devuelve { leer(): valores, fotosDe(campo), setIntegrantes(lista) }
 export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrantes=()=>[] }={}){
   cont.innerHTML='';
-  const fotos = {};             // id campo -> {img,name} para tipo foto
-  const el = {};                // id campo -> elemento(s)
+  const fotos = {}; const el = {}; const wraps = {};
   const sel = (n, sel0) => `<select>${'<option value="">--</option>'+Array.from({length:n},(_,i)=>`<option${String(i).padStart(2,'0')===sel0?' selected':''}>${String(i).padStart(2,'0')}</option>`).join('')}</select>`;
   function sugerencias(input, buscar, pintar, elegir){
     const ul=document.createElement('ul'); input.parentElement.appendChild(ul);
@@ -63,7 +101,7 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
   const pintarPersona = p=>`<b>${esc(p.texto)}</b><small>@${esc(p.usuario)}</small>`;
 
   for(const c of def.campos){
-    const w=document.createElement('div'); w.className='campo'; w.dataset.id=c.id;
+    const w=document.createElement('div'); w.className='campo'; w.dataset.id=c.id; wraps[c.id]=w;
     const lab=document.createElement('label'); lab.textContent=c.etiqueta+(c.req?' *':''); w.appendChild(lab);
     const v0=valorDefecto(c,yo);
     let box=document.createElement('div'); w.appendChild(box);
@@ -86,34 +124,57 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
             wrap.appendChild(i); cont2.appendChild(wrap); inputs.push(i); if(c.tipo==='personas' && !(idx===0&&c.bloqueado)) sugerencias(i,buscarPersona(inputs,i),pintarPersona,p=>{ i.value=p.texto; }); }
           while(cont2.children.length>k){ cont2.lastElementChild.remove(); inputs.pop(); } onChange(); };
         nsel.addEventListener('change',ajustar); ajustar(); el[c.id]=inputs; break; }
+      case 'casillas': { box.className='casillas'; const filas=[];
+        for(const o of (c.opciones||[])){ const f=document.createElement('div'); f.className='terr'; const chk=document.createElement('input'); chk.type='checkbox'; const l=document.createElement('label'); l.appendChild(chk); l.appendChild(document.createTextNode(' '+o)); f.appendChild(l);
+          let txt=null; if(c.conTexto){ txt=document.createElement('input'); txt.type='text'; txt.maxLength=80; txt.placeholder='Resultado / detalle'; f.appendChild(txt); chk.addEventListener('change',()=>{ if(chk.checked && !txt.value.trim() && c.textoDef) txt.value=c.textoDef; }); }
+          box.appendChild(f); filas.push({nombre:o, chk, txt}); }
+        el[c.id]=filas; break; }
+      case 'formula': { const i=document.createElement('input'); i.type='text'; i.readOnly=true; i.tabIndex=-1; i.style.opacity='.75'; i.title='Se calcula automáticamente'; box.appendChild(i); el[c.id]=i; break; }
       case 'foto': { const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.style.fontSize='13px'; const t=document.createElement('div'); t.className='thumb'; t.textContent='Sin foto';
         i.addEventListener('change',async e=>{ const f=e.target.files[0]; if(!f) return; fotos[c.id]={img:await cargarImagen(f),name:f.name}; t.innerHTML=`<img src="${fotos[c.id].img.src}" alt=""><button type="button" title="Quitar">✕</button>`; t.querySelector('button').onclick=()=>{ delete fotos[c.id]; t.textContent='Sin foto'; i.value=''; onChange(); }; onChange(); });
         box.appendChild(i); box.appendChild(t); el[c.id]=i; break; }
     }
     cont.appendChild(w);
   }
-  cont.addEventListener('input',onChange); cont.addEventListener('change',onChange);
-  function leer(){
+  function leerCrudo(){
     const v={};
     for(const c of def.campos){ const e=el[c.id]; if(!e) continue;
       if(c.tipo==='hora'){ v[c.id]=(e[0].value&&e[1].value)?`${e[0].value}:${e[1].value}`:''; }
+      else if(c.tipo==='casillas'){ v[c.id]=e.map(f=>({ nombre:f.nombre, on:f.chk.checked, texto:f.txt?f.txt.value.trim():'' })); }
+      else if(c.tipo==='formula'){ v[c.id]=''; }
       else if(Array.isArray(e)){ v[c.id]=e.map(i=>i.value.trim()); }
       else if(c.tipo==='foto'){ v[c.id]=fotos[c.id]?fotos[c.id].name:''; }
       else v[c.id]=(e.value||'').trim(); }
     return v;
   }
+  function leer(){
+    const v=leerCrudo();
+    for(const c of def.campos){ if(!estaActivo(def,v,c)) v[c.id]=Array.isArray(v[c.id])?[]:''; }     // campos inhabilitados no cuentan
+    for(const c of def.campos){ if(c.tipo==='formula'){ v[c.id]=calcular(def,c,v); if(el[c.id]) el[c.id].value=v[c.id]; } }
+    return v;
+  }
+  function aplicarReglas(){
+    const v=leerCrudo();
+    for(const c of def.campos){ const w=wraps[c.id]; if(!w) return; const on=estaActivo(def,v,c);
+      w.classList.toggle('inactivo',!on); w.querySelectorAll('input,select,textarea').forEach(i=>{ if(c.tipo==='formula') return; i.disabled=!on; });
+      const lab=w.querySelector('label'); if(lab) lab.textContent=c.etiqueta+(esRequerido(def,v,c)?' *':''); }
+  }
+  cont.addEventListener('input',()=>{ aplicarReglas(); onChange(); }); cont.addEventListener('change',()=>{ aplicarReglas(); onChange(); });
+  aplicarReglas();
   return { leer, fotos, el };
 }
 export function cargarImagen(f){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(f); const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=u; }); }
 
 export function validar(def, v, fotosCampo, fotosAnexo){
   const e=[];
-  for(const c of def.campos){ const x=v[c.id];
-    if(c.tipo==='foto'){ if(c.req && !fotosCampo[c.id]) e.push(`• Falta la foto: ${c.etiqueta}.`); continue; }
-    if(Array.isArray(x)){ const vacios=x.map((s,i)=>s?null:i+1).filter(Boolean); if(c.req&&vacios.length) e.push(`• ${c.etiqueta}: falta el ${vacios.join(', ')}.`);
+  for(const c of def.campos){ if(!estaActivo(def,v,c) || c.tipo==='formula') continue; const x=v[c.id]; const req=esRequerido(def,v,c);
+    if(c.tipo==='foto'){ if(req && !fotosCampo[c.id]) e.push(`• Falta la foto: ${c.etiqueta}.`); continue; }
+    if(c.tipo==='casillas'){ if(req && !x.some(i=>i.on)) e.push(`• ${c.etiqueta}: marca al menos una casilla.`); if(c.conTexto) x.forEach(i=>{ if(req && !i.texto) e.push(`• ${c.etiqueta}: falta el texto de "${i.nombre}".`); }); continue; }
+    if(Array.isArray(x)){ const vacios=x.map((s,i)=>s?null:i+1).filter(Boolean); if(req&&vacios.length) e.push(`• ${c.etiqueta}: falta el ${vacios.join(', ')}.`);
       const vistos=new Set(); for(const s of x){ const k=s.toLowerCase(); if(k&&vistos.has(k)){ e.push(`• ${c.etiqueta}: "${s}" está repetido.`); break; } vistos.add(k); } continue; }
-    if(c.req && !x) e.push(`• ${c.etiqueta} es obligatorio.`);
+    if(req && !x) e.push(`• ${c.etiqueta} es obligatorio.`);
     if(c.tipo==='fecha' && x && x>hoyISO()) e.push(`• ${c.etiqueta}: la fecha no puede ser futura.`);
+    if(c.reglas && c.reglas.posteriorA && x){ const o=def.campos.find(k=>k.id===c.reglas.posteriorA); const y=o?v[o.id]:''; if(y && x<=y) e.push(`• ${c.etiqueta} debe ser posterior a ${o.etiqueta}.`); }
   }
   const f=def.fotos||{min:0,max:10};
   if(fotosAnexo.length<(f.min||0)) e.push(`• Adjunta al menos ${f.min} foto(s) de evidencia.`);
@@ -121,7 +182,7 @@ export function validar(def, v, fotosCampo, fotosAnexo){
 }
 
 // ---------- Dibujo ----------
-export function fmtFecha(iso, formato='dd-mm-aaaa'){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return formato==='dd/mm/aaaa'?`${d}/${m}/${y}`:formato==='aaaa-mm-dd'?iso:`${d}-${m}-${y}`; }
+export function fmtFecha(iso, formato='dd-mm-aaaa'){ if(!iso) return ''; const [y,m,d]=String(iso).split('-'); if(!d) return iso; return formato==='dd/mm/aaaa'?`${d}/${m}/${y}`:formato==='aaaa-mm-dd'?iso:`${d}-${m}-${y}`; }
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function fit(ctx,txt,maxW){ while(ctx.measureText(txt).width>maxW && txt.length>1) txt=txt.slice(0,-1); return txt; }
 function wrap(ctx,txt,maxW){ const out=[]; for(const para of String(txt).split('\n')){ let line=''; for(const w of para.split(' ')){ const t=line?line+' '+w:w; if(ctx.measureText(t).width>maxW && line){out.push(line);line=w;} else line=t; } out.push(line); } return out; }
@@ -129,6 +190,15 @@ export function layoutAnexo(fotos, W){
   const gap=18, colW=(W-gap*3)/2, maxH=520, rows=[];
   for(let i=0;i<fotos.length;i+=2){ const pair=fotos.slice(i,i+2).map(p=>{ const s=Math.min(colW/p.img.naturalWidth,maxH/p.img.naturalHeight); return {p,w:p.img.naturalWidth*s,h:p.img.naturalHeight*s}; }); rows.push({items:pair,h:Math.max(...pair.map(x=>x.h))}); }
   return { gap, colW, rows, total: fotos.length ? 60+rows.reduce((a,r)=>a+r.h+gap,0)+30 : 0 };
+}
+// Líneas en columnas; columnas=0 -> automático (las que hagan falta para que quepan en el alto de la caja, hasta 6, reduciendo la letra si es necesario)
+function dibujarLineas(ctx, lineas, b, s, px, pintar){
+  const pad=4, maxW=b.w-pad*2-px; let tam=s.tam||17, lh=tam+3; let cols=+s.columnas||0;
+  let rows=Math.max(1,Math.floor((b.h-pad*2)/lh));
+  if(cols<=0){ cols=Math.ceil(lineas.length/rows); while(cols>6 && tam>10){ tam--; lh=tam+3; rows=Math.max(1,Math.floor((b.h-pad*2)/lh)); cols=Math.ceil(lineas.length/rows); } cols=Math.max(1,Math.min(6,cols)); }
+  rows=Math.ceil(lineas.length/cols); const colW=maxW/cols;
+  ctx.font=`${s.negrita!==false?'bold ':''}${tam}px "Roboto Condensed",Arial`; ctx.textAlign='left';
+  lineas.forEach((ln,i)=>{ const col=Math.floor(i/rows), row=i%rows; pintar(ln, b.x+pad+px+col*colW, b.y+pad+tam/2+row*lh, colW-6, tam); });
 }
 // Dibuja la plantilla completa en cv. fondoImg: Image cargada. valores: leer(). fotosCampo: {id:{img}}. fotosAnexo: [{img}]. sello: {folio, texto} | null
 export function dibujar(cv, def, fondoImg, valores, fotosCampo, fotosAnexo, sello=null, { escala=2, fechaAnexo='' }={}){
@@ -140,26 +210,25 @@ export function dibujar(cv, def, fondoImg, valores, fotosCampo, fotosAnexo, sell
   if(fondoImg && fondoImg.naturalWidth) ctx.drawImage(fondoImg,0,0,W,H); else { ctx.fillStyle='#101c21'; ctx.fillRect(0,0,W,H); }
   ctx.textBaseline='middle';
   for(const c of def.campos){
+    if(!estaActivo(def,valores,c)) continue;
     const b=c.caja, s=c.estilo||{}; const v=valores[c.id];
     const fuente=(peso)=>`${peso?'bold ':''}${s.tam||17}px "Roboto Condensed",Arial`;
     if(s.fondo && s.fondo!=='transparent'){ ctx.fillStyle=s.fondo; ctx.fillRect(b.x,b.y,b.w,b.h); }
     if(c.tipo==='foto'){ const p=fotosCampo[c.id]; ctx.fillStyle='#050a0c'; rr(ctx,b.x,b.y,b.w,b.h,6); ctx.fill(); if(p){ const sc=Math.min(b.w/p.img.naturalWidth,b.h/p.img.naturalHeight), w=p.img.naturalWidth*sc, h=p.img.naturalHeight*sc; ctx.save(); rr(ctx,b.x,b.y,b.w,b.h,6); ctx.clip(); ctx.drawImage(p.img,b.x+(b.w-w)/2,b.y+(b.h-h)/2,w,h); ctx.restore(); } continue; }
-    let texto = v;
-    if(c.tipo==='fecha') texto=fmtFecha(v,s.formato);
-    const lineas = Array.isArray(v) ? v.map((t,i)=>t?`${i+1}. ${t}`:'') .filter(Boolean) : (c.tipo==='parrafo' ? null : [texto]);
-    const pad=4; let x=b.x+pad; const maxW=b.w-pad*2;
-    // prefijo (etiqueta dentro de la imagen)
-    let px=0; if(s.prefijo){ ctx.textAlign='left'; ctx.fillStyle=s.prefijoColor||'#fff'; ctx.font=fuente(false); ctx.fillText(s.prefijo,x,b.y+(c.tipo==='parrafo'||Array.isArray(v)?(s.tam||17)/2+pad:b.h/2)); px=ctx.measureText(s.prefijo).width+6; }
+    const pad=4; let x=b.x+pad; const maxW=b.w-pad*2; const multi = c.tipo==='parrafo' || Array.isArray(v);
+    let px=0; if(s.prefijo){ ctx.textAlign='left'; ctx.fillStyle=s.prefijoColor||'#fff'; ctx.font=fuente(false); ctx.fillText(s.prefijo,x,multi?b.y+pad+(s.tam||17)/2:b.y+b.h/2); px=ctx.measureText(s.prefijo).width+6; }
     ctx.fillStyle=s.color||'#f0c24d'; ctx.font=fuente(s.negrita!==false);
+    if(c.tipo==='casillas'){ const items=(v||[]); if(!items.length) continue;
+      dibujarLineas(ctx, items, b, s, px, (it,xx,yy,cw,tam)=>{ ctx.fillStyle=it.on?'#7fd38a':'#ff6b6b'; ctx.font=`bold ${tam}px "Roboto Condensed",Arial`; ctx.fillText(it.on?'✔':'✘',xx,yy); const n=it.nombre.toUpperCase()+(it.texto?' —':''); ctx.fillStyle='#ffffff'; ctx.fillText(fit(ctx,n,cw-22),xx+20,yy); const nw=ctx.measureText(n).width; if(it.texto){ ctx.fillStyle=s.color||'#f0c24d'; ctx.font=`${tam-1}px "Roboto Condensed",Arial`; ctx.fillText(fit(ctx,it.texto,cw-26-nw),xx+26+nw,yy); } }); continue; }
+    if(Array.isArray(v)){ const lineas=v.map((t,i)=>t?`${i+1}. ${t}`:'').filter(Boolean); if(!lineas.length) continue;
+      dibujarLineas(ctx, lineas, b, s, px, (ln,xx,yy,cw)=>{ ctx.fillStyle=s.color||'#f0c24d'; ctx.fillText(fit(ctx,ln,cw),xx,yy); }); continue; }
+    let texto = c.tipo==='fecha' ? fmtFecha(v,s.formato) : v;
     if(c.tipo==='parrafo'){ if(!texto) continue; const lh=(s.tam||17)+3; const ls=wrap(ctx,texto,maxW-px); const top=b.y+pad+(s.tam||17)/2; const maxL=s.lineas>0?s.lineas:Math.floor((b.h-pad*2)/lh); ctx.textAlign='left'; ls.slice(0,Math.max(1,maxL)).forEach((ln,i)=>ctx.fillText(ln,x+(i===0?px:0),top+i*lh)); continue; }
-    if(Array.isArray(v)){ if(!lineas.length) continue; const cols=Math.max(1,Math.min(6,+s.columnas||1)); const lh=(s.tam||17)+3; const rows=Math.ceil(lineas.length/cols); const colW=(maxW-px)/cols; ctx.textAlign='left';
-      lineas.forEach((ln,i)=>{ const col=Math.floor(i/rows), row=i%rows; ctx.fillText(fit(ctx,ln,colW-6),x+px+col*colW,b.y+pad+(s.tam||17)/2+row*lh); }); continue; }
     if(!texto) continue;
     const al=s.alinear||'left'; ctx.textAlign=al; const tx=al==='center'?x+px+(maxW-px)/2:al==='right'?b.x+b.w-pad:x+px;
     ctx.fillText(fit(ctx,String(texto),maxW-px),tx,b.y+b.h/2);
   }
   ctx.textAlign='left';
-  // Anexo
   if(fotosAnexo && fotosAnexo.length){
     let y=H; const tit=(def.fotos&&def.fotos.titulo)||'ANEXO FOTOGRÁFICO';
     ctx.fillStyle='#0e1b20'; ctx.fillRect(0,y,W,46); ctx.fillStyle='#c9a43a'; ctx.fillRect(0,y,W,3); ctx.fillRect(0,y+43,W,3);
@@ -172,14 +241,15 @@ export function dibujar(cv, def, fondoImg, valores, fotosCampo, fotosAnexo, sell
       y+=r.h+L.gap; });
     ctx.fillStyle='#8a9398'; ctx.font='bold 13px "Roboto Condensed",Arial'; ctx.textAlign='center'; ctx.fillText('¡HONOR  ★  LEALTAD  ★  DISCIPLINA!',W/2,y+10); ctx.textAlign='left';
   }
-  // Sello
   if(sello && sello.folio){ ctx.save(); ctx.textAlign='right'; ctx.textBaseline='alphabetic'; const txt=`FOLIO ${sello.folio} · ${sello.texto||''}`;
     ctx.font='bold 12px "Roboto Condensed",Arial'; const w=ctx.measureText(txt).width+16; ctx.fillStyle='#000c'; rr(ctx,W-14-w,H-26,w,18,4); ctx.fill(); ctx.fillStyle='#f0c24d'; ctx.fillText(txt,W-22,H-13); ctx.restore(); }
   return { W, H, total:L.total };
 }
 export function resumenDe(def, v){
-  const partes=[]; for(const c of def.campos){ if(!c.resumen) continue; const x=v[c.id]; if(Array.isArray(x)) { if(x.filter(Boolean).length) partes.push(`${x.filter(Boolean).length} ${c.etiqueta.toLowerCase()}`); } else if(x) partes.push(c.tipo==='fecha'?fmtFecha(x):String(x)); }
+  const partes=[]; for(const c of def.campos){ if(!c.resumen) continue; const x=v[c.id];
+    if(c.tipo==='casillas'){ const n=(x||[]).filter(i=>i.on).length; partes.push(`${n}/${(c.opciones||[]).length} ${c.etiqueta.toLowerCase()}`); }
+    else if(Array.isArray(x)){ if(x.filter(Boolean).length) partes.push(`${x.filter(Boolean).length} ${c.etiqueta.toLowerCase()}`); }
+    else if(x) partes.push(c.tipo==='fecha'?fmtFecha(x):String(x)); }
   return partes.join(' · ');
 }
-// Fondo público del bucket "plantillas"
 export function cargarFondo(def){ return new Promise(res=>{ if(!def.fondo||!def.fondo.url) return res(null); const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>res(i); i.onerror=()=>res(null); i.src=def.fondo.url; }); }

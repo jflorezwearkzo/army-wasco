@@ -88,11 +88,22 @@
         <div class="fila"><div><label>Etiqueta</label><input id="pEtiqueta"></div><div><label>Tipo</label><select id="pTipo"></select></div></div>
         <div class="fila"><div><label>Valor por defecto</label><select id="pDefecto"></select></div><div><label>Texto por defecto</label><input id="pDefectoTxt" placeholder="(si no es automático)"></div></div>
         <div class="fila3"><label><input type="checkbox" id="pReq"> Obligatorio</label><label><input type="checkbox" id="pBloq"> Bloqueado</label><label><input type="checkbox" id="pRes"> En resumen</label></div>
-        <div id="pOpcionesW"><label>Opciones (una por línea)</label><textarea id="pOpciones" rows="3"></textarea></div>
+        <div id="pOpcionesW"><label>Opciones (una por línea)</label><textarea id="pOpciones" rows="3"></textarea>
+          <div id="pCasW" class="fila"><label style="margin:6px 0 0"><input type="checkbox" id="pConTexto"> Con texto por casilla</label><div><label>Texto al marcar</label><input id="pTextoDef" placeholder="p. ej. Control del estado logrado"></div></div></div>
+        <div id="pFormulaW">
+          <label>Operación</label><select id="pOp"></select>
+          <div id="pOrigenW"><label>Campo origen</label><select id="pOrigen"></select></div>
+          <div id="pOrigenesW"><label>Campos a unir (Ctrl+clic para varios)</label><select id="pOrigenes" multiple size="4"></select><label>Separador</label><input id="pSep" value=" · "></div>
+          <div id="pCodW"><label>Prefijo del código</label><input id="pCodPrefijo" value="DOC"></div>
+        </div>
         <div class="fila" id="pListaW"><div><label>Mínimo</label><input id="pMin" type="number" min="1" max="60" value="1"></div><div><label>Máximo</label><input id="pMax" type="number" min="1" max="60" value="3"></div></div>
+        <h2 style="margin-top:10px">Reglas</h2>
+        <div class="fila"><div><label>Habilitar solo si</label><select id="pHabCampo"></select></div><div><label>vale (vacío = "tiene valor")</label><input id="pHabValor" placeholder="p. ej. SÍ"></div></div>
+        <div class="fila"><div><label>Obligatorio solo si</label><select id="pReqCampo"></select></div><div><label>vale</label><input id="pReqValor" placeholder="p. ej. SÍ"></div></div>
+        <div><label>Debe ser posterior a (hora o fecha)</label><select id="pPostCampo"></select></div>
         <h2 style="margin-top:10px">Posición y estilo</h2>
         <div class="fila3"><div><label>X</label><input id="pX" type="number"></div><div><label>Y</label><input id="pY" type="number"></div><div><label>Ancho</label><input id="pW" type="number"></div></div>
-        <div class="fila3"><div><label>Alto</label><input id="pH" type="number"></div><div><label>Tamaño letra</label><input id="pTam" type="number" min="8" max="60"></div><div><label>Columnas</label><input id="pCols" type="number" min="1" max="6" value="1"></div></div>
+        <div class="fila3"><div><label>Alto</label><input id="pH" type="number"></div><div><label>Tamaño letra</label><input id="pTam" type="number" min="8" max="60"></div><div><label>Columnas <small>(0 = automático)</small></label><input id="pCols" type="number" min="0" max="6" value="1"></div></div>
         <div class="fila3"><div><label>Color texto</label><input id="pColor" type="color" value="#f0c24d"></div><div><label>Fondo caja</label><input id="pFondo" type="color" value="#0e1b20"></div><div><label>&nbsp;</label><label style="margin:0"><input type="checkbox" id="pSinFondo"> Sin fondo</label></div></div>
         <div class="fila"><div><label>Alineación</label><select id="pAlinear"><option value="left">Izquierda</option><option value="center">Centro</option><option value="right">Derecha</option></select></div><div><label>Formato de fecha</label><select id="pFormato"><option value="dd-mm-aaaa">DD-MM-AAAA</option><option value="dd/mm/aaaa">DD/MM/AAAA</option><option value="aaaa-mm-dd">AAAA-MM-DD</option></select></div></div>
         <div class="fila"><div><label>Prefijo dentro de la imagen</label><input id="pPrefijo" placeholder="p. ej. Nombre:"></div><div><label>Color del prefijo</label><input id="pPrefijoColor" type="color" value="#ffffff"></div></div>
@@ -103,6 +114,6 @@
   </aside>
 </main>
 <div id="modal"><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="color:var(--gold)">Vista previa con datos de ejemplo</b><button class="ghost" id="btnCerrar" type="button">Cerrar</button></div><canvas id="cv"></canvas></div></div>
-<script type="module" src="../js/app-disenador.js?v=607be5df"></script>
+<script type="module" src="../js/app-disenador.js?v=d7f0b46c"></script>
 </body>
 </html>

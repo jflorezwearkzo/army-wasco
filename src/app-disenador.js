@@ -1,6 +1,6 @@
 // Diseñador visual de formularios: fondo + cajas de campos -> definición JSON guardada en formularios.definicion
 import { requerir, barraUsuario, tiene, sb, esc, RANGOS } from './auth.js';
-import { ANCHO, TIPOS, DEFECTOS, campoNuevo, definicionNueva, dibujar, cargarFondo, fmtFecha } from './plantilla.js';
+import { ANCHO, TIPOS, DEFECTOS, OPERACIONES, campoNuevo, definicionNueva, dibujar, cargarFondo, fmtFecha, calcular } from './plantilla.js';
 
 const yo = await requerir(); barraUsuario(yo);
 if(!tiene(yo,'disenar_formularios')){ document.body.innerHTML='<p style="padding:30px;color:#f3f3f3;font-family:Arial">Necesitas el permiso de creación de formularios (diseñador).</p>'; throw new Error('sin permiso'); }
@@ -10,6 +10,7 @@ const msg=(t,ok)=>{ const m=$('#msg'); m.textContent=t; m.className='msg '+(ok?'
 let DEF=definicionNueva(), ESNUEVO=true, FONDO=null, SEL=null, FORM=null;
 $('#tipoNuevo').innerHTML=Object.entries(TIPOS).map(([k,v])=>`<option value="${k}">${esc(v.nombre)}</option>`).join('');
 $('#pTipo').innerHTML=$('#tipoNuevo').innerHTML;
+$('#pOp').innerHTML=Object.entries(OPERACIONES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('');
 $('#pDefecto').innerHTML=Object.entries(DEFECTOS).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('')+'<option value="__txt">Texto fijo…</option>';
 
 // ---------- Catálogo ----------
@@ -74,31 +75,43 @@ document.addEventListener('keydown',e=>{ const c=sel(); if(!c||['INPUT','TEXTARE
 // ---------- Campos ----------
 const sel=()=>DEF.campos.find(c=>c.id===SEL);
 function seleccionar(id){ SEL=id; esc_.querySelectorAll('.box').forEach(b=>b.classList.toggle('sel',b.dataset.id===id)); lista(); props(); }
-$('#btnAdd').onclick=()=>{ if(!DEF.fondo){ msg('Sube primero el fondo.'); return; } const c=campoNuevo($('#tipoNuevo').value, DEF.campos.length+1); if(c.tipo==='foto'){ c.caja.w=220; c.caja.h=150; c.estilo.fondo='transparent'; } if(c.tipo==='parrafo'){ c.caja.h=90; } if(c.tipo==='personas'||c.tipo==='lista'){ c.caja.h=70; } if(c.tipo==='fecha') c.defecto='hoy'; DEF.campos.push(c); SEL=c.id; render(); };
+$('#btnAdd').onclick=()=>{ if(!DEF.fondo){ msg('Sube primero el fondo.'); return; } const c=campoNuevo($('#tipoNuevo').value, DEF.campos.length+1); if(c.tipo==='foto'){ c.caja.w=220; c.caja.h=150; c.estilo.fondo='transparent'; } if(c.tipo==='parrafo'){ c.caja.h=90; } if(c.tipo==='personas'||c.tipo==='lista'||c.tipo==='casillas'){ c.caja.h=70; } if(c.tipo==='casillas'){ c.opciones=['Opción 1','Opción 2','Opción 3']; c.conTexto=true; } if(c.tipo==='formula'){ c.req=false; } if(c.tipo==='fecha') c.defecto='hoy'; DEF.campos.push(c); SEL=c.id; render(); };
 function lista(){ $('#lista').innerHTML=DEF.campos.map(c=>`<li data-id="${c.id}" class="${c.id===SEL?'sel':''}"><span>${esc(c.etiqueta)}</span><small>${esc(TIPOS[c.tipo]?TIPOS[c.tipo].nombre.split(' ')[0]:c.tipo)}</small></li>`).join('')||'<li><small>Sin campos todavía</small></li>'; $('#lista').querySelectorAll('li[data-id]').forEach(li=>li.onclick=()=>seleccionar(li.dataset.id)); }
 let llenando=false;
 function props(todo=true){
   const c=sel(); $('#prop').classList.toggle('on',!!c); if(!c) return; llenando=true;
   if(todo){ $('#pEtiqueta').value=c.etiqueta; $('#pTipo').value=c.tipo; const auto=c.defecto in DEFECTOS; $('#pDefecto').value=auto?c.defecto:'__txt'; $('#pDefectoTxt').value=auto?'':c.defecto; $('#pDefectoTxt').style.display=auto?'none':'';
     $('#pReq').checked=!!c.req; $('#pBloq').checked=!!c.bloqueado; $('#pRes').checked=!!c.resumen; $('#pOpciones').value=(c.opciones||[]).join('\n'); $('#pMin').value=c.min||1; $('#pMax').value=c.max||3;
-    $('#pOpcionesW').style.display=c.tipo==='opcion'?'':'none'; $('#pListaW').style.display=(c.tipo==='personas'||c.tipo==='lista')?'':'none';
-    const s=c.estilo; $('#pTam').value=s.tam; $('#pCols').value=s.columnas||1; $('#pColor').value=s.color; $('#pSinFondo').checked=s.fondo==='transparent'; $('#pFondo').value=s.fondo==='transparent'?'#0e1b20':s.fondo; $('#pAlinear').value=s.alinear||'left'; $('#pFormato').value=s.formato||'dd-mm-aaaa'; $('#pPrefijo').value=s.prefijo||''; $('#pPrefijoColor').value=s.prefijoColor||'#ffffff'; $('#pNegrita').checked=s.negrita!==false; }
+    $('#pOpcionesW').style.display=(c.tipo==='opcion'||c.tipo==='casillas')?'':'none'; $('#pCasW').style.display=c.tipo==='casillas'?'':'none'; $('#pConTexto').checked=!!c.conTexto; $('#pTextoDef').value=c.textoDef||'';
+    $('#pListaW').style.display=(c.tipo==='personas'||c.tipo==='lista')?'':'none';
+    const otros=DEF.campos.filter(x=>x.id!==c.id); const opts=(filtro,sel0,vacio='— Ninguno —')=>`<option value="">${vacio}</option>`+otros.filter(filtro).map(x=>`<option value="${x.id}"${x.id===sel0?' selected':''}>${esc(x.etiqueta)}</option>`).join('');
+    const f=c.formula||{op:'contar',origen:'',origenes:[],sep:' · ',prefijo:'DOC'}; $('#pFormulaW').style.display=c.tipo==='formula'?'':'none'; $('#pOp').value=f.op||'contar';
+    $('#pOrigen').innerHTML=opts(x=>true,f.origen,'— Elige —'); $('#pOrigenes').innerHTML=otros.map(x=>`<option value="${x.id}"${(f.origenes||[]).includes(x.id)?' selected':''}>${esc(x.etiqueta)}</option>`).join(''); $('#pSep').value=f.sep||' · '; $('#pCodPrefijo').value=f.prefijo||'DOC'; mostrarFormula();
+    const r=c.reglas||{}; $('#pHabCampo').innerHTML=opts(x=>['sino','opcion','casillas','texto','numero','personas','lista'].includes(x.tipo),r.habilitarCampo,'— Siempre —'); $('#pHabValor').value=r.habilitarValor||'';
+    $('#pReqCampo').innerHTML=opts(x=>['sino','opcion','casillas','texto','numero'].includes(x.tipo),r.reqCampo,'— Siempre (si es obligatorio) —'); $('#pReqValor').value=r.reqValor||'';
+    $('#pPostCampo').innerHTML=opts(x=>x.tipo==='hora'||x.tipo==='fecha',r.posteriorA,'— No aplica —');
+    const s=c.estilo; $('#pTam').value=s.tam; $('#pCols').value=s.columnas??1; $('#pColor').value=s.color; $('#pSinFondo').checked=s.fondo==='transparent'; $('#pFondo').value=s.fondo==='transparent'?'#0e1b20':s.fondo; $('#pAlinear').value=s.alinear||'left'; $('#pFormato').value=s.formato||'dd-mm-aaaa'; $('#pPrefijo').value=s.prefijo||''; $('#pPrefijoColor').value=s.prefijoColor||'#ffffff'; $('#pNegrita').checked=s.negrita!==false; }
   $('#pX').value=c.caja.x; $('#pY').value=c.caja.y; $('#pW').value=c.caja.w; $('#pH').value=c.caja.h; llenando=false;
 }
+function mostrarFormula(){ const op=$('#pOp').value; $('#pOrigenW').style.display=op==='unir'?'none':''; $('#pOrigenesW').style.display=op==='unir'?'':'none'; $('#pCodW').style.display=op==='codigo'?'':'none'; }
+$('#pOp').addEventListener('change',mostrarFormula);
 $('#prop').addEventListener('input',aplicar); $('#prop').addEventListener('change',aplicar);
 function aplicar(){ if(llenando) return; const c=sel(); if(!c) return;
   c.etiqueta=$('#pEtiqueta').value; const t=$('#pTipo').value; if(t!==c.tipo){ c.tipo=t; props(); }
   const d=$('#pDefecto').value; $('#pDefectoTxt').style.display=d==='__txt'?'':'none'; c.defecto=d==='__txt'?$('#pDefectoTxt').value:d;
   c.req=$('#pReq').checked; c.bloqueado=$('#pBloq').checked; c.resumen=$('#pRes').checked; c.opciones=$('#pOpciones').value.split('\n').map(s=>s.trim()).filter(Boolean); c.min=+$('#pMin').value||1; c.max=+$('#pMax').value||3;
+  c.conTexto=$('#pConTexto').checked; c.textoDef=$('#pTextoDef').value;
+  c.formula={ op:$('#pOp').value, origen:$('#pOrigen').value, origenes:[...$('#pOrigenes').selectedOptions].map(o=>o.value), sep:$('#pSep').value, prefijo:$('#pCodPrefijo').value.trim()||'DOC' };
+  c.reglas={ habilitarCampo:$('#pHabCampo').value, habilitarValor:$('#pHabValor').value.trim(), reqCampo:$('#pReqCampo').value, reqValor:$('#pReqValor').value.trim(), posteriorA:$('#pPostCampo').value };
   c.caja={ x:+$('#pX').value||0, y:+$('#pY').value||0, w:Math.max(16,+$('#pW').value||16), h:Math.max(10,+$('#pH').value||10) };
-  c.estilo={ tam:+$('#pTam').value||17, columnas:+$('#pCols').value||1, color:$('#pColor').value, fondo:$('#pSinFondo').checked?'transparent':$('#pFondo').value, alinear:$('#pAlinear').value, formato:$('#pFormato').value, prefijo:$('#pPrefijo').value, prefijoColor:$('#pPrefijoColor').value, negrita:$('#pNegrita').checked, lineas:0 };
+  c.estilo={ tam:+$('#pTam').value||17, columnas:Math.max(0,+$('#pCols').value||0), color:$('#pColor').value, fondo:$('#pSinFondo').checked?'transparent':$('#pFondo').value, alinear:$('#pAlinear').value, formato:$('#pFormato').value, prefijo:$('#pPrefijo').value, prefijoColor:$('#pPrefijoColor').value, negrita:$('#pNegrita').checked, lineas:0 };
   const b=esc_.querySelector(`.box[data-id="${c.id}"]`); if(b){ posicionar(b,c); b.firstChild.textContent=c.etiqueta; b.classList.toggle('foto',c.tipo==='foto'); } lista(); }
 $('#btnDel').onclick=()=>{ const c=sel(); if(!c) return; DEF.campos=DEF.campos.filter(x=>x!==c); SEL=null; render(); };
 $('#btnDup').onclick=()=>{ const c=sel(); if(!c) return; const n=JSON.parse(JSON.stringify(c)); n.id='c'+Date.now().toString(36); n.caja.y+=c.caja.h+6; n.etiqueta+=' (copia)'; DEF.campos.push(n); SEL=n.id; render(); };
 
 // ---------- Vista previa ----------
-function ejemplo(c){ switch(c.tipo){ case 'fecha': return new Date().toISOString().slice(0,10); case 'hora': return '14:30'; case 'numero': return '3'; case 'sino': return 'SÍ'; case 'rango': return RANGOS[2]; case 'opcion': return (c.opciones||[])[0]||'Opción'; case 'persona': return 'Capitán Nombre Apellido'; case 'personas': return Array.from({length:Math.min(+c.max||3,4)},(_,i)=>`Teniente Integrante ${i+1}`); case 'lista': return Array.from({length:Math.min(+c.max||3,3)},(_,i)=>`Elemento ${i+1}`); case 'parrafo': return 'Texto de ejemplo para ver cómo se acomoda el párrafo dentro de la caja, con varias líneas si hace falta.'; default: return c.defecto in DEFECTOS ? (c.defecto==='mi_nombre'?'Nombre Apellido':c.defecto==='mi_rango'?'Capitán':c.defecto==='mi_rango_pm'?'Auxiliar PM':c.defecto==='mi_rango_nombre'?'Capitán Nombre Apellido':c.defecto==='mi_usuario'?'usuario':'') || c.etiqueta : (c.defecto||c.etiqueta); } }
-$('#btnPreview').onclick=()=>{ if(!DEF.fondo){ msg('Sube primero el fondo.'); return; } const v={}; for(const c of DEF.campos) v[c.id]=ejemplo(c);
+function ejemplo(c){ switch(c.tipo){ case 'fecha': return new Date().toISOString().slice(0,10); case 'hora': return '14:30'; case 'numero': return '3'; case 'sino': return 'SÍ'; case 'rango': return RANGOS[2]; case 'opcion': return (c.opciones||[])[0]||'Opción'; case 'persona': return 'Capitán Nombre Apellido'; case 'personas': return Array.from({length:Math.min(+c.max||3,4)},(_,i)=>`Teniente Integrante ${i+1}`); case 'lista': return Array.from({length:Math.min(+c.max||3,3)},(_,i)=>`Elemento ${i+1}`); case 'casillas': return (c.opciones||[]).map((o,i)=>({nombre:o,on:i%3!==2,texto:c.conTexto?(i%3!==2?(c.textoDef||'Logrado'):'Fallido'):''})); case 'formula': return ''; case 'parrafo': return 'Texto de ejemplo para ver cómo se acomoda el párrafo dentro de la caja, con varias líneas si hace falta.'; default: return c.defecto in DEFECTOS ? (c.defecto==='mi_nombre'?'Nombre Apellido':c.defecto==='mi_rango'?'Capitán':c.defecto==='mi_rango_pm'?'Auxiliar PM':c.defecto==='mi_rango_nombre'?'Capitán Nombre Apellido':c.defecto==='mi_usuario'?'usuario':'') || c.etiqueta : (c.defecto||c.etiqueta); } }
+$('#btnPreview').onclick=()=>{ if(!DEF.fondo){ msg('Sube primero el fondo.'); return; } const v={}; for(const c of DEF.campos) v[c.id]=ejemplo(c); for(const c of DEF.campos) if(c.tipo==='formula') v[c.id]=calcular(DEF,c,v);
   const fc=DEF.campos.find(c=>c.tipo==='fecha'); dibujar($('#cv'), DEF, FONDO, v, {}, [], { folio:'PM-000000', texto:'usuario · '+new Date().toLocaleString('es-CO') }, { fechaAnexo: fc?fmtFecha(v[fc.id],fc.estilo.formato):'' }); $('#modal').classList.add('on'); };
 $('#btnCerrar').onclick=()=>$('#modal').classList.remove('on');
 
