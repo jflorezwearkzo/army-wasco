@@ -56,16 +56,21 @@ async function cargarUsuarios(){
   const rolesAsignables = roles.filter(rolAsignable);
   $('#uRol').innerHTML = '<option value="">— Sin rol —</option>' + rolesAsignables.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
   $('#uRol').disabled = !tiene(yo,'asignar_roles'); $('#uRol').title = tiene(yo,'asignar_roles') ? '' : 'Necesitas el permiso de asignación de roles';
-  ['#uNombre','#uRango','#uActivo'].forEach(s => $(s).disabled = !tiene(yo,'usuarios'));
+  ['#uNombre','#uRango','#uActivo','#uVisible'].forEach(s => $(s).disabled = !tiene(yo,'usuarios'));
   $('#uGuardar').style.display = (tiene(yo,'usuarios') || tiene(yo,'asignar_roles')) ? '' : 'none';
   $('#tbUsuarios').innerHTML = data.map(u => {
     const r = roles.find(x => x.id===u.rol_id);
     return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}</td>
       <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
+      <td><span class="tag ${(u.activo&&u.visible!==false)?'on':'off'}" title="${u.activo?'':'Los usuarios inactivos nunca aparecen en los formularios'}">${u.visible===false?'Oculto':'Visible'}</span></td>
       <td style="white-space:nowrap">${(r && !rolAsignable(r) && u.id!==yo.id) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `${(tiene(yo,'usuarios')||tiene(yo,'asignar_roles')) ? `<button class="ghost sm" data-e="${u.id}">Editar</button>` : ''}
-      ${tiene(yo,'usuarios') ? `<button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button>` : ''}
+      ${tiene(yo,'usuarios') ? `<button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button> <button class="ghost sm" data-vis="${u.id}" data-v="${u.visible===false?1:0}" title="Mostrar u ocultar en los desplegables de los formularios">${u.visible===false?'Mostrar en formularios':'Ocultar en formularios'}</button>` : ''}
       ${(tiene(yo,'reset_password') && u.id!==yo.id) ? `<button class="ghost sm" data-rp="${u.id}" data-u="${esc(u.usuario)}">Contraseña</button>` : ''}`}</td></tr>`;
-  }).join('') || '<tr><td colspan=5 class="muted">Sin usuarios</td></tr>';
+  }).join('') || '<tr><td colspan=6 class="muted">Sin usuarios</td></tr>';
+  document.querySelectorAll('[data-vis]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.from('perfiles').update({ visible: b.dataset.v==='1' }).eq('id', b.dataset.vis);
+    if(error) alert(error.message); cargarUsuarios();
+  });
   document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => editarUsuario(data.find(u => u.id===b.dataset.e)));
   document.querySelectorAll('[data-rp]').forEach(b => b.onclick = () => resetearPassword(b.dataset.rp, b.dataset.u));
   document.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
@@ -78,7 +83,7 @@ function editarUsuario(u){
   $('#tituloUsuario').textContent = 'Editar usuario'; $('#uGuardar').textContent = 'Guardar';
   $('#uId').value = u.id; $('#uUsuario').value = u.usuario; $('#uUsuario').disabled = true; $('#uNombre').value = u.nombre; $('#uRango').value = u.rango || '';
   $('#uPass').value=''; $('#uPass').disabled = true; $('#uPass').placeholder = 'Solo el propio usuario cambia su contraseña';
-  $('#uRol').value = u.rol_id || ''; $('#uActivo').checked = u.activo; msg('u','');
+  $('#uRol').value = u.rol_id || ''; $('#uActivo').checked = u.activo; $('#uVisible').checked = u.visible!==false; msg('u','');
 }
 function limpiarUsuario(){
   $('#fUsuario').reset(); $('#tituloUsuario').textContent = 'Nuevo usuario'; $('#uGuardar').textContent = 'Crear';
@@ -87,10 +92,10 @@ function limpiarUsuario(){
 $('#uCancelar').onclick = limpiarUsuario;
 $('#fUsuario').onsubmit = async e => {
   e.preventDefault(); msg('u','');
-  const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rango=$('#uRango').value||null, rol=$('#uRol').value, activo=$('#uActivo').checked;
+  const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rango=$('#uRango').value||null, rol=$('#uRol').value, activo=$('#uActivo').checked, visible=$('#uVisible').checked;
   try{
     if(id){
-      const cambios = {}; if(tiene(yo,'usuarios')) Object.assign(cambios, { nombre, rango, activo }); if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
+      const cambios = {}; if(tiene(yo,'usuarios')) Object.assign(cambios, { nombre, rango, activo, visible }); if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
       const { error } = await sb.from('perfiles').update(cambios).eq('id', id); if(error) throw error;
           } else {
       if(!tiene(yo,'usuarios')) throw new Error('No tienes permiso para crear usuarios.');
@@ -101,7 +106,7 @@ $('#fUsuario').onsubmit = async e => {
       if(!data || !data.id) throw new Error((data && data.error) || 'No se pudo crear el usuario.');
       data.user = { id: data.id };
       // El trigger creó el perfil inactivo con rol "usuario"; ahora lo ajustamos
-      const cambios = { nombre, rango, activo }; if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
+      const cambios = { nombre, rango, activo, visible }; if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
       // pequeño reintento: el trigger puede tardar unos ms
       let ok=false; for(let i=0;i<5 && !ok;i++){ const r = await sb.from('perfiles').update(cambios).eq('id', data.user.id).select('id'); ok = !r.error && r.data && r.data.length; if(!ok) await new Promise(r=>setTimeout(r,400)); }
       if(!ok) throw new Error('El usuario se creó pero no se pudo activar; edítalo desde la lista.');
@@ -228,12 +233,13 @@ async function cargarHist(){
   await cargarCatalogos();
   $('#hForm').innerHTML = '<option value="">Todos</option>' + formularios.map(f => `<option value="${esc(f.id)}">${esc(f.titulo)}</option>`).join('');
   // Rango de fechas y lista de usuarios a partir de lo que existe en el historial
-  const { data } = await sb.from('reportes_vista').select('fecha,usuario,usuario_nombre,usuario_rango').limit(2000);
+  const { data } = await sb.from('reportes_vista').select('fecha,usuario,usuario_nombre,usuario_rango,usuario_visible').limit(2000);
   const fechas = (data||[]).map(r => r.fecha).filter(Boolean).sort();
   rangoHist = { min: fechas[0] || '', max: fechas[fechas.length-1] || '' };
   ['#hDesde','#hHasta'].forEach(s => { $(s).min = rangoHist.min; $(s).max = rangoHist.max; });
   ajustarFechas();
-  const seen = {}; (data||[]).forEach(r => { if(r.usuario && !seen[r.usuario]) seen[r.usuario] = [r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '); });
+  // Sugerencias: todos los usuarios con reportes (activos o no), salvo los marcados como ocultos
+  const seen = {}; (data||[]).forEach(r => { if(r.usuario && r.usuario_visible!==false && !seen[r.usuario]) seen[r.usuario] = [r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '); });
   usuariosHist = Object.entries(seen).map(([u,n]) => ({u,n})).sort((a,b) => a.u.localeCompare(b.u));
   buscarHist();
 }

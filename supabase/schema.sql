@@ -438,7 +438,7 @@ select cron.schedule('auditoria_retencion_30d', '15 3 * * *', $$delete from publ
 create or replace view public.reportes_vista with (security_invoker = true) as
   select r.id, r.formulario_id, f.titulo as formulario, r.usuario_id,
          p.usuario, p.nombre as usuario_nombre, r.fecha, r.resumen, r.datos, r.imagen_path, r.creado_en,
-         p.rango as usuario_rango, r.folio_v2 as folio
+         p.rango as usuario_rango, r.folio_v2 as folio, p.visible as usuario_visible
   from public.reportes r
   left join public.formularios f on f.id = r.formulario_id
   left join public.perfiles p on p.id = r.usuario_id;
@@ -458,12 +458,15 @@ insert into public.formularios (id, titulo, descripcion, ruta, icono, orden) val
 ('patrullaje','Reporte de Fin de Día · Patrullaje PM','Cierre del día de patrullaje: una página por patrullaje con horario, integrantes, novedades, código de reporte y evidencia de salida y regreso.','reportes/patrullaje/','🚔',30)
 on conflict (id) do nothing;
 
+-- Visibilidad de usuarios en los desplegables de los formularios (los inactivos nunca aparecen)
+alter table public.perfiles add column if not exists visible boolean not null default true;
+
 -- Desplegables con búsqueda del formulario de patrullaje (cualquier usuario activo)
 create or replace function public.listar_integrantes()
 returns table(usuario text, nombre text, rango text)
 language sql security definer stable set search_path=public as $$
   select p.usuario, p.nombre, p.rango from public.perfiles p
-  where p.activo and coalesce(public.mi_perfil_activo(), false)
+  where p.activo and p.visible and coalesce(public.mi_perfil_activo(), false)
   order by p.rango nulls last, p.nombre;
 $$;
 revoke all on function public.listar_integrantes() from public;
