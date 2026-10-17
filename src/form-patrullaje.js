@@ -44,8 +44,10 @@ function crearPagina(i){
   // Integrantes: búsqueda sobre los miembros activos
   // El integrante 1 es siempre quien hace el reporte (bloqueado)
   { const i1=el.querySelector('.int[data-k="0"]'); i1.value=[YO.rango, YO.nombre||YO.usuario].filter(Boolean).join(' '); i1.readOnly=true; i1.tabIndex=-1; i1.style.opacity='.75'; i1.title='Eres quien reporta'; i1.placeholder='1.'; }
+  // Un mismo miembro no puede ir dos veces en el patrullaje: se excluyen los ya elegidos en los otros campos
+  const yaElegidos=excepto=>[...el.querySelectorAll('.int')].filter(x=>x!==excepto).map(x=>x.value.trim().toLowerCase()).filter(Boolean);
   el.querySelectorAll('.int:not([data-k="0"])').forEach(inp=>sugerencias(inp,
-    async q=>{ q=q.toLowerCase(); return INTEGRANTES.filter(p=>!q||p.texto.toLowerCase().includes(q)||p.usuario.toLowerCase().includes(q)).slice(0,12); },
+    async q=>{ q=q.toLowerCase(); const usados=yaElegidos(inp); return INTEGRANTES.filter(p=>!usados.includes(p.texto.toLowerCase())&&(!q||p.texto.toLowerCase().includes(q)||p.usuario.toLowerCase().includes(q))).slice(0,12); },
     p=>`<b>${esc(p.texto)}</b><small>@${esc(p.usuario)}</small>`,
     p=>{ inp.value=p.texto; }));
   // Código de reporte: búsqueda de folios existentes
@@ -102,6 +104,7 @@ function validate(d){
     if(!p.horaIni||!p.horaFin) e.push(`• ${t}indica hora de inicio y fin.`);
     else if(p.horaFin<=p.horaIni) e.push(`• ${t}la hora de fin debe ser posterior a la de inicio.`);
     if(p.integrantes.length<2) e.push(`• ${t}debe haber mínimo 2 integrantes (tú y al menos uno más).`);
+    { const vistos=new Set(); for(const n of p.integrantes){ const k=n.toLowerCase(); if(vistos.has(k)){ e.push(`• ${t}"${n}" está repetido en los integrantes.`); break; } vistos.add(k); } }
     if(p.novedades==='SÍ'&&p.novedadesN<1) e.push(`• ${t}indica la cantidad de novedades/bajas.`);
     if(p.codigo&&!/^PM-\d{6}$/.test(p.codigo)) e.push(`• ${t}el código de reporte debe ser un folio existente (PM-000000).`);
     if(!pg.fotos.sal) e.push(`• ${t}falta la foto de salida de patrulla.`);
