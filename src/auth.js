@@ -232,3 +232,15 @@ export function mejorasMovil(){
   document.querySelectorAll('input[type=file]').forEach(decorar);
   new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType!==1) return; if(n.matches && n.matches('input[type=file]')) decorar(n); n.querySelectorAll && n.querySelectorAll('input[type=file]').forEach(decorar); }))).observe(document.body,{childList:true,subtree:true});
 }
+
+// ---------- PWA: registro del service worker e instalación ----------
+export function registrarPWA(){
+  if(!('serviceWorker' in navigator)) return;
+  try{ navigator.serviceWorker.register(RAIZ + 'sw.js', { scope: new URL(RAIZ).pathname }).catch(()=>{}); }catch(e){}
+}
+let promptInstalar=null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); promptInstalar=e; document.dispatchEvent(new Event('pm-instalable')); });
+export const puedeInstalar = () => !!promptInstalar;
+export const esStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+export async function instalarPWA(){ if(!promptInstalar) return false; promptInstalar.prompt(); const { outcome } = await promptInstalar.userChoice; promptInstalar=null; return outcome==='accepted'; }
+registrarPWA();

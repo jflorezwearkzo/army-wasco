@@ -1,4 +1,4 @@
-  import { requerir, barraUsuario, cerrarSesion, sb, esc, nombreCompleto, validarPassword, traducirAuth, REGLA_PASSWORD, urlImagen } from './auth.js';
+  import { requerir, barraUsuario, cerrarSesion, instalarPWA, puedeInstalar, esStandalone, sb, esc, nombreCompleto, validarPassword, traducirAuth, REGLA_PASSWORD, urlImagen } from './auth.js';
   const yo=await requerir(); barraUsuario(yo);
   const NP={usuarios:'Gestión de usuarios',asignar_roles:'Asignación de roles',reset_password:'Restablecer contraseñas',crear_roles:'Creación de roles',crear_reportes:'Creación de reportes',gestion_reportes:'Gestión de reportes',disenar_formularios:'Creación de formularios (diseñador)',historial:'Ver historial',eliminar_historial:'Eliminar historial',auditoria:'Ver auditoría'};
   const perms=Object.entries(yo.rol.permisos||{}).filter(([k,v])=>v).map(([k])=>NP[k]||k).join(', ')||'ninguno';
@@ -37,3 +37,12 @@
   cargarMis();
 
   document.getElementById('btnTodas').onclick=()=>{ if(confirm('¿Cerrar la sesión en todos tus dispositivos? Tendrás que volver a ingresar en cada uno.')) cerrarSesion(true); };
+
+  // ---------- Instalar como app ----------
+  { const btn=document.getElementById('btnInstalar'), ios=document.getElementById('instalarIos'), txt=document.getElementById('instalarTxt');
+    const esIos=/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    const pintar=()=>{ if(esStandalone()){ txt.textContent='Ya estás usando PM Reportes como app instalada.'; btn.style.display='none'; ios.style.display='none'; return; }
+      btn.style.display=puedeInstalar()?'':'none'; ios.style.display=esIos?'':'none';
+      if(!puedeInstalar() && !esIos) txt.textContent='Para instalar: abre el menú del navegador (⋮) y elige "Instalar aplicación" o "Añadir a pantalla de inicio". Si no aparece, vuelve a esta página en unos segundos.'; };
+    btn.onclick=async()=>{ const ok=await instalarPWA(); if(ok){ txt.textContent='¡Instalada! Búscala como "PM Reportes" entre tus aplicaciones.'; btn.style.display='none'; } };
+    document.addEventListener('pm-instalable', pintar); pintar(); }

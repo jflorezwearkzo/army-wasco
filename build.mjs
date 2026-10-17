@@ -20,7 +20,7 @@ for (const f of readdirSync('src').filter(f => f.endsWith('.js'))) {
 // Rompe-caché: las páginas referencian js/<archivo>.js?v=<hash> para que un cambio se vea de inmediato
 const ver = {};
 for (const f of readdirSync('js')) ver[f] = createHash('sha1').update(readFileSync(`js/${f}`)).digest('hex').slice(0, 8);
-const pages = ['index.html', 'login.html', 'cuenta.html', 'reglamento.html', 'admin/index.html', 'reportes/bajas/index.html', 'reportes/reclutamiento/index.html', 'reportes/patrullaje/index.html', 'reportes/toma-territorio/index.html', 'reportes/plantilla/index.html', 'admin/disenador.html'];
+const pages = ['index.html', 'login.html', 'cuenta.html', 'reglamento.html', 'admin/index.html', 'reportes/bajas/index.html', 'reportes/reclutamiento/index.html', 'reportes/patrullaje/index.html', 'reportes/toma-territorio/index.html', 'reportes/plantilla/index.html', 'admin/disenador.html', 'privacidad.html'];
 for (const p of pages) {
   let html = readFileSync(p, 'utf8');
   html = html.replace(/(src="(?:\.\.\/)*js\/)([a-z0-9-]+\.js)(\?v=[0-9a-f]+)?"/g, (m, pre, file) => `${pre}${file}?v=${ver[file]}"`);
@@ -34,3 +34,9 @@ for (const f of readdirSync('js')) {
   writeFileSync(`js/${f}`, code);
 }
 console.log('versiones', ver);
+
+// Service worker: su versión cambia con cualquier cambio de los scripts, para que la caché se renueve
+{ const all = Object.values(ver).join('');
+  const swv = createHash('sha1').update(all + readFileSync('estilos.css')).digest('hex').slice(0, 10);
+  let sw = readFileSync('sw.js', 'utf8').replace(/const VERSION = 'pm-[^']*';/, `const VERSION = 'pm-${swv}';`);
+  writeFileSync('sw.js', sw); console.log('sw', swv); }

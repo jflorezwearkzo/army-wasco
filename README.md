@@ -12,6 +12,7 @@ login.html            Ingreso con usuario y contraseña
 cuenta.html           Mi cuenta: mis reportes (propios, con descarga), cambiar contraseña
 privacidad.html       Aviso de privacidad y uso (enlazado desde el login y la barra)
 reglamento.html       Reglamento (reglas, sanciones, rangos, ascensos, permisos, macros) + manual en docs/
+manifest.webmanifest  PWA (nombre, iconos en icons/, atajos); sw.js service worker (versión inyectada por build.mjs); sin-conexion.html
 admin/index.html      Panel de administración (pestañas según permisos)
 src/                  Código JavaScript legible (auth.js, config.js y el script de cada página)
 js/                   Código publicado: ofuscado a partir de src/ (no editar a mano)
@@ -125,3 +126,7 @@ Pestaña **Resumen** del panel (permiso ver historial): periodo configurable (30
 ## Móvil
 
 En pantallas angostas los formularios muestran una barra fija abajo con **Vista previa** (baja a la imagen) y **Exportar** (y lleva al mensaje de error si falta algo). Junto a cada selector de fotos hay un botón **📷 Cámara** que abre la cámara del celular directamente (los selectores normales siguen permitiendo elegir de la galería).
+
+## PWA (instalar como app)
+
+`manifest.webmanifest` + `sw.js` + iconos en `icons/` (generados desde `favicon.svg`). En **Mi cuenta › Instalar como app** aparece el botón de instalación (Android/Chrome/Edge) o las instrucciones para iPhone (Compartir → Añadir a pantalla de inicio). El service worker guarda el cascarón (páginas, estilos, scripts, plantillas, iconos): las páginas y scripts van **red primero** con caché de respaldo (los cambios llegan de inmediato; `build.mjs` cambia la versión del SW con cada build), las imágenes van **caché primero**; las llamadas a Supabase nunca se cachean. Sin conexión: las páginas ya visitadas abren; lo no visitado muestra `sin-conexion.html`. Iniciar sesión, exportar y ver historial requieren conexión.

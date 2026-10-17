@@ -6,6 +6,12 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Mi cuenta · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css">
@@ -35,12 +41,18 @@
       <div class="err" id="err"></div><div class="ok" id="ok"></div>
     </form>
   </div>
+  <div class="caja" style="margin-top:16px" id="cajaInstalar">
+    <h3 style="margin-top:0">Instalar como app</h3>
+    <p class="muted" style="margin-top:0" id="instalarTxt">Puedes instalar PM Reportes en tu celular o computador: tendrá su propio ícono, abrirá a pantalla completa y los formularios cargarán aunque la red esté lenta.</p>
+    <button type="button" class="primary" id="btnInstalar" style="display:none">📲 Instalar PM Reportes</button>
+    <div id="instalarIos" class="muted" style="display:none;font-size:13px">En iPhone/iPad: toca el botón <b>Compartir</b> de Safari y luego <b>"Añadir a pantalla de inicio"</b>.</div>
+  </div>
   <div class="caja" style="margin-top:16px">
     <h3 style="margin-top:0">Sesiones</h3>
     <p class="muted" style="margin-top:0">La sesión se cierra sola tras 2 horas sin actividad. Si usaste tu cuenta en un computador ajeno o crees que alguien más la tiene abierta, ciérrala en todos los dispositivos.</p>
     <button type="button" class="secondary" id="btnTodas">Cerrar sesión en todos mis dispositivos</button>
   </div>
 </main>
-<script type="module" src="js/app-cuenta.js?v=673160a8"></script>
+<script type="module" src="js/app-cuenta.js?v=a530319e"></script>
 </body>
 </html>
