@@ -101,7 +101,7 @@ function validate(d){
     const p=datosPagina(i), t=`Patrullaje ${i+1}: `;
     if(!p.horaIni||!p.horaFin) e.push(`• ${t}indica hora de inicio y fin.`);
     else if(p.horaFin<=p.horaIni) e.push(`• ${t}la hora de fin debe ser posterior a la de inicio.`);
-    if(!p.integrantes.length) e.push(`• ${t}indica al menos un integrante.`);
+    if(p.integrantes.length<2) e.push(`• ${t}debe haber mínimo 2 integrantes (tú y al menos uno más).`);
     if(p.novedades==='SÍ'&&p.novedadesN<1) e.push(`• ${t}indica la cantidad de novedades/bajas.`);
     if(p.codigo&&!/^PM-\d{6}$/.test(p.codigo)) e.push(`• ${t}el código de reporte debe ser un folio existente (PM-000000).`);
     if(!pg.fotos.sal) e.push(`• ${t}falta la foto de salida de patrulla.`);
@@ -160,12 +160,12 @@ function draw(i=ACTUAL){
   { const b=T.rango;  ctx.fillStyle=T.panel; ctx.fillRect(b.x,b.y,b.w,b.h); if(d.rango)  val(d.rango,b.x+4,b.y+b.h/2,b.w-8); }
   // Registro del patrullaje (se redibuja toda la zona)
   { const b=T.cont; ctx.fillStyle=T.panel; ctx.fillRect(b.x,b.y,b.w,b.h);
-    let y=b.y+14, x=b.x+8; const lh=22;
+    let y=b.y+12, x=b.x+8; const lh=20;
     let w=label('Patrullaje N°',x,y,'bold 18px'); val(String(p.n).padStart(2,'0'),x+w+8,y,80,'bold 18px'); y+=lh;
     w=label('Hora Inicio/Fin:',x,y); val(`${p.horaIni||'--:--'}  /  ${p.horaFin||'--:--'}`,x+w+8,y,200); y+=lh;
     w=label('Integrantes:',x,y);
     const ints=p.integrantes.length?p.integrantes:[]; const ix=x+w+8, maxW=b.w-(ix-b.x)-8;
-    ints.forEach((n,k)=>{ val(`${k+1}. ${n}`,ix,y,maxW); y+=lh; });
+    ints.forEach((n,k)=>{ val(`${k+1}. ${n}`,ix,y,maxW,'bold 16px'); y+=lh; });
     if(!ints.length) y+=lh;
     y+=6;
     w=label('Novedades/Bajas:',x,y); let w2=val(p.novedades==='SÍ'?'SÍ':'NO',x+w+8,y,60); if(p.novedades==='SÍ'){ ctx.fillStyle='#fff'; ctx.font='17px "Roboto Condensed",Arial'; ctx.fillText(`· Cantidad: ${p.novedadesN}`,x+w+8+w2+8,y); } y+=lh;
