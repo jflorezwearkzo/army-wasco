@@ -1,5 +1,5 @@
 // Formulario genérico: carga la definición JSON del formulario (?id=...) y la ejecuta con el motor de plantillas.
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, faviconEmoji, sb, esc } from './auth.js';
 import { construirFormulario, validar, dibujar, cargarFondo, cargarImagen, resumenDe, fmtFecha } from './plantilla.js';
 
 const ID = new URLSearchParams(location.search).get('id') || '';
@@ -47,7 +47,8 @@ $('#btnExport').onclick=async()=>{
     const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
     const a=document.createElement('a'); a.download=`reporte-${ID}-${reg.folio}-${fecha}.png`; a.href=URL.createObjectURL(blob); a.click();
     await adjuntarImagen({ yo:YO, id:reg.id, formularioId:ID, pngBlob:blob });
-    showErr(`Reporte ${reg.folio} exportado y guardado en el historial.`, true);
+    const dc=await notificarDiscord(reg.id);
+    showErr(`Reporte ${reg.folio} exportado y guardado en el historial.`+textoDiscord(dc), true);
   }catch(x){ showErr('No se pudo completar: '+x.message); }
   SELLO=null; draw(); btn.disabled=false; btn.textContent='Exportar imagen';
 };

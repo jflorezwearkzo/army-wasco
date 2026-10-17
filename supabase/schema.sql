@@ -507,3 +507,14 @@ alter policy formularios_write on public.formularios using (public.tengo_permiso
 alter policy plantillas_insert on storage.objects with check (bucket_id='plantillas' and public.tengo_permiso('disenar_formularios'));
 alter policy plantillas_update on storage.objects using (bucket_id='plantillas' and public.tengo_permiso('disenar_formularios'));
 alter policy plantillas_delete on storage.objects using (bucket_id='plantillas' and public.tengo_permiso('disenar_formularios'));
+
+-- ---------- Discord: publicación automática de reportes ----------
+create table if not exists public.formularios_discord (
+  formulario_id text primary key references public.formularios(id) on delete cascade,
+  webhook text not null, activo boolean not null default true, actualizado_en timestamptz not null default now());
+alter table public.formularios_discord enable row level security;
+create policy fd_select on public.formularios_discord for select using (public.tengo_permiso('gestion_reportes'));
+create policy fd_write  on public.formularios_discord for all using (public.tengo_permiso('gestion_reportes')) with check (public.tengo_permiso('gestion_reportes'));
+alter table public.reportes add column if not exists discord_enviado_en timestamptz;
+-- validar_update_reporte: el rol de servicio (auth.uid() is null) solo puede escribir discord_enviado_en (ver función en producción)
+-- Edge Function: supabase/functions/notificar-discord (verify_jwt=false; valida la sesión del llamante)

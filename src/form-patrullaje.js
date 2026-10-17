@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, hoyISO, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, hoyISO, faviconEmoji, sb, esc } from './auth.js';
 const YO = await requerir({ formulario:'patrullaje' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','patrullaje').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 
@@ -213,7 +213,7 @@ $('#btnExport').onclick=async()=>{
   const d=getData(), e=validate(d);
   if(e.length){ showErr(e.join('\n')); return; }
   showErr('');
-  const btn=$('#btnExport'); btn.disabled=true; const hechos=[];
+  const btn=$('#btnExport'); btn.disabled=true; const hechos=[]; let publicados=0;
   try{
     for(let i=0;i<paginas.length;i++){
       btn.textContent=`Registrando ${i+1}/${paginas.length}…`;
@@ -227,10 +227,11 @@ $('#btnExport').onclick=async()=>{
       const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
       const a=document.createElement('a'); a.download=`reporte-patrullaje-${FOLIO}-${fmtFecha(d.fecha)}-p${p.n}.png`; a.href=URL.createObjectURL(blob); a.click();
       await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'patrullaje', pngBlob:blob });
+      const dc=await notificarDiscord(reg.id); if(dc==='ok') publicados++;
       hechos.push(FOLIO); FOLIO=null; SELLO=null;
       if(i<paginas.length-1) await espera(700);   // el navegador necesita un respiro entre descargas
     }
-    showErr(`${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`,true);
+    showErr(`${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:''),true);
   }catch(x){ FOLIO=null; SELLO=null; showErr((hechos.length?`Se exportaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
   draw(); btn.disabled=false; btn.textContent='Exportar imágenes';
 };

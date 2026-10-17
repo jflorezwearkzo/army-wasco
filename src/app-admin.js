@@ -199,6 +199,7 @@ $('#fRangoPM').onsubmit = async e => {
 async function cargarForms(){
   await cargarCatalogos();
   $('#fForm').parentElement.style.display = (tiene(yo,'crear_reportes')||tiene(yo,'gestion_reportes')) ? '' : 'none';
+  $('#fDiscordW').style.display = tiene(yo,'gestion_reportes') ? '' : 'none';
   const ld=document.getElementById('linkDisenador'); if(ld) ld.style.display = tiene(yo,'disenar_formularios') ? '' : 'none';
   $('#tbForms').innerHTML = formularios.map(f => `<tr><td style="font-size:22px">${esc(f.icono||'')}</td><td><b>${esc(f.titulo)}</b><br><span class="muted">${esc(f.id)}</span></td>
     <td><a href="../${esc(f.ruta)}" target="_blank">${esc(f.ruta)}</a></td><td>${f.orden}</td>
@@ -217,8 +218,24 @@ function editarForm(f){
   $('#tituloForm').textContent='Editar formulario'; $('#fGuardar').textContent='Guardar';
   $('#fId').value=f.id; $('#fId').disabled=true; $('#fTitulo').value=f.titulo; $('#fDesc').value=f.descripcion||''; $('#fIcono').value=f.icono||'';
   $('#fOrden').value=f.orden; $('#fRuta').value=f.ruta; $('#fActivo').checked=f.activo; msg('f','');
+  $('#fWebhook').value=''; $('#fWebhookOn').checked=true; $('#fDiscordMsg').textContent='';
+  if(tiene(yo,'gestion_reportes')) sb.from('formularios_discord').select('webhook,activo').eq('formulario_id',f.id).maybeSingle().then(({data})=>{ if(data){ $('#fWebhook').value=data.webhook; $('#fWebhookOn').checked=data.activo; } });
 }
-function limpiarForm(){ $('#fForm').reset(); $('#tituloForm').textContent='Nuevo formulario'; $('#fGuardar').textContent='Crear'; $('#fId').disabled=false; $('#fIcono').value='📋'; $('#fOrden').value=100; msg('f',''); }
+$('#fProbar').onclick = async () => {
+  const id=$('#fId').value.trim().toLowerCase(); if(!id){ $('#fDiscordMsg').textContent='Guarda primero el formulario.'; return; }
+  await guardarDiscord(id); $('#fDiscordMsg').textContent='Enviando…';
+  const { data, error } = await sb.functions.invoke('notificar-discord', { body:{ formulario_id:id, prueba:true } });
+  $('#fDiscordMsg').textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Mensaje de prueba enviado al canal.' : 'Error: '+((data&&data.error)||'sin respuesta');
+};
+async function guardarDiscord(id){
+  if(!tiene(yo,'gestion_reportes')) return;
+  const w=$('#fWebhook').value.trim();
+  if(!w){ await sb.from('formularios_discord').delete().eq('formulario_id',id); return; }
+  if(!/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ throw new Error('El webhook debe ser un enlace de Discord (https://discord.com/api/webhooks/…).'); }
+  const { error } = await sb.from('formularios_discord').upsert({ formulario_id:id, webhook:w, activo:$('#fWebhookOn').checked, actualizado_en:new Date().toISOString() });
+  if(error) throw error;
+}
+function limpiarForm(){ $('#fForm').reset(); $('#fDiscordMsg').textContent=''; $('#tituloForm').textContent='Nuevo formulario'; $('#fGuardar').textContent='Crear'; $('#fId').disabled=false; $('#fIcono').value='📋'; $('#fOrden').value=100; msg('f',''); }
 $('#fCancelar').onclick = limpiarForm;
 $('#fForm').onsubmit = async e => {
   e.preventDefault(); msg('f','');
@@ -226,6 +243,7 @@ $('#fForm').onsubmit = async e => {
   const f = { id:$('#fId').value.trim().toLowerCase(), titulo:$('#fTitulo').value.trim(), descripcion:$('#fDesc').value.trim(), icono:$('#fIcono').value.trim(),
     orden:parseInt($('#fOrden').value)||100, ruta:$('#fRuta').value.trim(), activo:$('#fActivo').checked };
   const { error } = await sb.from('formularios').upsert(f); if(error){ msg('f', error.message); return; }
+  try{ await guardarDiscord(f.id); }catch(x){ msg('f','Formulario guardado, pero el webhook no: '+x.message); cargarForms(); return; }
   limpiarForm(); msg('f','Formulario guardado.', true); cargarForms();
 };
 

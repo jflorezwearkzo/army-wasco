@@ -112,6 +112,15 @@ export async function adjuntarImagen({ yo, id, formularioId, pngBlob }){
   if(e2) throw new Error('No se pudo adjuntar la imagen: ' + e2.message);
   return path;
 }
+// Publica el reporte en Discord si el formulario tiene webhook (lo hace el servidor; nunca falla el exportado por esto).
+// Devuelve: 'ok' | 'sin_webhook' | 'error: …'
+export async function notificarDiscord(reporteId){
+  try{ const { data, error } = await sb.functions.invoke('notificar-discord', { body:{ reporte_id: reporteId } });
+    if(error) return 'error: ' + (error.message||'sin respuesta');
+    if(data && data.ok) return 'ok'; if(data && data.motivo==='sin_webhook') return 'sin_webhook'; return 'error: ' + ((data&&data.error)||'desconocido'); }
+  catch(e){ return 'error: ' + e.message; }
+}
+export const textoDiscord = r => r==='ok' ? ' Publicado en Discord.' : r && r.startsWith('error') ? ` (No se pudo publicar en Discord: ${r.slice(7)})` : '';
 // Compatibilidad: flujo completo en una llamada (sin folio en la imagen)
 export async function guardarReporte({ yo, formularioId, fecha, resumen, datos, pngBlob }){
   const r = await crearReporte({ formularioId, fecha, resumen, datos });

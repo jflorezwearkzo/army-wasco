@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, hoyISO, faviconEmoji, sb, RANGOS } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, hoyISO, faviconEmoji, sb, RANGOS } from './auth.js';
 const YO = await requerir({ formulario:'reclutamiento' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','reclutamiento').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 // Fecha de hoy (editable); nombre, rango y Rango PM vienen del perfil/rol y quedan bloqueados
@@ -200,7 +200,8 @@ $('#btnExport').onclick=async()=>{
     const a=document.createElement('a'); a.download=`reporte-reclutamiento-${FOLIO}-${fmtFecha(d.fecha)}.png`; a.href=URL.createObjectURL(blob); a.click();
     // 3) Adjuntar al historial
     await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'reclutamiento', pngBlob:blob });
-    $('#err').style.color='#7fd38a'; showErr(`Reporte ${FOLIO} exportado y guardado en el historial.`);
+    const dc=await notificarDiscord(reg.id);
+    $('#err').style.color='#7fd38a'; showErr(`Reporte ${FOLIO} exportado y guardado en el historial.`+textoDiscord(dc));
   }catch(x){ $('#err').style.color=''; showErr('No se pudo completar: '+x.message); }
   FOLIO=null; SELLO=null;
   btn.disabled=false; btn.textContent='Exportar imagen';

@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, hoyISO, faviconEmoji, sb, RANGOS, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, hoyISO, faviconEmoji, sb, RANGOS, esc } from './auth.js';
 const FORM='toma-territorio';
 const YO = await requerir({ formulario:FORM }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id',FORM).maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
@@ -209,7 +209,8 @@ $('#btnExport').onclick=async()=>{
     const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
     const a=document.createElement('a'); a.download=`reporte-toma-territorio-${FOLIO}-${d.fecha}.png`; a.href=URL.createObjectURL(blob); a.click();
     await adjuntarImagen({ yo:YO, id:reg.id, formularioId:FORM, pngBlob:blob });
-    showErr(`Reporte ${FOLIO} exportado y guardado en el historial.`,true);
+    const dc=await notificarDiscord(reg.id);
+    showErr(`Reporte ${FOLIO} exportado y guardado en el historial.`+textoDiscord(dc),true);
   }catch(x){ showErr('No se pudo completar: '+x.message); }
   FOLIO=null; SELLO=null; draw();
   btn.disabled=false; btn.textContent='Exportar imagen';
