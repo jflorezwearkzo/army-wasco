@@ -737,3 +737,9 @@ create policy avatares_write on storage.objects for all
 -- RPC fijar_avatar(p_usuario, p_path): el propio usuario o permiso "usuarios"; audita "avatar". expediente() devuelve perfil.avatar_path.
 -- Permisos de solo lectura: ver_turnos (ve la agenda en el panel sin editar) y ver_anuncios (ve el tablón y quién lo leyó).
 -- anuncios_select / vistos_select incluyen ver_anuncios. El rol Administrador tiene ambos.
+
+-- Bajas reales de un reporte (el formulario guarda las 10 filas, vacías incluidas): solo cuentan las filas con nombre
+create or replace function public.bajas_de(d jsonb) returns int language sql immutable as $$
+  select case when jsonb_typeof(d->'rows')='array' then (select count(*)::int from jsonb_array_elements(d->'rows') e where coalesce(trim(e->>'nombre'),'') <> '') else 0 end
+$$;
+-- expediente(), ranking_calc() y ejecutar_programada() usan public.bajas_de(datos).

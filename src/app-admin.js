@@ -526,7 +526,7 @@ async function cargarResumen(){
   if(error){ $('#rNota').textContent=error.message; return; }
   const R=data||[]; const quien=r=>[r.usuario_rango,r.usuario_nombre||r.usuario].filter(Boolean).join(' ');
   // KPIs
-  const bajas=R.filter(r=>r.formulario_id==='bajas').reduce((a,r)=>a+((r.datos&&Array.isArray(r.datos.rows))?r.datos.rows.length:0),0);
+  const bajas=R.filter(r=>r.formulario_id==='bajas').reduce((a,r)=>a+((r.datos&&Array.isArray(r.datos.rows))?r.datos.rows.filter(x=>x&&String(x.nombre||'').trim()).length:0),0);
   const patr=R.filter(r=>r.formulario_id==='patrullaje').length, tomas=R.filter(r=>r.formulario_id==='toma-territorio'), aks=tomas.reduce((a,r)=>a+(+(r.datos&&r.datos.totalTomados)||0),0);
   const usuarios=new Set(R.map(r=>r.usuario)).size, dias=Math.max(1,Math.round((new Date(hasta)-new Date(desde))/864e5)+1);
   const reclut=R.filter(r=>r.formulario_id==='reclutamiento').length;
