@@ -684,3 +684,32 @@ create policy requisitos_write on public.requisitos_ascenso for all using (publi
 -- RPC expediente(p_usuario) (propio, o permisos historial/usuarios/sanciones): perfil, rol, stats, por_formulario, participaciones,
 --   advertencias_activas, sanciones, ascensos, en_rango_desde, reportes_recientes
 -- El rol Administrador tiene "sanciones".
+
+-- ---------- Turnos, anuncios, insignias y tareas programadas ----------
+create table if not exists public.turnos (id bigint generated always as identity primary key, fecha date not null, hora_inicio time not null, hora_fin time,
+  usuario_id uuid not null references public.perfiles(id) on delete cascade, notas text, asignado_por uuid, creado_en timestamptz not null default now());
+create index if not exists turnos_fecha_idx on public.turnos (fecha, usuario_id);
+alter table public.turnos enable row level security;
+create policy turnos_select on public.turnos for select using (coalesce(public.mi_perfil_activo(),false));
+create policy turnos_write on public.turnos for all using (public.tengo_permiso('turnos')) with check (public.tengo_permiso('turnos'));
+-- RPC turnos_lista(p_desde, p_hasta): agenda con nombres y bandera "reporte" (ya envió patrullaje ese día); para todos los activos
+create table if not exists public.anuncios (id bigint generated always as identity primary key, titulo text not null, cuerpo text not null default '', autor_id uuid,
+  fijado boolean not null default false, activo boolean not null default true, publicado_en timestamptz not null default now(), expira_en timestamptz,
+  creado_en timestamptz not null default now(), actualizado_en timestamptz not null default now());
+alter table public.anuncios enable row level security;
+create policy anuncios_select on public.anuncios for select using (coalesce(public.mi_perfil_activo(),false) and (public.tengo_permiso('anuncios') or (activo and publicado_en <= now() and (expira_en is null or expira_en > now()))));
+create policy anuncios_write on public.anuncios for all using (public.tengo_permiso('anuncios')) with check (public.tengo_permiso('anuncios'));
+create table if not exists public.anuncios_vistos (anuncio_id bigint not null references public.anuncios(id) on delete cascade, usuario_id uuid not null references public.perfiles(id) on delete cascade, visto_en timestamptz not null default now(), primary key (anuncio_id, usuario_id));
+alter table public.anuncios_vistos enable row level security;
+create policy vistos_select on public.anuncios_vistos for select using (usuario_id = auth.uid() or public.tengo_permiso('anuncios'));
+create policy vistos_insert on public.anuncios_vistos for insert with check (usuario_id = auth.uid() and coalesce(public.mi_perfil_activo(),false));
+create table if not exists public.insignias (id bigint generated always as identity primary key, usuario_id uuid not null references public.perfiles(id) on delete cascade, mes date not null, tipo text not null, valor int not null default 0, creado_en timestamptz not null default now(), unique (usuario_id, mes, tipo));
+alter table public.insignias enable row level security;
+create policy insignias_select on public.insignias for select using (coalesce(public.mi_perfil_activo(),false));
+-- RPCs: ranking_calc(mes) (interno) / ranking_mes(mes) (activos) / insignias_lista()
+-- Tareas programadas: todo en Postgres (pg_cron + pg_net), sin Edge Function ni secretos:
+--   discord_enviar(canal, payload) -> net.http_post al webhook de discord_canales
+--   ejecutar_programada(accion, fecha) -> recordatorio_turnos | cierre_diario | resumen_semanal | ranking_mensual (otorga insignias); audita programada_<accion>
+--   programar(clave, activo, hora, minuto, dia) -> cron.schedule('pm_<clave>', ...) en UTC (hora Bogotá +5); guarda configuracion.programadas
+create extension if not exists pg_net with schema extensions;
+-- El rol Administrador tiene "turnos" y "anuncios".

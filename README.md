@@ -121,6 +121,22 @@ En Admin → Resumen, el selector **PDF / Imagen PNG** y el botón **⬇ Exporta
 - En móvil la tabla se convierte en tarjetas. Roles y Formularios usan el mismo menú ⋯ en lugar de la fila de botones.
 - **Crear y editar en sub-ventana**: las tres pestañas (Usuarios, Roles, Formularios) van a ancho completo con un botón **＋ Nuevo …** en la cabecera; el formulario de crear/editar se abre en un diálogo modal dentro del panel (Esc o ✕ cierra; en móvil ocupa la pantalla con "← Volver"). La URL refleja el estado (`#usuarios/nuevo`, `#usuarios/editar/<id>`, `#roles/…`, `#formularios/…`) y se puede recargar o compartir. Al guardar, el diálogo se cierra, aparece un aviso flotante y la fila guardada queda resaltada unos segundos. El diálogo de usuario muestra su rol, último reporte y accesos rápidos a Ver como, Restablecer contraseña y Sus reportes.
 
+## Turnos y agenda de patrullaje
+
+Permiso **Turnos y agenda de patrullaje** (`turnos`). Admin → **Turnos**: calendario semanal (‹ › Hoy), "＋ Asignar turno" (integrante, fecha, hora inicio/fin, notas, repetir N semanas), clic en un turno para editar o eliminar. Los turnos pasados muestran ✅ si ese día existe Reporte de Fin de Día del integrante o ⏳ si no. Cada integrante ve "Mis próximos turnos" (14 días) en el inicio. Tabla `turnos`, RPC `turnos_lista`.
+
+## Tablón de anuncios
+
+Permiso **Tablón de anuncios** (`anuncios`). Admin → **Anuncios**: crear/editar (título, contenido, caducidad, fijar arriba, visible, publicar en Discord), contador de "leído por". En el inicio aparecen para todos; los no leídos salen como NUEVO con "Marcar como leído" (`anuncios_vistos`).
+
+## Ranking mensual e insignias
+
+`ranking.html` (enlace "Ranking" en la barra): podio por categoría (reportes, bajas, patrullajes, reclutamientos, AKs, participaciones), tabla completa ordenable, selector de mes y Salón de insignias. Solo cuentan reportes aprobados (RPC `ranking_mes`). La tarea `ranking_mensual` publica el top 3 del mes anterior en Discord el día 1 y otorga la insignia 🥇 de cada categoría (`insignias`).
+
+## Tareas programadas (Automatización)
+
+Admin → Automatización → Tareas programadas: **Recordatorio de turnos de hoy** (quién tiene turno y quién no ha reportado), **Cierre del día**, **Resumen semanal** (día y hora) y **Ranking mensual** (día 1). Cada una se activa/desactiva, se le fija la hora (Colombia) y tiene "▶ Ejecutar ahora". Corren dentro de Postgres con pg_cron y publican por pg_net en el canal de Discord correspondiente (`discord_canales`): no hay Edge Function ni secretos de por medio. RPCs `programar`, `ejecutar_programada`; configuración en `configuracion.programadas`; quedan en Auditoría como `programada_*`.
+
 ## Expediente por integrante
 
 `expediente.html?id=<uuid>` (sin id: el propio; enlace "Mi expediente" en la barra y en Mi cuenta; en Admin desde el menú ⋯ de cada usuario). Muestra perfil y rol, rango y desde cuándo, KPIs (reportes aprobados, últimos 30 días, bajas, reclutamientos, patrullajes, AKs, participaciones como integrante, advertencias activas, pendientes/rechazados), sanciones, ascensos y reportes recientes. Los demás expedientes requieren `historial`, `usuarios` o `sanciones` (RPC `expediente`).

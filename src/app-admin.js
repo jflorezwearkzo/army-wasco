@@ -4,9 +4,9 @@ import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord,
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','ver_como'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','anuncios','ver_como'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', ver_como:'Ver la página como otro usuario (solo lectura)' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos y agenda de patrullaje', anuncios:'Tablón de anuncios', ver_como:'Ver la página como otro usuario (solo lectura)' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
   ['roles',       'Roles',       ['crear_roles']],
@@ -14,13 +14,15 @@ const TABS = [
   ['revision',    'Revisión',    ['aprobar_reportes']],
   ['disciplina',  'Disciplina',  ['sanciones']],
   ['ascensos',    'Ascensos',    ['usuarios']],
+  ['turnos',      'Turnos',      ['turnos']],
+  ['anuncios',    'Anuncios',    ['anuncios']],
   ['historial',   'Historial',   ['historial','eliminar_historial']],
   ['resumen',     'Resumen',     ['historial']],
   ['automatizacion','Automatización',['gestion_reportes']],
   ['auditoria',   'Auditoría',   ['auditoria']],
 ];
 let roles = [], formularios = [], rangosPM = [];
-let USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={};
+let USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, ANUN=[];
 
 // ---------- Pestañas según permisos ----------
 const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id);
@@ -34,7 +36,7 @@ function abrir(t, sub=''){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
-  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos})[t]();
+  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios})[t]();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
 // Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
@@ -475,7 +477,7 @@ async function buscarHist(){
 }
 
 // ====================== AUDITORÍA ======================
-const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como', revision_aprobado:'✅ Aprobó', revision_rechazado:'⛔ Rechazó', revision_pendiente:'↩ Devolvió a pendiente', sancion_advertencia:'⚠️ Advertencia a', sancion_sancion:'⛔ Sanción a', sancion_suspension:'⏸️ Suspensión a', sancion_expulsion:'🚫 Expulsión de', sancion_anulada:'↩ Anuló sanción de', discord_aviso:'📣 Aviso Discord' };
+const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como', revision_aprobado:'✅ Aprobó', revision_rechazado:'⛔ Rechazó', revision_pendiente:'↩ Devolvió a pendiente', sancion_advertencia:'⚠️ Advertencia a', sancion_sancion:'⛔ Sanción a', sancion_suspension:'⏸️ Suspensión a', sancion_expulsion:'🚫 Expulsión de', sancion_anulada:'↩ Anuló sanción de', discord_aviso:'📣 Aviso Discord', programada_config:'⏰ Configuró tarea', programada_recordatorio_turnos:'⏰ Recordatorio de turnos', programada_cierre_diario:'⏰ Cierre diario', programada_resumen_semanal:'⏰ Resumen semanal', programada_ranking_mensual:'⏰ Ranking mensual' };
 const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta' };
 async function cargarAud(){ buscarAud(); }
 $('#aBuscar').onclick = buscarAud; $('#aTabla').onchange = buscarAud;
@@ -680,4 +682,95 @@ async function cargarAscensos(){
   $('#tbReq').innerHTML = RANGOS.map(r => { const q = REQ[r] || {}; return `<tr data-r="${esc(r)}"><td><b>${esc(r)}</b></td><td><input type="number" min="0" data-q="dias" value="${q.dias_minimos||0}" style="width:90px"></td><td><input type="number" min="0" data-q="rep" value="${q.reportes_minimos||0}" style="width:90px"></td><td><input data-q="nota" value="${esc(q.nota||'')}" placeholder="opcional"></td><td><button class="ghost sm" data-qg="${esc(r)}">Guardar</button></td></tr>`; }).join('');
   document.querySelectorAll('[data-qg]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); const fila = { rango: b.dataset.qg, dias_minimos: +tr.querySelector('[data-q=dias]').value||0, reportes_minimos: +tr.querySelector('[data-q=rep]').value||0, nota: tr.querySelector('[data-q=nota]').value.trim()||null };
     const { error } = await sb.from('requisitos_ascenso').upsert(fila); if(error){ $('#qErr').textContent = error.message; return; } $('#qErr').textContent=''; toast(`Requisitos de ${fila.rango} guardados.`); cargarAscensos(); });
+}
+
+// ====================== TURNOS ======================
+function isoDe(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function lunesDe(d){ const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
+async function cargarTurnos(){
+  if(!T_INICIO) T_INICIO = lunesDe(new Date());
+  if(!USUARIOS.length){ const { data } = await sb.from('perfiles').select('*').order('usuario'); USUARIOS = data || []; }
+  $('#tUsuario').innerHTML = '<option value="">— Elige —</option>' + USUARIOS.filter(u => u.activo).map(u => `<option value="${u.id}">${esc(nombreCompleto(u))} (${esc(u.usuario)})</option>`).join('');
+  const fin = new Date(T_INICIO); fin.setDate(fin.getDate()+6); const hoy = isoDe(new Date());
+  $('#tSemana').textContent = `${fFecha(isoDe(T_INICIO))} → ${fFecha(isoDe(fin))}`;
+  const { data, error } = await sb.rpc('turnos_lista', { p_desde: isoDe(T_INICIO), p_hasta: isoDe(fin) });
+  if(error){ $('#tErr').textContent = error.message; return; } $('#tErr').textContent='';
+  const dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  $('#tGrid').innerHTML = dias.map((n,i) => { const d = new Date(T_INICIO); d.setDate(d.getDate()+i); const iso = isoDe(d); const ts = (data||[]).filter(t => t.fecha===iso);
+    return `<div class="dia ${iso===hoy?'hoy':''}"><h5>${n} <span>${iso.slice(8,10)}/${iso.slice(5,7)}</span></h5>${ts.map(t => `<div class="tn" data-tid="${t.id}" title="Editar o eliminar"><b>${iso < hoy ? (t.reporte ? '✅ ' : '⏳ ') : (t.reporte ? '✅ ' : '')}${esc([t.rango, t.nombre||t.usuario].filter(Boolean).join(' '))}</b><span class="h">${String(t.hora_inicio).slice(0,5)}${t.hora_fin?'–'+String(t.hora_fin).slice(0,5):''}</span>${t.notas?`<div class="muted">${esc(t.notas)}</div>`:''}</div>`).join('')}<div class="mas" data-nuevo="${iso}">＋</div></div>`; }).join('');
+  document.querySelectorAll('[data-nuevo]').forEach(x => x.onclick = () => nuevoTurno(x.dataset.nuevo));
+  document.querySelectorAll('#tGrid [data-tid]').forEach(x => x.onclick = () => editarTurno((data||[]).find(t => t.id==x.dataset.tid)));
+}
+$('#tPrev').onclick = () => { T_INICIO.setDate(T_INICIO.getDate()-7); cargarTurnos(); };
+$('#tNext').onclick = () => { T_INICIO.setDate(T_INICIO.getDate()+7); cargarTurnos(); };
+$('#tHoy').onclick = () => { T_INICIO = lunesDe(new Date()); cargarTurnos(); };
+$('#tNuevo').onclick = () => nuevoTurno(isoDe(new Date()));
+function nuevoTurno(fecha){ $('#fTurno').reset(); $('#tId').value=''; $('#tFecha').value = fecha; $('#tIni').value='20:00'; $('#tFin').value='22:00'; $('#tituloTurno').textContent='Asignar turno'; $('#tfErr').textContent=''; $('#tRepetir').parentElement.style.display=''; $('#dlgTurno').showModal(); }
+function editarTurno(t){ $('#fTurno').reset(); $('#tId').value=t.id; $('#tUsuario').value=t.usuario_id; $('#tFecha').value=t.fecha; $('#tIni').value=String(t.hora_inicio).slice(0,5); $('#tFin').value=t.hora_fin?String(t.hora_fin).slice(0,5):''; $('#tNotas').value=t.notas||''; $('#tituloTurno').textContent='Editar turno'; $('#tfErr').textContent=''; $('#tRepetir').parentElement.style.display='none';
+  let del = $('#tEliminar'); if(!del){ del = document.createElement('button'); del.type='button'; del.id='tEliminar'; del.className='ghost'; del.textContent='🗑 Eliminar'; $('#tBotones').appendChild(del); }
+  del.style.display=''; del.onclick = async () => { if(!confirm('¿Eliminar este turno?')) return; const { error } = await sb.from('turnos').delete().eq('id', t.id); if(error){ $('#tfErr').textContent=error.message; return; } $('#dlgTurno').close(); toast('Turno eliminado.'); cargarTurnos(); };
+  $('#dlgTurno').showModal(); }
+$('#fTurno').onsubmit = async e => {
+  e.preventDefault(); $('#tfErr').textContent=''; const del = $('#tEliminar'); if(del && !$('#tId').value) del.style.display='none';
+  const base = { usuario_id: $('#tUsuario').value, fecha: $('#tFecha').value, hora_inicio: $('#tIni').value, hora_fin: $('#tFin').value || null, notas: $('#tNotas').value.trim() || null, asignado_por: yo.id };
+  if(!base.usuario_id){ $('#tfErr').textContent='Elige el integrante.'; return; }
+  let r;
+  if($('#tId').value) r = await sb.from('turnos').update(base).eq('id', +$('#tId').value);
+  else { const filas = [base]; if($('#tRepetir').checked){ const n = Math.max(1, Math.min(12, +$('#tSemanas').value||4)); for(let i=1;i<n;i++){ const d = new Date(base.fecha+'T00:00:00'); d.setDate(d.getDate()+7*i); filas.push({ ...base, fecha: isoDe(d) }); } } r = await sb.from('turnos').insert(filas); }
+  if(r.error){ $('#tfErr').textContent = r.error.message; return; }
+  $('#dlgTurno').close(); toast('Turno guardado.'); cargarTurnos();
+};
+
+// ====================== ANUNCIOS ======================
+async function cargarAnuncios(){
+  const [{ data, error }, { data: vis }] = await Promise.all([sb.from('anuncios').select('*').order('fijado',{ascending:false}).order('publicado_en',{ascending:false}).limit(200), sb.from('anuncios_vistos').select('anuncio_id')]);
+  if(error){ $('#nErr').textContent = error.message; return; } $('#nErr').textContent=''; ANUN = data || [];
+  const vistos = {}; (vis||[]).forEach(v => vistos[v.anuncio_id] = (vistos[v.anuncio_id]||0)+1);
+  const activos = USUARIOS.length ? USUARIOS.filter(u => u.activo).length : null;
+  $('#tbAnun').innerHTML = ANUN.map(a => { const cad = a.expira_en && new Date(a.expira_en) < new Date(); return `<tr data-id="${a.id}" style="${a.activo && !cad ? '' : 'opacity:.6'}"><td><b>${a.fijado?'📌 ':''}${esc(a.titulo)}</b><br><span class="muted" style="font-size:12px">${esc((a.cuerpo||'').slice(0,120))}${(a.cuerpo||'').length>120?'…':''}</span></td>
+    <td class="muted" style="white-space:nowrap">${fFecha(a.publicado_en)}</td><td class="muted">${a.expira_en ? fFecha(a.expira_en) : '—'}</td><td>${vistos[a.id]||0}${activos?` <span class="muted">/ ${activos}</span>`:''}</td>
+    <td>${cad ? '<span class="tag off">Caducado</span>' : a.activo ? '<span class="tag on">Visible</span>' : '<span class="tag off">Oculto</span>'}</td><td class="acc" style="text-align:right">${botonMenu(a.id)}</td></tr>`; }).join('') || '<tr><td colspan=6 class="muted">Sin anuncios</td></tr>';
+  document.querySelectorAll('#tbAnun [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const a = ANUN.find(x => x.id==b.dataset.menu);
+    abrirMenu(b, 'anun:'+a.id, `<b style="color:var(--text)">${esc(a.titulo)}</b>`, [['editar','✏️ Editar'], ['discord','📣 Publicar en Discord'], [a.activo?'ocultar':'mostrar', a.activo?'🙈 Ocultar':'👁 Mostrar'], [a.fijado?'desfijar':'fijar', a.fijado?'Quitar fijado':'📌 Fijar arriba'], ['eliminar','🗑 Eliminar', true]], async op => {
+      if(op==='editar') editarAnuncio(a);
+      if(op==='discord'){ const r = await avisoDiscord('anuncios', { embed: { title: `📣 ${a.titulo}`, description: a.cuerpo||'' } }); toast(r==='ok' ? 'Publicado en Discord.' : r==='sin_webhook' ? 'El canal de anuncios no tiene webhook (Automatización).' : 'No se pudo publicar: '+r, r!=='ok'); }
+      if(op==='ocultar' || op==='mostrar'){ await sb.from('anuncios').update({ activo: op==='mostrar', actualizado_en: new Date().toISOString() }).eq('id', a.id); cargarAnuncios(); }
+      if(op==='fijar' || op==='desfijar'){ await sb.from('anuncios').update({ fijado: op==='fijar', actualizado_en: new Date().toISOString() }).eq('id', a.id); cargarAnuncios(); }
+      if(op==='eliminar'){ if(!confirm(`¿Eliminar el anuncio "${a.titulo}"?`)) return; const { error } = await sb.from('anuncios').delete().eq('id', a.id); if(error) alert(error.message); cargarAnuncios(); }
+    }); });
+  document.querySelectorAll('#tbAnun tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('button,a,input')) return; const a = ANUN.find(x => x.id==tr.dataset.id); if(a) editarAnuncio(a); });
+}
+$('#nNuevo').onclick = () => { $('#fAnuncio').reset(); $('#nId').value=''; $('#nActivo').checked=true; $('#nDiscord').checked=true; $('#tituloAnuncio').textContent='Nuevo anuncio'; $('#nGuardar').textContent='Publicar'; $('#nfErr').textContent=''; $('#dlgAnuncio').showModal(); };
+function editarAnuncio(a){ $('#fAnuncio').reset(); $('#nId').value=a.id; $('#nTitulo').value=a.titulo; $('#nCuerpo').value=a.cuerpo||''; $('#nExpira').value=a.expira_en?String(a.expira_en).slice(0,10):''; $('#nFijado').checked=!!a.fijado; $('#nActivo').checked=!!a.activo; $('#nDiscord').checked=false; $('#tituloAnuncio').textContent='Editar anuncio'; $('#nGuardar').textContent='Guardar'; $('#nfErr').textContent=''; $('#dlgAnuncio').showModal(); }
+$('#fAnuncio').onsubmit = async e => {
+  e.preventDefault(); $('#nfErr').textContent='';
+  const fila = { titulo: $('#nTitulo').value.trim(), cuerpo: $('#nCuerpo').value.trim(), fijado: $('#nFijado').checked, activo: $('#nActivo').checked, expira_en: $('#nExpira').value ? $('#nExpira').value + 'T23:59:59' : null, actualizado_en: new Date().toISOString() };
+  const id = $('#nId').value; let r;
+  if(id) r = await sb.from('anuncios').update(fila).eq('id', +id); else r = await sb.from('anuncios').insert({ ...fila, autor_id: yo.id });
+  if(r.error){ $('#nfErr').textContent = r.error.message; return; }
+  $('#dlgAnuncio').close(); let extra = '';
+  if($('#nDiscord').checked && fila.activo){ const d = await avisoDiscord('anuncios', { embed: { title: `📣 ${fila.titulo}`, description: fila.cuerpo } }); extra = d==='ok' ? ' Publicado en Discord.' : d==='sin_webhook' ? ' (Discord: canal de anuncios sin webhook)' : ' (Discord: '+d+')'; }
+  toast('Anuncio guardado.'+extra); cargarAnuncios();
+};
+
+// ====================== TAREAS PROGRAMADAS ======================
+var PROGRAMADAS = [
+  ['recordatorio_turnos','Recordatorio de turnos de hoy','recordatorios','Lista los turnos del día y quién no ha enviado su Reporte de Fin de Día', 20, 0, null],
+  ['cierre_diario','Cierre del día','resumen','Reportes aprobados del día por formulario y quiénes reportaron', 23, 55, null],
+  ['resumen_semanal','Resumen semanal','resumen','KPIs de los últimos 7 días y los 5 más activos', 8, 0, 1],
+  ['ranking_mensual','Ranking mensual','ranking','Top 3 del mes anterior por categoría; otorga las insignias', 9, 0, null],
+];
+async function cargarProgramadas(){
+  const { data } = await sb.from('configuracion').select('valor').eq('clave','programadas').maybeSingle(); const cfg = (data && data.valor) || {};
+  const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  $('#tbProg').innerHTML = PROGRAMADAS.map(([k, n, canal, desc, h, m, dia]) => { const c = cfg[k] || {}; return `<tr data-p="${k}"><td><b>${esc(n)}</b><br><span class="muted" style="font-size:12px">${esc(desc)}</span></td><td class="muted">${esc(canal)}</td>
+    <td><input type="checkbox" data-pa ${c.activo?'checked':''}></td>
+    <td style="white-space:nowrap">${k==='resumen_semanal' ? `<select data-pd style="width:auto;display:inline-block;padding:4px 6px;margin-right:4px">${DIAS.map((d,i)=>`<option value="${i}" ${(c.dia??dia)==i?'selected':''}>${d}</option>`).join('')}</select>` : k==='ranking_mensual' ? '<span class="muted">día 1 · </span>' : ''}<input type="time" data-ph value="${String(c.hora??h).padStart(2,'0')}:${String(c.minuto??m).padStart(2,'0')}" style="width:auto;display:inline-block;padding:4px 6px"></td>
+    <td><button class="ghost sm" data-pg="${k}">Guardar</button></td><td><button class="ghost sm" data-px="${k}" title="Ejecuta la tarea ahora mismo con los datos de hoy">▶ Ejecutar ahora</button></td></tr>`; }).join('');
+  document.querySelectorAll('[data-pg]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); const [hh, mm] = tr.querySelector('[data-ph]').value.split(':').map(Number); const dsel = tr.querySelector('[data-pd]');
+    const { data: r, error } = await sb.rpc('programar', { p_clave: b.dataset.pg, p_activo: tr.querySelector('[data-pa]').checked, p_hora: hh, p_minuto: mm, p_dia: dsel ? +dsel.value : 1 });
+    if(error){ $('#pErr').textContent = error.message; return; } $('#pErr').textContent=''; toast(r.activo ? `Programada (${r.cron} UTC).` : 'Tarea desactivada.'); });
+  document.querySelectorAll('[data-px]').forEach(b => b.onclick = async () => { b.disabled = true; const { data: r, error } = await sb.rpc('ejecutar_programada', { p_accion: b.dataset.px }); b.disabled = false;
+    if(error){ $('#pErr').textContent = error.message; return; } $('#pErr').textContent='';
+    toast(r.enviado ? 'Enviado a Discord.' : r.motivo==='sin_webhook' ? 'Generado, pero el canal no tiene webhook configurado.' : 'Sin nada que enviar: '+(r.motivo||''), !r.enviado); });
 }

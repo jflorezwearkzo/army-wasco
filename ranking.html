@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
+<title>Ranking · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="js/tema.js?v=9ab9535e"></script>
+<link rel="stylesheet" href="estilos.css">
+<style>
+  main{max-width:1100px;margin:24px auto;padding:0 20px}
+  h1{color:var(--gold);margin:0 0 4px;font-size:28px}
+  .barra-mes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 18px}
+  .barra-mes select{width:auto}
+  .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .cat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .cat h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px}
+  .pod{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line3)}
+  .pod:last-child{border-bottom:0}
+  .pod .m{font-size:22px;width:30px;text-align:center}
+  .pod .n{flex:1}.pod .n small{display:block;color:var(--muted);font-size:12px}
+  .pod .v{font-size:20px;font-weight:700;color:var(--gold)}
+  .pod.yo .n{color:var(--gold)}
+  .vacio{color:var(--muted);font-size:13px}
+  .tabla{margin-top:18px}
+  .tabla th{cursor:pointer;white-space:nowrap}
+  .tabla th.on{color:var(--text)}
+  tr.yo td{background:var(--hover2)}
+  .insig{display:flex;flex-wrap:wrap;gap:8px}
+  .ins{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:5px 12px;font-size:13px;display:flex;gap:6px;align-items:center}
+  .ins b{color:var(--gold)}
+  .ins small{color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <p class="unidad">Army de Wasco · Policía Militar</p>
+  <h1>🏆 Ranking del mes</h1>
+  <p class="muted" style="margin:0">Solo cuentan los reportes aprobados. El día 1 de cada mes se publican los ganadores en Discord y reciben su insignia.</p>
+  <div class="barra-mes"><label style="margin:0">Mes</label><select id="mes"></select><span class="muted" id="total"></span></div>
+  <div class="cats" id="cats"></div>
+  <div class="caja tabla"><h3 style="margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px">Tabla completa</h3>
+    <div style="overflow:auto"><table id="tabla"><thead><tr><th data-k="pos">#</th><th data-k="nombre">Integrante</th><th data-k="reportes">Reportes</th><th data-k="bajas">Bajas</th><th data-k="patrullajes">Patrullajes</th><th data-k="reclutamientos">Reclut.</th><th data-k="aks">AKs</th><th data-k="participaciones">Particip.</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+  <div class="caja" style="margin-top:18px"><h3 style="margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px">Salón de insignias</h3><div class="insig" id="insignias"><span class="muted">Cargando…</span></div></div>
+  <div class="err" id="err"></div>
+</main>
+<script type="module" src="js/app-ranking.js?v=728fa8d5"></script>
+</body>
+</html>

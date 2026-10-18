@@ -15,8 +15,8 @@
 <title>Policía Militar · Reportes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
 <style>
-  :root{--bg:var(--bg);--panel:var(--panel);--line:var(--line);--gold:var(--gold);--text:var(--text);--muted:var(--muted);}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column}
   header{padding:36px 20px 24px;text-align:center;border-bottom:2px solid var(--line);
@@ -40,9 +40,24 @@
   .card.proximo{opacity:.55;pointer-events:none}
   .card.proximo .meta .tag{color:var(--muted)}
   .empty{color:var(--muted);text-align:center;padding:40px}
+  .tablon{max-width:980px;margin:0 auto 22px;display:grid;grid-template-columns:2fr 1fr;gap:14px}
+  @media(max-width:800px){.tablon{grid-template-columns:1fr}}
+  .tablon .caja{padding:14px 16px}
+  .tablon h3{margin:0 0 8px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
+  .anu{border:1px solid var(--line2);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--bg2);position:relative}
+  .anu.nuevo{border-color:var(--gold)}
+  .anu.nuevo::after{content:"NUEVO";position:absolute;right:10px;top:8px;font-size:10px;letter-spacing:1px;background:var(--gold);color:var(--gold-text);padding:1px 6px;border-radius:8px}
+  .anu h4{margin:0 0 4px;font-size:15px}
+  .anu p{margin:0;font-size:14px;white-space:pre-line}
+  .anu .f{color:var(--muted);font-size:11px;margin-top:6px}
+  .anu .f a{cursor:pointer}
+  .turno{display:flex;gap:8px;align-items:center;font-size:14px;padding:6px 0;border-bottom:1px solid var(--line3)}
+  .turno b{color:var(--gold);min-width:92px}
+  .enlaces{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:0 0 18px}
+  .enlaces a{text-decoration:none}
   footer{text-align:center;padding:18px;color:#5a6a71;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-top:1px solid var(--line3)}
 </style>
-<script src="js/tema.js?v=6d703728"></script>
+<script src="js/tema.js?v=9ab9535e"></script>
 </head>
 <body>
 <header>
@@ -51,6 +66,10 @@
   <p class="lema">¡Honor <b>★</b> Lealtad <b>★</b> Disciplina!</p>
 </header>
 <main>
+  <div class="tablon" id="tablon" style="display:none">
+    <div class="caja"><h3>📣 Tablón de anuncios <a href="ranking.html" class="ghost sm" style="text-decoration:none;font-weight:400;text-transform:none;letter-spacing:0">🏆 Ranking del mes</a></h3><div id="anuncios"></div></div>
+    <div class="caja"><h3>🚔 Mis próximos turnos</h3><div id="turnos"></div></div>
+  </div>
   <div class="grid" id="lista"></div>
   <a class="card" href="reglamento.html" style="margin-top:18px;display:block;max-width:520px;margin-left:auto;margin-right:auto">
     <div class="ico">📜</div>
@@ -60,6 +79,6 @@
 </main>
 <footer>Un equipo · Una misión · Un solo Army</footer>
 
-<script type="module" src="js/app-index.js?v=57b8cba1"></script>
+<script type="module" src="js/app-index.js?v=f3b227bd"></script>
 </body>
 </html>
