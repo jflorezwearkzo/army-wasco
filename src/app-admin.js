@@ -360,7 +360,8 @@ async function cargarResumen(){
   const bajas=R.filter(r=>r.formulario_id==='bajas').reduce((a,r)=>a+((r.datos&&Array.isArray(r.datos.rows))?r.datos.rows.length:0),0);
   const patr=R.filter(r=>r.formulario_id==='patrullaje').length, tomas=R.filter(r=>r.formulario_id==='toma-territorio'), aks=tomas.reduce((a,r)=>a+(+(r.datos&&r.datos.totalTomados)||0),0);
   const usuarios=new Set(R.map(r=>r.usuario)).size, dias=Math.max(1,Math.round((new Date(hasta)-new Date(desde))/864e5)+1);
-  $('#rKpis').innerHTML=[[R.length,'Reportes'],[(R.length/dias).toFixed(1),'Por día'],[usuarios,'Usuarios activos'],[bajas,'Bajas reportadas'],[patr,'Patrullajes'],[`${aks}${tomas.length?' / '+tomas.length*3:''}`,'AKs tomados']].map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
+  const reclut=R.filter(r=>r.formulario_id==='reclutamiento').length;
+  $('#rKpis').innerHTML=[[R.length,'Reportes'],[(R.length/dias).toFixed(1),'Por día'],[usuarios,'Usuarios activos'],[bajas,'Bajas reportadas'],[reclut,'Reclutamientos'],[patr,'Patrullajes'],[`${aks}${tomas.length?' / '+tomas.length*3:''}`,'AKs tomados']].map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
   // Por día
   const porDia={}; for(let d=new Date(desde); iso(d)<=hasta; d=new Date(d.getTime()+864e5)) porDia[iso(d)]=0; R.forEach(r=>{ if(r.fecha in porDia) porDia[r.fecha]++; });
   const max=Math.max(1,...Object.values(porDia));
@@ -374,6 +375,11 @@ async function cargarResumen(){
   // Integrantes (patrullaje + toma)
   const pi={}; R.forEach(r=>{ if(!['patrullaje','toma-territorio'].includes(r.formulario_id)) return; const l=(r.datos&&Array.isArray(r.datos.integrantes))?r.datos.integrantes:[]; new Set(l.map(x=>String(x).trim()).filter(Boolean)).forEach(n=>{ pi[n]=(pi[n]||0)+1; }); });
   $('#rIntegrantes').innerHTML=Object.entries(pi).sort((a,b)=>b[1]-a[1]).slice(0,30).map(([n,c])=>`<tr><td>${esc(n)}</td><td>${c}</td></tr>`).join('')||'<tr><td colspan=2 class="muted">—</td></tr>';
+  // Bajas por persona (quien reporta) y reclutamientos por persona
+  const pb={}; R.filter(r=>r.formulario_id==='bajas').forEach(r=>{ const k=r.usuario||'—'; pb[k]=pb[k]||{nombre:quien(r),rep:0,bajas:0}; pb[k].rep++; pb[k].bajas+=(r.datos&&Array.isArray(r.datos.rows))?r.datos.rows.filter(x=>x&&x.nombre).length:0; });
+  $('#rBajas').innerHTML=Object.entries(pb).sort((a,b)=>b[1].bajas-a[1].bajas).map(([u,x])=>`<tr><td><b>${esc(u)}</b> <span class="muted">${esc(x.nombre)}</span></td><td>${x.rep}</td><td><b>${x.bajas}</b></td></tr>`).join('')||'<tr><td colspan=3 class="muted">Sin reportes de bajas en el periodo</td></tr>';
+  const pr={}; R.filter(r=>r.formulario_id==='reclutamiento').forEach(r=>{ const k=r.usuario||'—'; pr[k]=pr[k]||{nombre:quien(r),n:0,nombres:[]}; pr[k].n++; const d=r.datos||{}; const nom=[d.ofRango,d.ofNombre].filter(Boolean).join(' '); if(nom) pr[k].nombres.push(nom); });
+  $('#rReclut').innerHTML=Object.entries(pr).sort((a,b)=>b[1].n-a[1].n).map(([u,x])=>`<tr><td><b>${esc(u)}</b> <span class="muted">${esc(x.nombre)}</span></td><td><b>${x.n}</b></td><td class="muted" style="font-size:12px">${esc(x.nombres.join(', '))}</td></tr>`).join('')||'<tr><td colspan=3 class="muted">Sin reclutamientos en el periodo</td></tr>';
   $('#rNota').textContent=`Periodo ${desde.split('-').reverse().join('-')} a ${hasta.split('-').reverse().join('-')} · ${R.length} reporte(s)${R.length>=3000?' (límite alcanzado; acota el periodo)':''}.`;
 }
 $('#rActualizar').onclick=cargarResumen;
