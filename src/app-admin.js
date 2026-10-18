@@ -495,7 +495,7 @@ async function buscarHist(){
 
 // ====================== AUDITORÍA ======================
 const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como', revision_aprobado:'✅ Aprobó', revision_rechazado:'⛔ Rechazó', revision_pendiente:'↩ Devolvió a pendiente', sancion_advertencia:'⚠️ Advertencia a', sancion_sancion:'⛔ Sanción a', sancion_suspension:'⏸️ Suspensión a', sancion_expulsion:'🚫 Expulsión de', sancion_anulada:'↩ Anuló sanción de', discord_aviso:'📣 Aviso Discord', avatar:'📷 Cambió la foto de', respaldo:'💾 Copia de seguridad', programada_config:'⏰ Configuró tarea', programada_recordatorio_turnos:'⏰ Recordatorio de turnos', programada_cierre_diario:'⏰ Cierre diario', programada_resumen_semanal:'⏰ Resumen semanal', programada_ranking_mensual:'⏰ Ranking mensual' };
-const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta' };
+const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta', sanciones:'sanción', turnos:'turno', anuncios:'anuncio', requisitos_ascenso:'requisito de ascenso', discord_canales:'canal de Discord', formularios_discord:'canal del formulario', configuracion:'configuración', insignias:'insignia', sistema:'sistema' };
 async function cargarAud(){ buscarAud(); }
 $('#aBuscar').onclick = buscarAud; $('#aTabla').onchange = buscarAud;
 let tAud; $('#aUsuario').oninput = () => { clearTimeout(tAud); tAud = setTimeout(buscarAud, 250); };

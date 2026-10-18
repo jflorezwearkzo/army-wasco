@@ -748,3 +748,5 @@ alter table public.anuncios add column if not exists imagen_path text;
 insert into storage.buckets (id, name, public) values ('anuncios','anuncios', true) on conflict (id) do nothing;
 create policy anuncios_img_select on storage.objects for select using (bucket_id = 'anuncios');
 create policy anuncios_img_write on storage.objects for all using (bucket_id = 'anuncios' and public.tengo_permiso('anuncios')) with check (bucket_id = 'anuncios' and public.tengo_permiso('anuncios'));
+-- Auditoría genérica (registrar_auditoria) también en: turnos, anuncios, requisitos_ascenso, discord_canales, formularios_discord, configuracion, insignias.
+-- Los webhooks se guardan como "(oculto)" en el detalle; se excluyen busqueda/actualizado_en. Sanciones, ascensos, revisión, ver_como, avatar y respaldo auditan desde sus RPC.

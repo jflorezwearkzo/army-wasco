@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=5726aac9"></script>
+<script src="../js/tema.js?v=60837d7f"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1200px;margin:0 auto;padding:20px}
@@ -435,7 +435,7 @@
       <h3 style="display:flex;justify-content:space-between;align-items:center">Auditoría <button type="button" class="ghost sm" id="aCsv" title="Descarga lo que está filtrado (hazlo antes de que se borre a los 30 días)">⬇ Exportar CSV</button></h3>
       <p class="muted" style="margin-top:0;font-size:13px">Registro inalterable de acciones (lo escribe la base de datos; nadie puede borrarlo ni editarlo). Se conserva 30 días.</p>
       <div class="fila" style="margin-bottom:12px">
-        <div><label>Tipo</label><select id="aTabla"><option value="">Todos</option><option value="perfiles">Usuarios</option><option value="roles">Roles</option><option value="rangos_pm">Rangos PM</option><option value="formularios">Formularios</option><option value="reportes">Reportes</option><option value="auth">Contraseñas</option></select></div>
+        <div><label>Tipo</label><select id="aTabla"><option value="">Todos</option><option value="perfiles">Usuarios</option><option value="roles">Roles</option><option value="rangos_pm">Rangos PM</option><option value="formularios">Formularios</option><option value="reportes">Reportes</option><option value="sanciones">Sanciones</option><option value="turnos">Turnos</option><option value="anuncios">Anuncios</option><option value="requisitos_ascenso">Requisitos de ascenso</option><option value="discord_canales">Canales de Discord</option><option value="formularios_discord">Canales por formulario</option><option value="configuracion">Configuración / tareas</option><option value="insignias">Insignias</option><option value="sistema">Sistema (respaldos)</option><option value="auth">Contraseñas</option></select></div>
         <div><label>Usuario</label><input id="aUsuario" placeholder="quién hizo la acción" autocomplete="off"></div>
         <div><button type="button" class="secondary" id="aBuscar" style="width:100%">Actualizar</button></div>
       </div>
@@ -458,6 +458,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=d9876e30"></script>
+<script type="module" src="../js/app-admin.js?v=d8617c10"></script>
 </body>
 </html>
