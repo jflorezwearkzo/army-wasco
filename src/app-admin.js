@@ -1,3 +1,4 @@
+import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
 import { requerir, barraUsuario, tiene, sb, esc, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
@@ -354,6 +355,7 @@ async function buscarAud(){
 
 // ====================== RESUMEN ======================
 const iso = d => d.toISOString().slice(0,10);
+let RES=null;
 async function cargarResumen(){
   if(!$('#rDesde').value){ const h=new Date(); $('#rHasta').value=iso(h); $('#rDesde').value=iso(new Date(h.getTime()-29*864e5)); }
   const desde=$('#rDesde').value, hasta=$('#rHasta').value;
@@ -365,7 +367,8 @@ async function cargarResumen(){
   const patr=R.filter(r=>r.formulario_id==='patrullaje').length, tomas=R.filter(r=>r.formulario_id==='toma-territorio'), aks=tomas.reduce((a,r)=>a+(+(r.datos&&r.datos.totalTomados)||0),0);
   const usuarios=new Set(R.map(r=>r.usuario)).size, dias=Math.max(1,Math.round((new Date(hasta)-new Date(desde))/864e5)+1);
   const reclut=R.filter(r=>r.formulario_id==='reclutamiento').length;
-  $('#rKpis').innerHTML=[[R.length,'Reportes'],[(R.length/dias).toFixed(1),'Por día'],[usuarios,'Usuarios activos'],[bajas,'Bajas reportadas'],[reclut,'Reclutamientos'],[patr,'Patrullajes'],[`${aks}${tomas.length?' / '+tomas.length*3:''}`,'AKs tomados']].map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
+  const KP=[[R.length,'Reportes'],[(R.length/dias).toFixed(1),'Por día'],[usuarios,'Usuarios activos'],[bajas,'Bajas reportadas'],[reclut,'Reclutamientos'],[patr,'Patrullajes'],[`${aks}${tomas.length?' / '+tomas.length*3:''}`,'AKs tomados']];
+  $('#rKpis').innerHTML=KP.map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
   // Por día
   const porDia={}; for(let d=new Date(desde); iso(d)<=hasta; d=new Date(d.getTime()+864e5)) porDia[iso(d)]=0; R.forEach(r=>{ if(r.fecha in porDia) porDia[r.fecha]++; });
   const max=Math.max(1,...Object.values(porDia));
@@ -384,6 +387,25 @@ async function cargarResumen(){
   $('#rBajas').innerHTML=Object.entries(pb).sort((a,b)=>b[1].bajas-a[1].bajas).map(([u,x])=>`<tr><td><b>${esc(u)}</b> <span class="muted">${esc(x.nombre)}</span></td><td>${x.rep}</td><td><b>${x.bajas}</b></td></tr>`).join('')||'<tr><td colspan=3 class="muted">Sin reportes de bajas en el periodo</td></tr>';
   const pr={}; R.filter(r=>r.formulario_id==='reclutamiento').forEach(r=>{ const k=r.usuario||'—'; pr[k]=pr[k]||{nombre:quien(r),n:0,nombres:[]}; pr[k].n++; const d=r.datos||{}; const nom=[d.ofRango,d.ofNombre].filter(Boolean).join(' '); if(nom) pr[k].nombres.push(nom); });
   $('#rReclut').innerHTML=Object.entries(pr).sort((a,b)=>b[1].n-a[1].n).map(([u,x])=>`<tr><td><b>${esc(u)}</b> <span class="muted">${esc(x.nombre)}</span></td><td><b>${x.n}</b></td><td class="muted" style="font-size:12px">${esc(x.nombres.join(', '))}</td></tr>`).join('')||'<tr><td colspan=3 class="muted">Sin reclutamientos en el periodo</td></tr>';
+  const fd=d=>d.split('-').reverse().join('-');
+  RES={ desde, hasta, total:R.length, kpis:KP, porDia,
+    porForm:Object.entries(pf).sort((a,b)=>b[1]-a[1]).map(([k,n])=>[k,n,Math.round(n/R.length*100)+'%']),
+    porUsuario:Object.entries(pu).sort((a,b)=>b[1].n-a[1].n).map(([u,x])=>[u,x.nombre,x.n,fd(x.ultimo)]),
+    integrantes:Object.entries(pi).sort((a,b)=>b[1]-a[1]).slice(0,30),
+    bajas:Object.entries(pb).sort((a,b)=>b[1].bajas-a[1].bajas).map(([u,x])=>[u,x.nombre,x.rep,x.bajas]),
+    reclut:Object.entries(pr).sort((a,b)=>b[1].n-a[1].n).map(([u,x])=>[u,x.nombre,x.n,x.nombres.join(', ')]) };
+  $('#rExportar').disabled=false;
   $('#rNota').textContent=`Periodo ${desde.split('-').reverse().join('-')} a ${hasta.split('-').reverse().join('-')} · ${R.length} reporte(s)${R.length>=3000?' (límite alcanzado; acota el periodo)':''}.`;
 }
 $('#rActualizar').onclick=cargarResumen;
+$('#rExportar').onclick=async()=>{
+  if(!RES) return; const btn=$('#rExportar'); btn.disabled=true; const txt=btn.textContent; btn.textContent='Generando…';
+  try{
+    await (document.fonts ? document.fonts.ready : Promise.resolve());
+    const fmt=$('#rFormato').value; const fd=d=>d.split('-').reverse().join('-');
+    const pags=dibujarResumen(RES, { periodo:`Periodo ${fd(RES.desde)} a ${fd(RES.hasta)} · ${RES.total} reporte(s)`, generado:`Generado por ${nombreCompleto(yo)} · ${new Date().toLocaleString('es-CO')}` });
+    const nombre=`resumen-pm-${RES.desde}_${RES.hasta}`;
+    if(fmt==='pdf') descargar(resumenPDF(pags), nombre+'.pdf'); else descargar(await resumenPNG(pags), nombre+'.png');
+  }catch(x){ alert('No se pudo exportar: '+x.message); }
+  btn.disabled=false; btn.textContent=txt;
+};

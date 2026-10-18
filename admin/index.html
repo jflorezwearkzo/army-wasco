@@ -166,7 +166,8 @@
   <section id="t-resumen">
     <div class="caja">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">Resumen de actividad
-        <span style="display:flex;gap:8px;align-items:center;font-weight:400;font-size:13px"><label style="margin:0">Desde</label><input id="rDesde" type="date" style="width:auto"><label style="margin:0">Hasta</label><input id="rHasta" type="date" style="width:auto"><button type="button" class="secondary sm" id="rActualizar">Actualizar</button></span></h3>
+        <span style="display:flex;gap:8px;align-items:center;font-weight:400;font-size:13px"><label style="margin:0">Desde</label><input id="rDesde" type="date" style="width:auto"><label style="margin:0">Hasta</label><input id="rHasta" type="date" style="width:auto"><button type="button" class="secondary sm" id="rActualizar">Actualizar</button>
+          <span style="border-left:1px solid var(--line);padding-left:8px;display:flex;gap:6px;align-items:center"><select id="rFormato" style="width:auto"><option value="pdf">PDF</option><option value="png">Imagen PNG</option></select><button type="button" class="primary sm" id="rExportar" disabled title="Descarga el resumen con KPIs y tablas como reporte">⬇ Exportar resumen</button></span></span></h3>
       <div class="kpis" id="rKpis"></div>
       <div class="dos" style="grid-template-columns:1fr 1fr;margin-top:14px">
         <div><h4>Reportes por día</h4><div class="barras" id="rDias"></div></div>
@@ -210,6 +211,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=99a5e28f"></script>
+<script type="module" src="../js/app-admin.js?v=5c6a6ff2"></script>
 </body>
 </html>
