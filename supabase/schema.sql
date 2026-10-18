@@ -495,7 +495,8 @@ on conflict (id) do nothing;
 alter table public.formularios add column if not exists definicion jsonb;      -- definición JSON (fondo, campos, anexo)
 alter table public.formularios add column if not exists version integer not null default 1;
 insert into storage.buckets (id, name, public) values ('plantillas','plantillas', true) on conflict (id) do nothing;
-create policy plantillas_read   on storage.objects for select using (bucket_id='plantillas');
+-- Bucket público: la lectura por URL no pasa por RLS; el SELECT solo habilita remove/upsert y se restringe para impedir el listado.
+create policy plantillas_read   on storage.objects for select using (bucket_id='plantillas' and coalesce(public.tengo_permiso('disenar_formularios'), false));
 create policy plantillas_insert on storage.objects for insert with check (bucket_id='plantillas' and (public.tengo_permiso('crear_reportes') or public.tengo_permiso('gestion_reportes')));
 create policy plantillas_update on storage.objects for update using (bucket_id='plantillas' and public.tengo_permiso('gestion_reportes'));
 create policy plantillas_delete on storage.objects for delete using (bucket_id='plantillas' and public.tengo_permiso('gestion_reportes'));
@@ -730,7 +731,8 @@ grant execute on function public.auditar_respaldo(jsonb) to authenticated;
 -- ---------- Avatar (foto del personaje de RP, no real) y permisos de solo lectura ----------
 alter table public.perfiles add column if not exists avatar_path text;
 insert into storage.buckets (id, name, public) values ('avatares','avatares', true) on conflict (id) do nothing;
-create policy avatares_select on storage.objects for select using (bucket_id = 'avatares');
+create policy avatares_select on storage.objects for select using (bucket_id = 'avatares' and coalesce(public.mi_perfil_activo(), false)
+  and ((storage.foldername(name))[1] = auth.uid()::text or coalesce(public.tengo_permiso('usuarios'), false)));
 create policy avatares_write on storage.objects for all
   using (bucket_id = 'avatares' and coalesce(public.mi_perfil_activo(),false) and ((storage.foldername(name))[1] = auth.uid()::text or public.tengo_permiso('usuarios')))
   with check (bucket_id = 'avatares' and coalesce(public.mi_perfil_activo(),false) and ((storage.foldername(name))[1] = auth.uid()::text or public.tengo_permiso('usuarios')));
@@ -746,7 +748,7 @@ $$;
 -- Anuncios con imagen (1): bucket público "anuncios", columna anuncios.imagen_path; escriben quienes tienen permiso "anuncios"
 alter table public.anuncios add column if not exists imagen_path text;
 insert into storage.buckets (id, name, public) values ('anuncios','anuncios', true) on conflict (id) do nothing;
-create policy anuncios_img_select on storage.objects for select using (bucket_id = 'anuncios');
+create policy anuncios_img_select on storage.objects for select using (bucket_id = 'anuncios' and coalesce(public.tengo_permiso('anuncios'), false));
 create policy anuncios_img_write on storage.objects for all using (bucket_id = 'anuncios' and public.tengo_permiso('anuncios')) with check (bucket_id = 'anuncios' and public.tengo_permiso('anuncios'));
 -- Auditoría genérica (registrar_auditoria) también en: turnos, anuncios, requisitos_ascenso, discord_canales, formularios_discord, configuracion, insignias.
 -- Los webhooks se guardan como "(oculto)" en el detalle; se excluyen busqueda/actualizado_en. Sanciones, ascensos, revisión, ver_como, avatar y respaldo auditan desde sus RPC.
