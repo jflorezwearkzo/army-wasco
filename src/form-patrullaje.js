@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, esc, cargarFoto } from './auth.js';
 const YO = await requerir({ formulario:'patrullaje' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','patrullaje').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 
@@ -78,7 +78,7 @@ function ajustarPaginas(){
   tabs(); draw();
 }
 $('#nPat').addEventListener('change',ajustarPaginas);
-function loadFile(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f);const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});}
+const loadFile=f=>cargarFoto(f);
 
 let ACTUAL=0;
 function tabs(){

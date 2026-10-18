@@ -573,3 +573,27 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke execute on function public.actividad_usuarios() from anon, public;
 grant execute on function public.actividad_usuarios() to authenticated;
+
+-- Solo el rol protegido puede tener "ver_como"
+create or replace function public.roles_ver_como_solo_admin() returns trigger language plpgsql as $$
+begin
+  if not coalesce(new.protegido,false) and coalesce((new.permisos->>'ver_como')::boolean,false) then
+    raise exception 'El permiso "Ver como" es exclusivo del rol Administrador';
+  end if;
+  return new;
+end $$;
+create or replace trigger roles_ver_como_solo_admin before insert or update on public.roles for each row execute function public.roles_ver_como_solo_admin();
+
+-- ---------- Configuración general y canales de Discord ----------
+create table if not exists public.configuracion (clave text primary key, valor jsonb not null default '{}'::jsonb, actualizado_en timestamptz not null default now(), actualizado_por uuid);
+alter table public.configuracion enable row level security;
+create policy configuracion_select on public.configuracion for select using (coalesce(public.mi_perfil_activo(), false));
+create policy configuracion_write on public.configuracion for all
+  using (public.tengo_permiso('gestion_reportes') or public.tengo_permiso('crear_roles')) with check (public.tengo_permiso('gestion_reportes') or public.tengo_permiso('crear_roles'));
+-- Canales generales (los de cada formulario viven en formularios_discord). Edge Function: notificar-general
+create table if not exists public.discord_canales (clave text primary key, nombre text not null, webhook text, activo boolean not null default true, actualizado_en timestamptz not null default now());
+alter table public.discord_canales enable row level security;
+create policy discord_canales_rw on public.discord_canales for all using (public.tengo_permiso('gestion_reportes')) with check (public.tengo_permiso('gestion_reportes'));
+insert into public.discord_canales (clave, nombre) values
+  ('avisos','Avisos generales (sanciones, ascensos, seguridad)'),('anuncios','Tablón de anuncios'),('ranking','Ranking mensual'),
+  ('resumen','Resumen semanal y cierre diario'),('recordatorios','Recordatorios de turnos y reportes') on conflict (clave) do nothing;

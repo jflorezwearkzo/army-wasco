@@ -31,7 +31,7 @@
     const lista=MIS.filter(r=>(!f||r.formulario_id===f)&&(!q||(r.folio||'').toLowerCase().includes(q)||(r.resumen||'').toLowerCase().includes(q)));
     document.getElementById('mTotal').textContent=`${lista.length} de ${MIS.length}`;
     document.getElementById('tbMis').innerHTML=lista.map(r=>`<tr><td><b>${esc(r.folio||'')}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||'')}</td><td>${esc(r.resumen||'')}</td><td class="muted">${r.creado_en?new Date(r.creado_en).toLocaleString('es-CO'):''}</td><td>${r.imagen_path?`<button class="ghost" data-img="${esc(r.imagen_path)}" data-folio="${esc(r.folio||'')}" style="padding:4px 8px;font-size:12px">Descargar</button>`:'<span class="muted">—</span>'}</td></tr>`).join('')||'<tr><td colspan=6 class="muted">Aún no tienes reportes.</td></tr>';
-    document.querySelectorAll('[data-img]').forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ const u=await urlImagen(b.dataset.img); const a=document.createElement('a'); a.href=u; a.download=`reporte-${b.dataset.folio}.png`; a.target='_blank'; a.click(); }catch(x){ alert('No se pudo obtener la imagen: '+x.message); } b.disabled=false; });
+    document.querySelectorAll('[data-img]').forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ const u=await urlImagen(b.dataset.img); const a=document.createElement('a'); a.href=u; a.download=`reporte-${b.dataset.folio}.${(b.dataset.img.split('.').pop()||'png')}`; a.target='_blank'; a.click(); }catch(x){ alert('No se pudo obtener la imagen: '+x.message); } b.disabled=false; });
   }
   document.getElementById('mForm').onchange=pintarMis; document.getElementById('mBuscar').oninput=pintarMis;
   cargarMis();

@@ -121,6 +121,18 @@ En Admin → Resumen, el selector **PDF / Imagen PNG** y el botón **⬇ Exporta
 - En móvil la tabla se convierte en tarjetas. Roles y Formularios usan el mismo menú ⋯ en lugar de la fila de botones.
 - **Crear y editar en sub-ventana**: las tres pestañas (Usuarios, Roles, Formularios) van a ancho completo con un botón **＋ Nuevo …** en la cabecera; el formulario de crear/editar se abre en un diálogo modal dentro del panel (Esc o ✕ cierra; en móvil ocupa la pantalla con "← Volver"). La URL refleja el estado (`#usuarios/nuevo`, `#usuarios/editar/<id>`, `#roles/…`, `#formularios/…`) y se puede recargar o compartir. Al guardar, el diálogo se cierra, aparece un aviso flotante y la fila guardada queda resaltada unos segundos. El diálogo de usuario muestra su rol, último reporte y accesos rápidos a Ver como, Restablecer contraseña y Sus reportes.
 
+## Tema claro / oscuro
+
+Toda la interfaz usa variables CSS (`estilos.css`: `--bg`, `--panel`, `--line2`, `--gold`…) y `js/tema.js` aplica el tema guardado (`localStorage.pm_tema`) antes de pintar. Se cambia desde la barra superior ("🌗 Tema"). Las imágenes de los reportes no cambian: se dibujan sobre sus plantillas.
+
+## Fotos y almacenamiento
+
+Las fotos se reducen en el navegador a 1600 px por lado antes de dibujarlas (`cargarFoto` en `src/auth.js`), lo que acelera la exportación en el celular. La imagen del reporte se descarga en PNG, pero en el historial se guarda en **WebP** (≈60-70 % más liviana; `blobParaHistorial`); en navegadores sin WebP (Safari) se guarda el PNG. Los nombres de descarga y la publicación en Discord respetan la extensión real.
+
+## Canales de Discord y automatización
+
+Admin → **Automatización** → Canales de Discord: webhooks por propósito (`discord_canales`: avisos, anuncios, ranking, resumen, recordatorios) con botón Probar. La Edge Function `notificar-general` (`{canal, texto, embed, prueba}`) publica en ellos; exige sesión con alguno de los permisos que generan avisos y audita como `discord_aviso`. En el cliente: `avisoDiscord(canal, {texto, embed})`.
+
 ## "Ver como" (solo Administrador)
 
 En Admin → Usuarios, el rol Administrador tiene el botón **👁 Ver como** en cada usuario. Al pulsarlo, toda la página (inicio, formularios, panel, Mi cuenta…) se muestra exactamente como la vería esa persona, con una **franja amarilla fija** arriba ("Estás viendo como … · solo lectura · Salir de Ver como"). Sirve para comprobar quejas tipo "a mí no me aparece el formulario X".

@@ -13,6 +13,7 @@ const TABS = [
   ['formularios', 'Formularios', ['crear_reportes','gestion_reportes']],
   ['historial',   'Historial',   ['historial','eliminar_historial']],
   ['resumen',     'Resumen',     ['historial']],
+  ['automatizacion','Automatización',['gestion_reportes']],
   ['auditoria',   'Auditoría',   ['auditoria']],
 ];
 let roles = [], formularios = [], rangosPM = [];
@@ -29,7 +30,7 @@ function abrir(t, sub=''){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
-  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud})[t]();
+  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion})[t]();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
 // Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
@@ -145,7 +146,7 @@ function abrirMenuUsuario(btn, u){
   if(tiene(yo,'historial')) ops.push(['reportes','📋 Ver sus reportes']);
   if(ok && tiene(yo,'reset_password') && u.id!==yo.id) ops.push(['password','🔑 Restablecer contraseña']);
   if(ok && tiene(yo,'usuarios')){ ops.push(['visible', u.visible===false ? '👁 Mostrar en formularios' : '🙈 Ocultar en formularios']); if(u.id!==yo.id) ops.push([u.activo?'desactivar':'activar', u.activo ? '⛔ Desactivar cuenta' : '✅ Activar cuenta']); }
-  abrirMenu(btn, u.id, `<b style="color:var(--text)">${esc(u.usuario)}</b> · ${esc(r?r.nombre:'Sin rol')}${ok?'':` · <span style="color:#ff9f9f">${motivoNoTocar(u)}</span>`}`, ops.map(([k,t]) => [k, t, k==='desactivar']), op => accionUsuario(op, u));
+  abrirMenu(btn, u.id, `<b style="color:var(--text)">${esc(u.usuario)}</b> · ${esc(r?r.nombre:'Sin rol')}${ok?'':` · <span style="color:var(--err2)">${motivoNoTocar(u)}</span>`}`, ops.map(([k,t]) => [k, t, k==='desactivar']), op => accionUsuario(op, u));
 }
 // Menú flotante genérico: ops = [[clave, texto, peligro?]]
 function abrirMenu(btn, id, cab, ops, alElegir){
@@ -287,7 +288,7 @@ async function cargarRoles(){
   if(RESALTAR){ resaltar($('#tbRoles'), RESALTAR); RESALTAR=null; }
   document.querySelectorAll('#tbRoles [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const r = roles.find(x => x.id===b.dataset.menu); const ok = rolAsignable(r);
     const ops = []; if(ok){ ops.push(['editar','✏️ Editar']); if(!r.protegido) ops.push(['eliminar','🗑 Eliminar rol', true]); }
-    abrirMenu(b, 'rol:'+r.id, `<b style="color:var(--text)">${esc(r.nombre)}</b>${ok?'':` · <span style="color:#ff9f9f">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>`}`, ops, async op => {
+    abrirMenu(b, 'rol:'+r.id, `<b style="color:var(--text)">${esc(r.nombre)}</b>${ok?'':` · <span style="color:var(--err2)">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>`}`, ops, async op => {
       if(op==='editar') editarRol(r);
       if(op==='eliminar'){ if(!confirm(`¿Eliminar el rol "${r.nombre}"? Los usuarios que lo tengan quedarán sin rol.`)) return; const { error } = await sb.from('roles').delete().eq('id', r.id); if(error) alert(error.message); cargarRoles(); }
     }); });
@@ -450,7 +451,7 @@ async function buscarHist(){
   $('#tbHist').innerHTML = data.map(r => `<tr><td><b>${esc(r.folio||r.id)}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||r.formulario_id||'—')}</td>
     <td>${esc(r.usuario||'—')}<br><span class="muted">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td>
     <td class="muted">${new Date(r.creado_en).toLocaleString('es-CO')}</td>
-    <td>${r.imagen_path ? `<button class="ghost sm" data-hv="${esc(r.imagen_path)}" data-n="reporte-${esc(r.folio||r.id)}.png">Ver</button>` : '—'}</td>
+    <td>${r.imagen_path ? `<button class="ghost sm" data-hv="${esc(r.imagen_path)}" data-n="reporte-${esc(r.folio||r.id)}.${(r.imagen_path||'').split('.').pop()||'png'}">Ver</button>` : '—'}</td>
     <td>${tiene(yo,'eliminar_historial') ? `<button class="ghost sm" data-hd="${r.id}" data-p="${esc(r.imagen_path||'')}">Eliminar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=8 class="muted">Sin reportes</td></tr>';
   document.querySelectorAll('[data-hv]').forEach(b => b.onclick = async () => {
     try{ const u = await urlImagen(b.dataset.hv); $('#dlgImg').src = u; $('#dlgDl').href = u; $('#dlgDl').download = b.dataset.n; $('#dlg').showModal(); }
@@ -542,3 +543,27 @@ $('#rExportar').onclick=async()=>{
   }catch(x){ alert('No se pudo exportar: '+x.message); }
   btn.disabled=false; btn.textContent=txt;
 };
+
+// ====================== AUTOMATIZACIÓN: canales de Discord ======================
+async function cargarAutomatizacion(){
+  const { data, error } = await sb.from('discord_canales').select('*').order('clave');
+  if(error){ $('#cErr').textContent = error.message; return; }
+  $('#cErr').textContent='';
+  $('#tbCanales').innerHTML = (data||[]).map(c => `<tr data-id="${esc(c.clave)}"><td><b>${esc(c.nombre)}</b><br><span class="muted" style="font-size:12px">${esc(c.clave)}</span></td>
+    <td><input type="url" data-wh="${esc(c.clave)}" value="${esc(c.webhook||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px"></td>
+    <td><input type="checkbox" data-on="${esc(c.clave)}" ${c.activo?'checked':''}></td>
+    <td style="white-space:nowrap"><button class="ghost sm" data-cg="${esc(c.clave)}">Guardar</button> <button class="ghost sm" data-cp="${esc(c.clave)}" title="Envía un mensaje de prueba al canal">Probar</button> <span class="muted" data-cm="${esc(c.clave)}" style="font-size:12px"></span></td></tr>`).join('');
+  const guardar = async clave => {
+    const w = $(`[data-wh="${clave}"]`).value.trim(); const m = $(`[data-cm="${clave}"]`);
+    if(w && !/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }
+    const { error } = await sb.from('discord_canales').update({ webhook: w || null, activo: $(`[data-on="${clave}"]`).checked, actualizado_en: new Date().toISOString() }).eq('clave', clave);
+    m.textContent = error ? 'Error: '+error.message : 'Guardado.'; return !error;
+  };
+  document.querySelectorAll('[data-cg]').forEach(b => b.onclick = () => guardar(b.dataset.cg));
+  document.querySelectorAll('[data-cp]').forEach(b => b.onclick = async () => {
+    const clave = b.dataset.cp, m = $(`[data-cm="${clave}"]`); if(!(await guardar(clave))) return; m.textContent='Enviando…';
+    const { data, error } = await sb.functions.invoke('notificar-general', { body:{ canal: clave, prueba: true } });
+    m.textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Prueba enviada.' : 'Error: '+((data&&(data.error||data.motivo))||'sin respuesta');
+  });
+  if(typeof cargarProgramadas === 'function') cargarProgramadas();
+}

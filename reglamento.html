@@ -14,48 +14,49 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Reglamento · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="js/tema.js?v=43ec2e4f"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
   .layout{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
-  .lateral{position:sticky;top:60px;background:var(--panel);border:1px solid #2b3a40;border-radius:10px;padding:10px 8px}
+  .lateral{position:sticky;top:60px;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:10px 8px}
   .lateral .grp{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 10px 4px}
   .lateral a{display:flex;align-items:center;gap:8px;color:#d7dde0;text-decoration:none;padding:7px 10px;border-radius:7px;font-size:14px}
   .lateral a span{width:20px;text-align:center}
-  .lateral a:hover{background:#121f26}
-  .lateral a.act{background:#2a1f10;color:var(--gold);border:1px solid #6b5420}
+  .lateral a:hover{background:var(--panel3)}
+  .lateral a.act{background:var(--avisobg);color:var(--gold);border:1px solid var(--avisoline)}
   .contenido{min-width:0}
   .contenido h2.sec:first-child{margin-top:0;padding-top:0;border-top:0}
-  .movil{display:none;width:100%;margin:0 0 14px;padding:10px;background:var(--panel);color:#fff;border:1px solid #2b3a40;border-radius:8px;font:inherit}
+  .movil{display:none;width:100%;margin:0 0 14px;padding:10px;background:var(--panel);color:#fff;border:1px solid var(--line2);border-radius:8px;font:inherit}
   @media (max-width:800px){.layout{grid-template-columns:1fr}.lateral{display:none}.movil{display:block}}
   .cabecera{text-align:center;margin-bottom:22px}
   .cabecera h1{margin:0;color:var(--gold);font-size:34px}
   .cabecera h1 small{display:block;font-size:.4em;font-style:normal;color:var(--muted);letter-spacing:5px;margin-top:6px}
   .cabecera p{color:var(--muted);margin:10px 0 0}
   ol.reglas{list-style:none;padding:0;margin:0;counter-reset:regla}
-  ol.reglas>li{position:relative;background:var(--panel);border:1px solid #2b3a40;border-radius:10px;padding:16px 18px 16px 70px;margin-bottom:12px;counter-increment:regla}
+  ol.reglas>li{position:relative;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:16px 18px 16px 70px;margin-bottom:12px;counter-increment:regla}
   ol.reglas>li::before{content:counter(regla,decimal-leading-zero);position:absolute;left:18px;top:14px;font-size:26px;font-weight:700;font-style:italic;color:var(--gold)}
   ol.reglas h3{margin:0 0 6px;font-size:18px}
   ol.reglas p{margin:6px 0;color:#d7dde0}
   ol.reglas ul{margin:6px 0 6px 18px;color:#d7dde0;list-style:disc} ol.reglas ul li{padding:0;margin:3px 0;border:0;background:none}
-  .castigo{display:inline-block;margin-top:8px;padding:5px 10px;border-radius:6px;background:#2a1f10;border:1px solid #6b5420;color:var(--gold);font-size:14px}
+  .castigo{display:inline-block;margin-top:8px;padding:5px 10px;border-radius:6px;background:var(--avisobg);border:1px solid var(--avisoline);color:var(--gold);font-size:14px}
   .castigo b{color:#ffd978}
-  .sistema{background:#121f26;border:1px solid var(--line);border-radius:10px;padding:18px;margin:26px 0;text-align:center}
+  .sistema{background:var(--panel3);border:1px solid var(--line);border-radius:10px;padding:18px;margin:26px 0;text-align:center}
   .sistema h2{margin:0 0 10px;color:var(--gold);font-size:16px;letter-spacing:2px;text-transform:uppercase}
   .sistema .f{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .sistema .f div{padding:12px 18px;border:1px solid #2b3a40;border-radius:8px;min-width:200px}
+  .sistema .f div{padding:12px 18px;border:1px solid var(--line2);border-radius:8px;min-width:200px}
   .sistema .f b{display:block;font-size:22px;color:#fff}
   .docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:10px}
-  .docs a{display:block;background:var(--panel);border:1px solid #2b3a40;border-radius:10px;padding:14px 16px;color:inherit;text-decoration:none}
+  .docs a{display:block;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:14px 16px;color:inherit;text-decoration:none}
   .docs a:hover{border-color:var(--gold)}
   .docs a b{display:block;color:var(--gold);margin-bottom:4px}
   .docs a span{color:var(--muted);font-size:13px}
   h2.sec{color:var(--gold);font-size:18px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px}
   h2.sec small{display:block;letter-spacing:0;text-transform:none;color:var(--muted);font-size:13px;margin-top:3px}
   .indice{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 10px}
-  .indice a{color:#d7dde0;text-decoration:none;border:1px solid #2b3a40;border-radius:20px;padding:5px 12px;font-size:13px;background:var(--panel)}
+  .indice a{color:#d7dde0;text-decoration:none;border:1px solid var(--line2);border-radius:20px;padding:5px 12px;font-size:13px;background:var(--panel)}
   .indice a:hover{border-color:var(--gold);color:var(--gold)}
-  .bloque{background:var(--panel);border:1px solid #2b3a40;border-radius:10px;padding:14px 18px;margin-bottom:12px}
+  .bloque{background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:14px 18px;margin-bottom:12px}
   .bloque h3{margin:0 0 8px;color:var(--gold);font-size:15px}
   .bloque ul,.bloque ol{margin:6px 0 6px 20px;color:#d7dde0}
   .bloque li{margin:5px 0}
@@ -66,18 +67,18 @@
   table.reglas td{padding:9px 10px;border-bottom:1px solid #1f2d33;vertical-align:top;color:#d7dde0}
   table.reglas td:first-child{white-space:nowrap;font-weight:700;color:#fff}
   table.reglas td:last-child{color:var(--gold);min-width:150px}
-  table.reglas tr:hover td{background:#121f26}
+  table.reglas tr:hover td{background:var(--panel3)}
   .macros{display:grid;grid-template-columns:1fr;gap:6px}
   .macros code{display:block;background:#0d161b;border:1px solid #1f2d33;border-radius:6px;padding:8px 10px;font-size:13px;color:#d7dde0;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace}
   .macros code b{color:var(--gold);font-weight:700}
   .rangos{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
-  .rangos div{background:var(--panel);border:1px solid #2b3a40;border-radius:10px;padding:12px 14px}
+  .rangos div{background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:12px 14px}
   .rangos div b{display:block;color:var(--gold);margin-bottom:4px}
   .rangos div span{font-size:13px;color:#d7dde0}
   .plantilla{background:#0d161b;border:1px dashed #3b4b52;border-radius:8px;padding:10px 14px;font-family:ui-monospace,Consolas,monospace;font-size:13px;color:#d7dde0;white-space:pre-wrap;margin:8px 0}
   .nota{font-size:13px;color:var(--muted);margin:6px 0}
-  .mapa img{display:block;width:100%;border-radius:8px;border:1px solid #2b3a40}
-  .video{position:relative;padding-top:56.25%;border-radius:8px;overflow:hidden;border:1px solid #2b3a40;background:#000}
+  .mapa img{display:block;width:100%;border-radius:8px;border:1px solid var(--line2)}
+  .video{position:relative;padding-top:56.25%;border-radius:8px;overflow:hidden;border:1px solid var(--line2);background:#000}
   .video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
   .dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .leyendas{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px}
@@ -87,7 +88,7 @@
   ul.leyenda li{display:flex;align-items:center;gap:10px;margin:6px 0}
   ul.leyenda b{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-size:12px;color:#fff;flex:none;text-shadow:0 1px 1px #000}
   @media (max-width:900px){.dos{grid-template-columns:1fr}}
-  .arriba{position:fixed;right:18px;bottom:18px;background:var(--panel);border:1px solid #2b3a40;color:var(--gold);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:18px}
+  .arriba{position:fixed;right:18px;bottom:18px;background:var(--panel);border:1px solid var(--line2);color:var(--gold);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:18px}
   @media (max-width:640px){ol.reglas li{padding-left:56px} ol.reglas>li::before{left:12px;font-size:22px} table.reglas{font-size:13px} table.reglas td:first-child{white-space:normal}}
 </style>
 </head>
@@ -408,6 +409,6 @@ Tiempo: [HORAS, DÍAS O SEMANAS QUE SOLICITA]</div></div>
 </div>
   </div>
 </main>
-<script type="module" src="js/app-reglamento.js?v=23f7b3b3"></script>
+<script type="module" src="js/app-reglamento.js?v=776703d0"></script>
 </body>
 </html>

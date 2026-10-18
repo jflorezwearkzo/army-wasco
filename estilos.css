@@ -1,4 +1,7 @@
-:root{--bg:#0b1216;--panel:#101c21;--line:#c9a43a;--gold:#f0c24d;--text:#f3f3f3;--muted:#9aa7ad;--err:#ff6b6b;--ok:#7fd38a;}
+:root{--bg:#0b1216;--panel:#101c21;--bg2:#0a1114;--panel2:#243239;--panel3:#121f26;--hover:#0d181d;--hover2:#1b2a31;--barra:#07100f;--line:#c9a43a;--line2:#2b3a40;--line3:#1c272c;--gold:#f0c24d;--gold-text:#1a1200;--text:#f3f3f3;--muted:#9aa7ad;--err:#ff6b6b;--err2:#ff9f9f;--errbg:#3a1717;--ok:#7fd38a;--okbg:#173a24;--avisobg:#2a1f10;--avisoline:#6b5420;color-scheme:dark}
+:root[data-theme="light"]{--bg:#efece4;--panel:#ffffff;--bg2:#f7f5ef;--panel2:#e9e4d6;--panel3:#f1eee6;--hover:#f4f1e9;--hover2:#efe6cf;--barra:#e9e3d2;--line:#b8952e;--line2:#d3cdbd;--line3:#e4dfd2;--gold:#8f6b0c;--gold-text:#ffffff;--text:#1d2226;--muted:#5d686e;--err:#c62828;--err2:#b71c1c;--errbg:#fde7e7;--ok:#1e7d3a;--okbg:#e2f3e6;--avisobg:#fff4d6;--avisoline:#d8b55a;color-scheme:light}
+:root[data-theme="light"] .primary{background:var(--gold);color:#fff}
+:root[data-theme="light"] img.plantilla,:root[data-theme="light"] canvas{color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif;min-height:100vh}
 a{color:var(--gold)}
@@ -6,25 +9,25 @@ h1{font-style:italic;text-transform:uppercase;letter-spacing:1px}
 .unidad{color:var(--gold);letter-spacing:4px;font-size:13px;font-weight:700;text-transform:uppercase;margin:0 0 6px}
 .caja{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px}
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-input,select,textarea{width:100%;padding:9px 11px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
+input,select,textarea{width:100%;padding:9px 11px;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;color:var(--text);font-family:inherit;font-size:15px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 button{cursor:pointer;border:0;border-radius:6px;padding:10px 16px;font-family:inherit;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.5px}
-.primary{background:var(--gold);color:#1a1200}
-.secondary{background:#243239;color:var(--text)}
+.primary{background:var(--gold);color:var(--gold-text)}
+.secondary{background:var(--panel2);color:var(--text)}
 .danger{background:#5a1f1f;color:#ffd6d6}
-.ghost{background:transparent;color:var(--muted);border:1px solid #2b3a40;padding:6px 10px;font-size:12px}
+.ghost{background:transparent;color:var(--muted);border:1px solid var(--line2);padding:6px 10px;font-size:12px}
 .sm{padding:5px 9px;font-size:12px}
 .err{color:var(--err);font-size:14px;min-height:20px;margin-top:8px;white-space:pre-line}
 .ok{color:var(--ok);font-size:14px;min-height:20px;margin-top:8px}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:8px 10px;border-bottom:1px solid #1c272c;text-align:left;vertical-align:middle}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line3);text-align:left;vertical-align:middle}
 th{color:var(--gold);font-size:12px;text-transform:uppercase;letter-spacing:1px}
-tr:hover td{background:#0d181d}
-.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;background:#243239;color:var(--muted)}
-.tag.on{background:#173a24;color:var(--ok)}
-.tag.off{background:#3a1717;color:#ff9f9f}
+tr:hover td{background:var(--hover)}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;background:var(--panel2);color:var(--muted)}
+.tag.on{background:var(--okbg);color:var(--ok)}
+.tag.off{background:var(--errbg);color:var(--err2)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chips label{display:flex;align-items:center;gap:6px;margin:0;padding:6px 10px;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-size:14px;cursor:pointer}
+.chips label{display:flex;align-items:center;gap:6px;margin:0;padding:6px 10px;border:1px solid var(--line2);border-radius:6px;color:var(--text);font-size:14px;cursor:pointer}
 .chips input{width:auto}
 .muted{color:var(--muted)}
 .fila{display:flex;gap:10px;flex-wrap:wrap;align-items:end}

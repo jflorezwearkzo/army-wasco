@@ -3,7 +3,7 @@ import { requerir, barraUsuario, tiene, sb, esc, RANGOS } from './auth.js';
 import { ANCHO, TIPOS, DEFECTOS, OPERACIONES, campoNuevo, definicionNueva, dibujar, cargarFondo, fmtFecha, calcular } from './plantilla.js';
 
 const yo = await requerir(); barraUsuario(yo);
-if(!tiene(yo,'disenar_formularios')){ document.body.innerHTML='<p style="padding:30px;color:#f3f3f3;font-family:Arial">Necesitas el permiso de creación de formularios (diseñador).</p>'; throw new Error('sin permiso'); }
+if(!tiene(yo,'disenar_formularios')){ document.body.innerHTML='<p style="padding:30px;color:var(--text);font-family:Arial">Necesitas el permiso de creación de formularios (diseñador).</p>'; throw new Error('sin permiso'); }
 const $=s=>document.querySelector(s);
 const msg=(t,ok)=>{ const m=$('#msg'); m.textContent=t; m.className='msg '+(ok?'ok':t?'err':''); };
 

@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, RANGOS } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, RANGOS, cargarFoto } from './auth.js';
 const YO = await requerir({ formulario:'reclutamiento' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','reclutamiento').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 // Fecha de hoy (editable); nombre, rango y Rango PM vienen del perfil/rol y quedan bloqueados
@@ -37,7 +37,7 @@ $('#fotos').addEventListener('change', async e=>{
   if(f){ const img=await loadFile(f); photos=[{img,name:f.name}]; }   // una sola foto: reemplaza la anterior
   e.target.value=''; renderThumbs(); draw();
 });
-function loadFile(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f);const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});}
+const loadFile=f=>cargarFoto(f);
 function renderThumbs(){
   const t=$('#thumbs'); t.innerHTML='';
   photos.forEach((p,i)=>{

@@ -14,25 +14,26 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Diseñador de formularios · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="../js/tema.js?v=43ec2e4f"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
-  :root{--bg:#0b1216;--panel:#101c21;--line:#c9a43a;--gold:#f0c24d;--text:#f3f3f3;--muted:#9aa7ad;--err:#ff6b6b}
+  :root{--bg:var(--bg);--panel:var(--panel);--line:var(--line);--gold:var(--gold);--text:var(--text);--muted:var(--muted);--err:#ff6b6b}
   body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif}
   header{padding:14px 20px 8px;border-bottom:1px solid #223;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
   header h1{margin:0;font-size:20px;color:var(--gold);text-transform:uppercase;letter-spacing:1px}
   header a{color:var(--muted);text-decoration:none;font-size:13px}
   main{display:grid;grid-template-columns:1fr 360px;gap:16px;padding:16px;max-width:1700px;margin:0 auto}
   @media (max-width:1000px){main{grid-template-columns:1fr}}
-  .caja{background:var(--panel);border:1px solid #2b3a40;border-radius:8px;padding:12px}
+  .caja{background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:12px}
   .caja h2{margin:0 0 8px;font-size:13px;color:var(--gold);text-transform:uppercase;letter-spacing:1px}
   label{display:block;font-size:12px;color:var(--muted);margin:6px 0 2px}
-  input,select,textarea{width:100%;padding:6px 8px;background:#0a1114;border:1px solid #2b3a40;border-radius:6px;color:var(--text);font-family:inherit;font-size:14px;box-sizing:border-box}
+  input,select,textarea{width:100%;padding:6px 8px;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;color:var(--text);font-family:inherit;font-size:14px;box-sizing:border-box}
   input[type=checkbox]{width:auto}
   input[type=color]{padding:0;height:30px}
   .fila{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .fila3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
   button{cursor:pointer;border:0;border-radius:6px;padding:8px 12px;font-family:inherit;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.4px}
-  .primary{background:var(--gold);color:#1a1200}.secondary{background:#243239;color:var(--text)}.ghost{background:transparent;color:var(--muted);border:1px solid #2b3a40;padding:5px 9px;font-size:12px}.danger{background:#5a1f1f;color:#fff}
+  .primary{background:var(--gold);color:var(--gold-text)}.secondary{background:var(--panel2);color:var(--text)}.ghost{background:transparent;color:var(--muted);border:1px solid var(--line2);padding:5px 9px;font-size:12px}.danger{background:#5a1f1f;color:#fff}
   .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   #escenario{position:relative;width:100%;background:#000;border:1px solid var(--line);border-radius:6px;overflow:hidden;user-select:none;touch-action:none}
   #escenario img{display:block;width:100%;height:auto;pointer-events:none}
@@ -41,8 +42,8 @@
   .box.sel{border:2px solid #7fd38a;background:rgba(127,211,138,.15);z-index:5}
   .box .rs{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;background:#7fd38a;cursor:nwse-resize}
   .box.foto{background:rgba(80,160,255,.15);border-color:rgba(80,160,255,.9)}
-  #lista{list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;border:1px solid #2b3a40;border-radius:6px}
-  #lista li{padding:6px 8px;border-bottom:1px solid #1c272c;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px}
+  #lista{list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;border:1px solid var(--line2);border-radius:6px}
+  #lista li{padding:6px 8px;border-bottom:1px solid var(--line3);cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px}
   #lista li.sel{background:#1a2a32;color:var(--gold)}
   #lista li small{color:var(--muted)}
   .msg{font-size:13px;min-height:18px;margin-top:6px;white-space:pre-line}.msg.err{color:var(--err)}.msg.ok{color:#7fd38a}
@@ -87,7 +88,7 @@
       <div class="fila3"><div><label>Icono</label><input id="fIcono" value="📋"></div><div><label>Orden</label><input id="fOrden" type="number" value="100"></div><div><label>Visible</label><select id="fActivo"><option value="1">Sí</option><option value="0">No</option></select></div></div>
       <div class="fila"><div><label>Fotos de anexo (mín)</label><input id="fMin" type="number" min="0" max="10" value="0"></div><div><label>Fotos de anexo (máx)</label><input id="fMax" type="number" min="0" max="10" value="10"></div></div>
       <label>Título del anexo</label><input id="fAnexo" value="ANEXO FOTOGRÁFICO">
-      <div style="margin-top:10px;padding:8px 10px;border:1px solid #2b3a40;border-radius:8px">
+      <div style="margin-top:10px;padding:8px 10px;border:1px solid var(--line2);border-radius:8px">
         <label style="margin-top:0"><input type="checkbox" id="fMulti"> Reporte en varias páginas (una imagen por cada una)</label>
         <div class="fila" id="fMultiW"><div><label>Nombre de cada página</label><input id="fMultiEtq" value="Patrullaje"></div><div><label>Máximo</label><input id="fMultiMax" type="number" min="1" max="20" value="10"></div></div>
         <p class="ayuda" style="margin:4px 0 0">Marca en cada campo "Se repite por página" para los que cambian entre páginas (hora, integrantes, fotos…). Los demás se llenan una sola vez.</p>
@@ -127,6 +128,6 @@
   </aside>
 </main>
 <div id="modal"><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="color:var(--gold)">Vista previa con datos de ejemplo</b><button class="ghost" id="btnCerrar" type="button">Cerrar</button></div><canvas id="cv"></canvas></div></div>
-<script type="module" src="../js/app-disenador.js?v=436c122c"></script>
+<script type="module" src="../js/app-disenador.js?v=1d3ff439"></script>
 </body>
 </html>

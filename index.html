@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#0b1216;--panel:#101c21;--line:#c9a43a;--gold:#f0c24d;--text:#f3f3f3;--muted:#9aa7ad;}
+  :root{--bg:var(--bg);--panel:var(--panel);--line:var(--line);--gold:var(--gold);--text:var(--text);--muted:var(--muted);}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column}
   header{padding:36px 20px 24px;text-align:center;border-bottom:2px solid var(--line);
@@ -28,7 +28,7 @@
   header .lema b{color:var(--gold)}
   main{flex:1;max-width:1100px;width:100%;margin:0 auto;padding:28px 20px 40px}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
-  .card{display:block;background:var(--panel);border:1px solid #2b3a40;border-radius:10px;padding:20px;color:inherit;text-decoration:none;
+  .card{display:block;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:20px;color:inherit;text-decoration:none;
     position:relative;transition:border-color .15s,transform .15s}
   .card:hover{border-color:var(--gold);transform:translateY(-2px)}
   .card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;background:var(--line);border-radius:0 3px 3px 0}
@@ -40,8 +40,9 @@
   .card.proximo{opacity:.55;pointer-events:none}
   .card.proximo .meta .tag{color:var(--muted)}
   .empty{color:var(--muted);text-align:center;padding:40px}
-  footer{text-align:center;padding:18px;color:#5a6a71;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-top:1px solid #1c272c}
+  footer{text-align:center;padding:18px;color:#5a6a71;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-top:1px solid var(--line3)}
 </style>
+<script src="js/tema.js?v=43ec2e4f"></script>
 </head>
 <body>
 <header>
@@ -59,6 +60,6 @@
 </main>
 <footer>Un equipo · Una misión · Un solo Army</footer>
 
-<script type="module" src="js/app-index.js?v=fbbbd57c"></script>
+<script type="module" src="js/app-index.js?v=2951b9c3"></script>
 </body>
 </html>

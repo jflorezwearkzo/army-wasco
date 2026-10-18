@@ -51,6 +51,7 @@ Deno.serve(async (req: Request) => {
   const { data: cfg } = await admin.from("formularios_discord").select("webhook, activo").eq("formulario_id", r.formulario_id).maybeSingle();
   if (!cfg || !cfg.activo) return json(200, { ok: false, motivo: "sin_webhook" });
 
+  const ext = (r.imagen_path.split(".").pop() || "png").toLowerCase();
   const { data: file, error: e3 } = await admin.storage.from("reportes").download(r.imagen_path);
   if (e3 || !file) return json(500, { error: "No se pudo leer la imagen" });
   const quien = [r.usuario_rango, r.usuario_nombre || r.usuario].filter(Boolean).join(" ");
@@ -59,11 +60,11 @@ Deno.serve(async (req: Request) => {
     username: "Policía Militar · Reportes",
     embeds: [{ title: `${r.formulario} · ${r.folio}`, description: r.resumen || "", color: 0xf0c24d,
       fields: [{ name: "Fecha", value: fecha || "—", inline: true }, { name: "Reporta", value: quien || "—", inline: true }],
-      image: { url: `attachment://${r.folio}.png` }, footer: { text: `Sellado por el servidor · Army de Wasco` }, timestamp: new Date(r.creado_en).toISOString() }],
+      image: { url: `attachment://${r.folio}.${ext}` }, footer: { text: `Sellado por el servidor · Army de Wasco` }, timestamp: new Date(r.creado_en).toISOString() }],
   };
   const form = new FormData();
   form.append("payload_json", JSON.stringify(payload));
-  form.append("files[0]", file, `${r.folio}.png`);
+  form.append("files[0]", file, `${r.folio}.${ext}`);
   const resp = await fetch(cfg.webhook, { method: "POST", body: form });
   if (!resp.ok) return json(502, { error: `Discord respondió ${resp.status}: ${(await resp.text()).slice(0, 200)}` });
   await admin.from("reportes").update({ discord_enviado_en: new Date().toISOString() }).eq("id", id);

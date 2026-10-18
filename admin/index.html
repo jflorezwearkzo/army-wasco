@@ -14,51 +14,52 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="../js/tema.js?v=43ec2e4f"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1200px;margin:0 auto;padding:20px}
   h1{color:var(--gold);margin:6px 0 16px;font-size:30px}
-  nav{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid #1c272c;margin-bottom:18px}
+  nav{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line3);margin-bottom:18px}
   nav button{background:transparent;color:var(--muted);border-radius:6px 6px 0 0;padding:10px 16px}
-  nav button.on{background:var(--panel);color:var(--gold);border:1px solid #1c272c;border-bottom-color:var(--panel);margin-bottom:-1px}
+  nav button.on{background:var(--panel);color:var(--gold);border:1px solid var(--line3);border-bottom-color:var(--panel);margin-bottom:-1px}
   section{display:none} section.on{display:block}
   .dos{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-  .kpi{background:#0a1114;border:1px solid #2b3a40;border-radius:8px;padding:10px 12px}
+  .kpi{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:10px 12px}
   .kpi b{display:block;font-size:26px;color:var(--gold)}
   .kpi span{font-size:12px;color:var(--muted)}
-  .barras{display:flex;align-items:flex-end;gap:3px;height:140px;border-bottom:1px solid #2b3a40;padding-bottom:2px}
+  .barras{display:flex;align-items:flex-end;gap:3px;height:140px;border-bottom:1px solid var(--line2);padding-bottom:2px}
   .barras div{flex:1;background:var(--gold);min-width:4px;position:relative;border-radius:2px 2px 0 0}
   .barras div:hover::after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#000c;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap}
   #t-resumen h4{margin:0 0 6px;color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:1px}
   @media(max-width:950px){.dos{grid-template-columns:1fr}}
   .caja h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:14px;letter-spacing:1px}
-  img.mini{height:48px;border-radius:4px;border:1px solid #2b3a40}
+  img.mini{height:48px;border-radius:4px;border:1px solid var(--line2)}
   dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;max-width:95vw}
   dialog img{max-width:90vw;max-height:80vh;display:block}
   dialog::backdrop{background:#000a}
   input[type=date]{color-scheme:dark;cursor:pointer}
   input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) sepia(1) saturate(5) hue-rotate(5deg);cursor:pointer;opacity:.9}
-  .sugs{position:absolute;left:0;right:0;top:100%;z-index:5;background:#0a1114;border:1px solid var(--gold);border-top:0;border-radius:0 0 6px 6px;max-height:220px;overflow:auto;display:none}
+  .sugs{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--bg2);border:1px solid var(--gold);border-top:0;border-radius:0 0 6px 6px;max-height:220px;overflow:auto;display:none}
   .sugs div{padding:8px 11px;cursor:pointer;font-size:14px}
-  .sugs div:hover,.sugs div.act{background:#1b2a31;color:var(--gold)}
+  .sugs div:hover,.sugs div.act{background:var(--hover2);color:var(--gold)}
   .sugs small{color:var(--muted);margin-left:6px}
   /* --- Diálogos de edición (sub-ventana dentro del panel) --- */
   dialog.dlg-edit{padding:0;width:min(560px,95vw);max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
   dialog.dlg-edit .caja{border:0;margin:0;border-radius:0}
-  dialog.dlg-edit .cab-dlg{display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--panel);z-index:2;padding:14px 18px 10px;border-bottom:1px solid #1c272c;margin:-18px -18px 14px}
+  dialog.dlg-edit .cab-dlg{display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--panel);z-index:2;padding:14px 18px 10px;border-bottom:1px solid var(--line3);margin:-18px -18px 14px}
   dialog.dlg-edit .cab-dlg h3{margin:0;flex:1}
   dialog.dlg-edit .cab-dlg .cerrar{background:transparent;border:1px solid transparent;color:var(--muted);font-size:20px;line-height:1;padding:4px 8px;border-radius:6px;cursor:pointer}
-  dialog.dlg-edit .cab-dlg .cerrar:hover{border-color:#2b3a40;color:var(--gold)}
+  dialog.dlg-edit .cab-dlg .cerrar:hover{border-color:var(--line2);color:var(--gold)}
   dialog.dlg-edit .volver{display:none}
-  .ctx{background:#0a1114;border:1px solid #2b3a40;border-radius:8px;padding:8px 12px;font-size:13px;color:var(--muted);margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+  .ctx{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--muted);margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
   .ctx a{color:var(--gold);cursor:pointer}
   .btn-nuevo{white-space:nowrap}
   tr.resalta td{animation:resalta 2.4s ease-out}
   @keyframes resalta{0%,40%{background:#3b3310}100%{background:transparent}}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:300;background:#143a24;color:#c8f5d6;border:1px solid #2f7a4c;border-radius:10px;padding:10px 16px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .25s;pointer-events:none;max-width:92vw}
   .toast.on{opacity:1}
-  .toast.err{background:#3a1717;color:#ffb4b4;border-color:#7a2f2f}
+  .toast.err{background:var(--errbg);color:#ffb4b4;border-color:#7a2f2f}
   @media(max-width:720px){
     dialog.dlg-edit{width:100vw;max-width:100vw;height:100vh;max-height:100vh;border:0;border-radius:0;margin:0}
     dialog.dlg-edit .volver{display:inline-block}
@@ -75,14 +76,14 @@
   table.usuarios .nom{color:var(--muted);font-size:13px}
   table.usuarios input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--gold)}
   .btn-acc{background:transparent;border:1px solid transparent;color:var(--muted);font-size:18px;line-height:1;padding:4px 8px;border-radius:6px;cursor:pointer}
-  .btn-acc:hover,.btn-acc.on{border-color:#2b3a40;color:var(--gold);background:#0a1114}
-  .menu-acc{position:absolute;z-index:60;background:#0f1a20;border:1px solid #2b3a40;border-radius:10px;min-width:230px;box-shadow:0 10px 30px rgba(0,0,0,.55);padding:6px;font-size:14px}
+  .btn-acc:hover,.btn-acc.on{border-color:var(--line2);color:var(--gold);background:var(--bg2)}
+  .menu-acc{position:absolute;z-index:60;background:var(--panel);border:1px solid var(--line2);border-radius:10px;min-width:230px;box-shadow:0 10px 30px rgba(0,0,0,.55);padding:6px;font-size:14px}
   .menu-acc button{display:block;width:100%;text-align:left;background:transparent;border:0;color:var(--text);padding:9px 12px;border-radius:6px;font:inherit;text-transform:none;letter-spacing:0;cursor:pointer}
-  .menu-acc button:hover{background:#1b2a31;color:var(--gold)}
-  .menu-acc button.peligro:hover{background:#3a1717;color:#ff9f9f}
-  .menu-acc hr{border:0;border-top:1px solid #1c272c;margin:4px 0}
-  .menu-acc .cab{padding:6px 12px 8px;color:var(--muted);font-size:12px;border-bottom:1px solid #1c272c;margin-bottom:4px}
-  .u-bulk{display:none;position:sticky;bottom:12px;z-index:40;margin-top:12px;background:#121f26;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .menu-acc button:hover{background:var(--hover2);color:var(--gold)}
+  .menu-acc button.peligro:hover{background:var(--errbg);color:var(--err2)}
+  .menu-acc hr{border:0;border-top:1px solid var(--line3);margin:4px 0}
+  .menu-acc .cab{padding:6px 12px 8px;color:var(--muted);font-size:12px;border-bottom:1px solid var(--line3);margin-bottom:4px}
+  .u-bulk{display:none;position:sticky;bottom:12px;z-index:40;margin-top:12px;background:var(--panel3);border:1px solid var(--gold);border-radius:10px;padding:10px 12px;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 10px 30px rgba(0,0,0,.5)}
   .u-bulk.on{display:flex}
   .u-bulk b{color:var(--gold);margin-right:6px}
   .u-bulk .rolw{display:flex;gap:4px;align-items:center}
@@ -91,7 +92,7 @@
   @media(max-width:720px){
     .u-tabla table.usuarios,table.usuarios tbody,table.usuarios tr{display:block;width:100%}
     table.usuarios thead{display:none}
-    table.usuarios tr.urow{border:1px solid #2b3a40;border-radius:10px;margin-bottom:10px;padding:10px 12px 10px 42px;position:relative;background:#0a1114}
+    table.usuarios tr.urow{border:1px solid var(--line2);border-radius:10px;margin-bottom:10px;padding:10px 12px 10px 42px;position:relative;background:var(--bg2)}
     table.usuarios td{display:inline-block;border:0;padding:2px 8px 2px 0;width:auto}
     table.usuarios td.chk{position:absolute;left:12px;top:12px}
     table.usuarios td.acc{position:absolute;right:6px;top:6px}
@@ -109,7 +110,7 @@
   <section id="t-usuarios">
       <div class="caja">
         <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Usuarios <span class="muted" id="uContador" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px"></span></span><button type="button" class="primary sm btn-nuevo" id="uNuevo">＋ Nuevo usuario</button></h3>
-        <div id="avisoInactivos" style="display:none;background:#2a1f10;border:1px solid #6b5420;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px"></div>
+        <div id="avisoInactivos" style="display:none;background:var(--avisobg);border:1px solid var(--avisoline);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px"></div>
         <div class="u-herr">
           <input id="uBuscar" type="search" placeholder="🔍 Buscar por usuario, nombre, rango o rol…" autocomplete="off">
           <select id="uFiltro" title="Filtrar por estado"><option value="">Todos</option><option value="activos">Activos</option><option value="inactivos">Inactivos</option><option value="ocultos">Ocultos en formularios</option><option value="sinrol">Sin rol</option></select>
@@ -205,7 +206,7 @@
           <label>Descripción</label><textarea id="fDesc" rows="3"></textarea>
           <div class="fila"><div><label>Icono</label><input id="fIcono" value="📋"></div><div><label>Orden</label><input id="fOrden" type="number" value="100"></div></div>
           <label>Ruta de la página</label><input id="fRuta" placeholder="reportes/nuevo/" required>
-          <div id="fDiscordW" style="margin-top:10px;padding:10px;border:1px solid #2b3a40;border-radius:8px">
+          <div id="fDiscordW" style="margin-top:10px;padding:10px;border:1px solid var(--line2);border-radius:8px">
             <label style="margin-top:0">Webhook de Discord <small>(al sellar un reporte se publica la imagen en ese canal; el enlace no se muestra a los usuarios)</small></label>
             <input id="fWebhook" type="url" placeholder="https://discord.com/api/webhooks/…">
             <div style="display:flex;gap:10px;align-items:center;margin-top:6px"><label style="margin:0"><input type="checkbox" id="fWebhookOn" checked> Publicar automáticamente</label><button type="button" class="ghost sm" id="fProbar">Enviar prueba</button><span id="fDiscordMsg" class="muted"></span></div>
@@ -233,6 +234,21 @@
       <div class="err" id="hErr"></div>
     </div>
   </section>
+  <!-- ===================== AUTOMATIZACIÓN ===================== -->
+  <section id="t-automatizacion">
+    <div class="caja">
+      <h3>Canales de Discord</h3>
+      <p class="muted" style="margin-top:0;font-size:13px">Cada propósito tiene su propio canal (webhook). Los reportes de cada formulario se configuran en Formularios; aquí van los avisos generales. Los enlaces nunca se muestran a los usuarios.</p>
+      <table><thead><tr><th>Canal</th><th>Webhook</th><th>Activo</th><th></th></tr></thead><tbody id="tbCanales"></tbody></table>
+      <div class="err" id="cErr"></div>
+    </div>
+    <div class="caja" style="margin-top:18px" id="cajaProgramadas">
+      <h3>Tareas programadas</h3>
+      <p class="muted" style="margin-top:0;font-size:13px">Recordatorios, cierre diario, resumen semanal y ranking mensual. Se configuran más abajo cuando el módulo esté activo.</p>
+      <div id="programadas"></div>
+    </div>
+  </section>
+
   <!-- ===================== AUDITORÍA ===================== -->
   <section id="t-resumen">
     <div class="caja">
@@ -283,6 +299,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=c7719f31"></script>
+<script type="module" src="../js/app-admin.js?v=8bf1337a"></script>
 </body>
 </html>

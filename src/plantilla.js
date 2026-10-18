@@ -1,6 +1,6 @@
 // Motor de plantillas: definición JSON -> formulario HTML + dibujo sobre canvas.
 // Lo usan reportes/plantilla/ (formulario genérico) y admin/disenador.html (vista previa).
-import { RANGOS, esc, hoyISO } from './auth.js';
+import { RANGOS, esc, hoyISO, cargarFoto } from './auth.js';
 
 export const ANCHO = 1024;                    // todas las plantillas se dibujan a 1024 px de ancho (x2 al exportar)
 export const TIPOS = {
@@ -169,7 +169,7 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
   aplicarReglas();
   return { leer, leerPropio, fotos, el };
 }
-export function cargarImagen(f){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(f); const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=u; }); }
+export const cargarImagen = f => cargarFoto(f);
 
 export function validar(def, v, fotosCampo, fotosAnexo){
   const e=[];

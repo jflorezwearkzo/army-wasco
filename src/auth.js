@@ -63,8 +63,8 @@ export async function requerir({ permiso=null, formulario=null } = {}){
   return yo;
 }
 function aviso(html){
-  return `<div style="font-family:Arial,sans-serif;color:#f3f3f3;background:#0b1216;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center">
-    <div><p style="font-size:18px">${html}</p><a href="${RAIZ}" style="color:#f0c24d">Volver al inicio</a></div></div>`;
+  return `<div style="font-family:Arial,sans-serif;color:var(--text);background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center">
+    <div><p style="font-size:18px">${html}</p><a href="${RAIZ}" style="color:var(--gold)">Volver al inicio</a></div></div>`;
 }
 
 // ---------- "Ver como": el admin ve la página tal como la vería otro usuario (solo lectura) ----------
@@ -94,9 +94,9 @@ async function aplicarVerComo(yoReal){
   const pintar = () => {
     if(!document.body) return;
     const s = document.createElement('style'); s.textContent = `
-.pm-vc{position:sticky;top:0;z-index:200;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;padding:8px 14px;background:#f0c24d;color:#1a1200;font:600 13px "Roboto Condensed",Arial,sans-serif;border-bottom:2px solid #a8831f}
+.pm-vc{position:sticky;top:0;z-index:200;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;padding:8px 14px;background:var(--gold);color:var(--gold-text);font:600 13px "Roboto Condensed",Arial,sans-serif;border-bottom:2px solid #a8831f}
 .pm-vc b{font-weight:800}.pm-vc .rl{opacity:.75;font-weight:500}
-.pm-vc button{background:#1a1200;color:#f0c24d;border:0;border-radius:6px;padding:5px 10px;font:inherit;cursor:pointer}
+.pm-vc button{background:var(--gold-text);color:var(--gold);border:0;border-radius:6px;padding:5px 10px;font:inherit;cursor:pointer}
 body.pm-modo-vc #btnExport,body.pm-modo-vc button[type=submit]{opacity:.5;cursor:not-allowed}`;
     document.head.append(s);
     const d = document.createElement('div'); d.className = 'pm-vc';
@@ -120,26 +120,32 @@ export async function salirVerComo(usuarioId){
   location.href = RAIZ + 'admin/#usuarios';
 }
 
+// Publica un aviso en un canal general de Discord (avisos, anuncios, ranking, resumen, recordatorios). Nunca lanza error.
+export async function avisoDiscord(canal, { texto=null, embed=null } = {}){
+  try{ const { data, error } = await sb.functions.invoke('notificar-general', { body:{ canal, texto, embed } });
+    if(error) return 'error: '+error.message; return (data&&data.ok) ? 'ok' : (data&&data.motivo) || 'error'; }catch(x){ return 'error: '+(x.message||x); }
+}
+
 // Barra superior con usuario, rol, enlaces y salir. Se inserta al inicio de <body>.
 export function barraUsuario(yo){
   if(!document.getElementById('barraCss')){
     const s = document.createElement('style'); s.id = 'barraCss';
     s.textContent = `
-.barra{display:flex;gap:14px;align-items:center;padding:8px 20px;background:#07100f;border-bottom:1px solid #1c272c;font:13px "Roboto Condensed",Arial,sans-serif;color:#9aa7ad;position:relative;z-index:50}
-.barra a{color:#9aa7ad;text-decoration:none}
-.barra a.oro{color:#f0c24d}
+.barra{display:flex;gap:14px;align-items:center;padding:8px 20px;background:var(--barra);border-bottom:1px solid var(--line3);font:13px "Roboto Condensed",Arial,sans-serif;color:var(--muted);position:relative;z-index:50}
+.barra a{color:var(--muted);text-decoration:none}
+.barra a.oro{color:var(--gold)}
 .barra .inicio{margin-right:auto}
 .barra .menu{display:flex;gap:14px;align-items:center}
-.barra .yo{color:#9aa7ad}.barra .yo b{color:#f3f3f3}
-.barra .btn{display:none;background:#121f26;border:1px solid #2b3a40;color:#f3f3f3;border-radius:7px;padding:6px 10px;font:inherit;cursor:pointer;align-items:center;gap:8px;max-width:60vw}
+.barra .yo{color:var(--muted)}.barra .yo b{color:var(--text)}
+.barra .btn{display:none;background:var(--panel3);border:1px solid var(--line2);color:var(--text);border-radius:7px;padding:6px 10px;font:inherit;cursor:pointer;align-items:center;gap:8px;max-width:60vw}
 .barra .btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:720px){
   .barra{padding:8px 14px}
   .barra .btn{display:flex}
-  .barra .menu{display:none;position:absolute;right:10px;top:calc(100% + 6px);flex-direction:column;align-items:stretch;gap:0;background:#0f1a20;border:1px solid #2b3a40;border-radius:10px;min-width:220px;box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden}
+  .barra .menu{display:none;position:absolute;right:10px;top:calc(100% + 6px);flex-direction:column;align-items:stretch;gap:0;background:var(--panel);border:1px solid var(--line2);border-radius:10px;min-width:220px;box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden}
   .barra.abierta .menu{display:flex}
-  .barra .menu a,.barra .menu .yo{padding:12px 16px;border-bottom:1px solid #1c272c;font-size:15px}
-  .barra .menu .yo{background:#121f26}
+  .barra .menu a,.barra .menu .yo{padding:12px 16px;border-bottom:1px solid var(--line3);font-size:15px}
+  .barra .menu .yo{background:var(--panel3)}
   .barra .menu a:last-child{border-bottom:0}
 }`;
     document.head.append(s);
@@ -152,12 +158,14 @@ export function barraUsuario(yo){
       ${esAdminDeAlgo(yo) ? `<a class="oro" href="${RAIZ}admin/">Administración</a>` : ''}
       <a href="${RAIZ}reglamento.html">Reglamento</a>
       <a href="${RAIZ}cuenta.html">Mi cuenta</a>
+      <a href="#" id="btnTema" title="Cambiar entre tema oscuro y claro">🌗 Tema</a>
       <a href="${RAIZ}privacidad.html" style="font-size:12px">Privacidad</a>
       <a href="#" id="btnSalir">Salir</a>
     </nav>`;
   const btn = b.querySelector('.btn');
   btn.onclick = e => { e.stopPropagation(); const ab = b.classList.toggle('abierta'); btn.setAttribute('aria-expanded', ab); };
   document.addEventListener('click', e => { if(!b.contains(e.target)){ b.classList.remove('abierta'); btn.setAttribute('aria-expanded','false'); } });
+  b.querySelector('#btnTema').onclick = e => { e.preventDefault(); if(window.pmTema) window.pmTema.alternar(); };
   b.querySelector('#btnSalir').onclick = e => { e.preventDefault(); try{ sessionStorage.removeItem(K_VC); }catch(x){} cerrarSesion(); };
   document.body.prepend(b);
 }
@@ -171,9 +179,37 @@ export async function crearReporte({ formularioId, fecha, resumen, datos }){
   return { id: data.id, folio: data.folio_v2, datos: data.datos };
 }
 // Paso 2: sube la imagen con el folio estampado y la adjunta al registro (solo una vez).
+// Carga una foto del usuario reducida a un tamaño razonable (máx. 1600 px por lado): menos memoria en el celular y
+// exportación más rápida. Devuelve un <img> listo para dibujar.
+export function cargarFoto(f, max=1600){
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(f); const i = new Image();
+    i.onload = () => {
+      URL.revokeObjectURL(u);
+      const w = i.naturalWidth || i.width, h = i.naturalHeight || i.height, k = Math.min(1, max / Math.max(w, h));
+      if(k >= 1) return res(i);
+      const c = document.createElement('canvas'); c.width = Math.round(w*k); c.height = Math.round(h*k);
+      const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(i, 0, 0, c.width, c.height);
+      const o = new Image(); o.onload = () => res(o); o.onerror = () => res(i); o.src = c.toDataURL('image/jpeg', 0.9);
+    };
+    i.onerror = rej; i.src = u;
+  });
+}
+// Convierte el PNG exportado a WebP (≈60-70 % más liviano) para guardarlo en el historial; si el navegador no sabe
+// generar WebP (Safari), se guarda el PNG tal cual.
+export async function blobParaHistorial(pngBlob){
+  try{
+    const bmp = await createImageBitmap(pngBlob); const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+    c.getContext('2d').drawImage(bmp, 0, 0); bmp.close && bmp.close();
+    const webp = await new Promise(r => c.toBlob(r, 'image/webp', 0.92));
+    if(webp && webp.type === 'image/webp' && webp.size < pngBlob.size) return { blob: webp, ext: 'webp' };
+  }catch(e){}
+  return { blob: pngBlob, ext: 'png' };
+}
 export async function adjuntarImagen({ yo, id, formularioId, pngBlob }){
-  const path = `${yo.id}/${formularioId}-${id}.png`;
-  const { error: e1 } = await sb.storage.from('reportes').upload(path, pngBlob, { contentType:'image/png', upsert:false });
+  const { blob, ext } = await blobParaHistorial(pngBlob);
+  const path = `${yo.id}/${formularioId}-${id}.${ext}`;
+  const { error: e1 } = await sb.storage.from('reportes').upload(path, blob, { contentType:'image/'+ext, upsert:false });
   if(e1) throw new Error('No se pudo subir la imagen: ' + e1.message);
   const { error: e2 } = await sb.from('reportes').update({ imagen_path: path }).eq('id', id);
   if(e2) throw new Error('No se pudo adjuntar la imagen: ' + e2.message);
@@ -203,7 +239,7 @@ export async function urlImagen(path){
 // Favicon dinámico: un emoji como icono de pestaña
 export function faviconEmoji(emoji){
   if(!emoji) return;
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0b1216"/><rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#c9a43a" stroke-width="2"/><text x="32" y="44" text-anchor="middle" font-size="36">${emoji}</text></svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="var(--bg)"/><rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="var(--line)" stroke-width="2"/><text x="32" y="44" text-anchor="middle" font-size="36">${emoji}</text></svg>`;
   let l=document.querySelector('link[rel="icon"]'); if(!l){ l=document.createElement('link'); l.rel='icon'; document.head.appendChild(l); }
   l.type='image/svg+xml'; l.href='data:image/svg+xml,'+encodeURIComponent(svg);
 }
@@ -248,7 +284,7 @@ export function borrador({ clave, yo, form, antes=null, despues=null, dias=7 }){
   // Banner
   let guardado=null; try{ const raw=localStorage.getItem(K); if(raw){ guardado=JSON.parse(raw); if(Date.now()-guardado.t > dias*864e5){ guardado=null; localStorage.removeItem(K); } } }catch(e){}
   if(guardado && guardado.v){
-    const b=document.createElement('div'); b.style.cssText='background:#2a1f10;border:1px solid #6b5420;border-radius:8px;padding:10px 14px;margin:0 0 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px;color:#f3f3f3';
+    const b=document.createElement('div'); b.style.cssText='background:var(--avisobg);border:1px solid var(--avisoline);border-radius:8px;padding:10px 14px;margin:0 0 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--text)';
     b.innerHTML=`<span>📝 Tienes un borrador sin exportar del <b>${new Date(guardado.t).toLocaleString('es-CO')}</b> (las fotos hay que adjuntarlas de nuevo).</span><button type="button" class="primary" style="padding:6px 12px;font-size:13px">Continuar</button><button type="button" class="ghost" style="padding:6px 10px;font-size:12px">Descartar</button>`;
     const [bc, bd] = b.querySelectorAll('button');
     bc.onclick = () => { pausado=true; try{ if(antes) antes(guardado.v); aplicar(guardado.v); }finally{ pausado=false; } if(despues) despues(); b.remove(); };
@@ -264,9 +300,9 @@ export function mejorasMovil(){
   if(document.getElementById('pmMovilCss')) return;
   const s=document.createElement('style'); s.id='pmMovilCss';
   s.textContent=`
-  .pm-flot{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#07100fee;border-top:1px solid #c9a43a;padding:8px 12px;gap:8px;backdrop-filter:blur(4px)}
+  .pm-flot{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--barra)ee;border-top:1px solid var(--line);padding:8px 12px;gap:8px;backdrop-filter:blur(4px)}
   .pm-flot button{flex:1;padding:10px 8px;font-size:14px}
-  .pm-cam{margin-left:6px;padding:6px 10px;font-size:12px;background:#243239;color:#f3f3f3;border:0;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700;text-transform:uppercase}
+  .pm-cam{margin-left:6px;padding:6px 10px;font-size:12px;background:var(--panel2);color:var(--text);border:0;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700;text-transform:uppercase}
   @media (max-width:1000px){ .pm-flot{display:flex} body{padding-bottom:64px} }`;
   document.head.appendChild(s);
   const exportar=document.getElementById('btnExport'), preview=document.querySelector('.preview');
@@ -303,13 +339,13 @@ registrarPWA();
 // const ov = bloquearPantalla('Registrando…'); ov.texto('Exportando…'); ov.exito('Reporte PM-000012 exportado', alCerrar) | ov.quitar()
 export function bloquearPantalla(texto='Procesando…'){
   if(!document.getElementById('pmOvCss')){ const s=document.createElement('style'); s.id='pmOvCss'; s.textContent=`
-  .pm-ov{position:fixed;inset:0;z-index:1000;background:#07100fe6;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);font-family:"Roboto Condensed",Arial,sans-serif}
-  .pm-ov .c{background:#101c21;border:1px solid #c9a43a;border-radius:12px;padding:26px 30px;max-width:420px;width:100%;text-align:center;color:#f3f3f3}
-  .pm-ov .sp{width:54px;height:54px;border-radius:50%;border:5px solid #243239;border-top-color:#f0c24d;margin:0 auto 16px;animation:pmgira .9s linear infinite}
+  .pm-ov{position:fixed;inset:0;z-index:1000;background:var(--barra)e6;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);font-family:"Roboto Condensed",Arial,sans-serif}
+  .pm-ov .c{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px 30px;max-width:420px;width:100%;text-align:center;color:var(--text)}
+  .pm-ov .sp{width:54px;height:54px;border-radius:50%;border:5px solid var(--panel2);border-top-color:var(--gold);margin:0 auto 16px;animation:pmgira .9s linear infinite}
   .pm-ov .ok{font-size:54px;margin-bottom:8px}
-  .pm-ov h3{margin:0 0 6px;color:#f0c24d;font-size:20px;text-transform:uppercase;letter-spacing:1px}
-  .pm-ov p{margin:0;color:#9aa7ad;font-size:14px;white-space:pre-line}
-  .pm-ov button{margin-top:16px;background:#f0c24d;color:#1a1200;border:0;border-radius:6px;padding:10px 18px;font-family:inherit;font-weight:700;font-size:14px;text-transform:uppercase;cursor:pointer}
+  .pm-ov h3{margin:0 0 6px;color:var(--gold);font-size:20px;text-transform:uppercase;letter-spacing:1px}
+  .pm-ov p{margin:0;color:var(--muted);font-size:14px;white-space:pre-line}
+  .pm-ov button{margin-top:16px;background:var(--gold);color:var(--gold-text);border:0;border-radius:6px;padding:10px 18px;font-family:inherit;font-weight:700;font-size:14px;text-transform:uppercase;cursor:pointer}
   @keyframes pmgira{to{transform:rotate(360deg)}}`; document.head.appendChild(s); }
   const ov=document.createElement('div'); ov.className='pm-ov'; ov.setAttribute('role','alert'); ov.setAttribute('aria-live','assertive');
   ov.innerHTML=`<div class="c"><div class="sp"></div><h3>Exportando reporte</h3><p></p><p style="margin-top:10px;font-size:12px">No cierres ni recargues la página.</p></div>`;

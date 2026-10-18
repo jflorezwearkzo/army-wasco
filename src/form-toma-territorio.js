@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, RANGOS, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, RANGOS, esc, cargarFoto } from './auth.js';
 const FORM='toma-territorio';
 const YO = await requerir({ formulario:FORM }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id',FORM).maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
@@ -51,7 +51,7 @@ $('#fotos').addEventListener('change', async e=>{
   for(const f of e.target.files){ if(photos.length>=MAX_FOTOS) break; photos.push({img:await loadFile(f),name:f.name}); }
   e.target.value=''; renderThumbs(); draw();
 });
-function loadFile(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f);const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});}
+const loadFile=f=>cargarFoto(f);
 function renderThumbs(){
   const t=$('#thumbs'); t.innerHTML='';
   photos.forEach((p,i)=>{ const d=document.createElement('div'); d.className='thumb';
