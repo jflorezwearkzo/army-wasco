@@ -560,3 +560,16 @@ grant execute on function public.ver_como(uuid, text) to authenticated;
 alter table public.roles disable trigger roles_validar_protegido;
 update public.roles set permisos = permisos || '{"ver_como": true}'::jsonb where protegido = true;
 alter table public.roles enable trigger roles_validar_protegido;
+
+-- ---------- Actividad por usuario (para la lista de Usuarios del panel) ----------
+create or replace function public.actividad_usuarios()
+returns table(usuario_id uuid, reportes bigint, ultimo date)
+language sql stable security definer set search_path = public as $$
+  select r.usuario_id, count(*), max(r.fecha)
+  from public.reportes r
+  where coalesce(public.mi_perfil_activo(), false)
+    and (public.tengo_permiso('usuarios') or public.tengo_permiso('asignar_roles') or public.tengo_permiso('historial'))
+  group by r.usuario_id;
+$$;
+revoke execute on function public.actividad_usuarios() from anon, public;
+grant execute on function public.actividad_usuarios() to authenticated;

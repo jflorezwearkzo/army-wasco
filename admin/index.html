@@ -43,6 +43,40 @@
   .sugs div{padding:8px 11px;cursor:pointer;font-size:14px}
   .sugs div:hover,.sugs div.act{background:#1b2a31;color:var(--gold)}
   .sugs small{color:var(--muted);margin-left:6px}
+  /* --- Usuarios: buscador, menú ⋯, selección múltiple --- */
+  .u-herr{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .u-herr input[type=search]{flex:2;min-width:200px}
+  .u-herr select{flex:1;min-width:140px;width:auto}
+  table.usuarios th.chk,table.usuarios td.chk{width:28px;padding-right:0}
+  table.usuarios th.acc,table.usuarios td.acc{width:40px;text-align:right}
+  table.usuarios tr.sel td{background:#13231c}
+  table.usuarios tr.urow{cursor:pointer}
+  table.usuarios .nom{color:var(--muted);font-size:13px}
+  table.usuarios input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--gold)}
+  .btn-acc{background:transparent;border:1px solid transparent;color:var(--muted);font-size:18px;line-height:1;padding:4px 8px;border-radius:6px;cursor:pointer}
+  .btn-acc:hover,.btn-acc.on{border-color:#2b3a40;color:var(--gold);background:#0a1114}
+  .menu-acc{position:absolute;z-index:60;background:#0f1a20;border:1px solid #2b3a40;border-radius:10px;min-width:230px;box-shadow:0 10px 30px rgba(0,0,0,.55);padding:6px;font-size:14px}
+  .menu-acc button{display:block;width:100%;text-align:left;background:transparent;border:0;color:var(--text);padding:9px 12px;border-radius:6px;font:inherit;text-transform:none;letter-spacing:0;cursor:pointer}
+  .menu-acc button:hover{background:#1b2a31;color:var(--gold)}
+  .menu-acc button.peligro:hover{background:#3a1717;color:#ff9f9f}
+  .menu-acc hr{border:0;border-top:1px solid #1c272c;margin:4px 0}
+  .menu-acc .cab{padding:6px 12px 8px;color:var(--muted);font-size:12px;border-bottom:1px solid #1c272c;margin-bottom:4px}
+  .u-bulk{display:none;position:sticky;bottom:12px;z-index:40;margin-top:12px;background:#121f26;border:1px solid var(--gold);border-radius:10px;padding:10px 12px;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .u-bulk.on{display:flex}
+  .u-bulk b{color:var(--gold);margin-right:6px}
+  .u-bulk .rolw{display:flex;gap:4px;align-items:center}
+  .u-bulk select{width:auto;padding:5px 8px;font-size:12px}
+  .u-bulk [data-bulk=cancelar]{margin-left:auto}
+  @media(max-width:720px){
+    .u-tabla table.usuarios,table.usuarios tbody,table.usuarios tr{display:block;width:100%}
+    table.usuarios thead{display:none}
+    table.usuarios tr.urow{border:1px solid #2b3a40;border-radius:10px;margin-bottom:10px;padding:10px 12px 10px 42px;position:relative;background:#0a1114}
+    table.usuarios td{display:inline-block;border:0;padding:2px 8px 2px 0;width:auto}
+    table.usuarios td.chk{position:absolute;left:12px;top:12px}
+    table.usuarios td.acc{position:absolute;right:6px;top:6px}
+    table.usuarios td.u{display:block;font-size:16px}
+    table.usuarios td.ult::before{content:"Último reporte: ";color:var(--muted)}
+  }
 </style>
 </head>
 <body>
@@ -54,9 +88,26 @@
   <section id="t-usuarios">
     <div class="dos">
       <div class="caja">
-        <h3>Usuarios</h3>
+        <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">Usuarios <span class="muted" id="uContador" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px"></span></h3>
         <div id="avisoInactivos" style="display:none;background:#2a1f10;border:1px solid #6b5420;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px"></div>
-        <table><thead><tr><th>Usuario</th><th>Rango y nombre</th><th>Rol</th><th>Estado</th><th>En formularios</th><th></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
+        <div class="u-herr">
+          <input id="uBuscar" type="search" placeholder="🔍 Buscar por usuario, nombre, rango o rol…" autocomplete="off">
+          <select id="uFiltro" title="Filtrar por estado"><option value="">Todos</option><option value="activos">Activos</option><option value="inactivos">Inactivos</option><option value="ocultos">Ocultos en formularios</option><option value="sinrol">Sin rol</option></select>
+          <select id="uFiltroRol" title="Filtrar por rol"><option value="">Todos los roles</option></select>
+        </div>
+        <div class="u-tabla">
+        <table class="usuarios"><thead><tr><th class="chk"><input type="checkbox" id="uTodos" title="Seleccionar todos los visibles"></th><th>Usuario</th><th>Rango y nombre</th><th>Rol</th><th>Estado</th><th>En formularios</th><th>Último reporte</th><th class="acc"></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
+        </div>
+        <div class="u-bulk" id="uBulk">
+          <b><span id="uBulkN">0</span> seleccionado(s)</b>
+          <button type="button" class="ghost sm" data-bulk="activar">Activar</button>
+          <button type="button" class="ghost sm" data-bulk="desactivar">Desactivar</button>
+          <button type="button" class="ghost sm" data-bulk="mostrar">Mostrar en formularios</button>
+          <button type="button" class="ghost sm" data-bulk="ocultar">Ocultar en formularios</button>
+          <span class="rolw"><select id="uBulkRol"><option value="">Asignar rol…</option></select><button type="button" class="ghost sm" data-bulk="rol">Asignar</button></span>
+          <button type="button" class="ghost sm" data-bulk="cancelar">✕ Cancelar</button>
+        </div>
+        <div class="menu-acc" id="uMenu" hidden></div>
       </div>
       <div class="caja">
         <h3 id="tituloUsuario">Nuevo usuario</h3>
@@ -72,7 +123,7 @@
           <div class="fila" style="margin-top:14px"><button class="primary" id="uGuardar">Crear</button><button type="button" class="ghost" id="uCancelar">Cancelar</button></div>
           <div class="err" id="uErr"></div><div class="ok" id="uOk"></div>
         </form>
-        <p class="muted" style="font-size:12px">Para restablecer una contraseña olvidada: Supabase → Authentication → Users → el usuario → "Reset password", o crea un usuario nuevo y desactiva el anterior.</p>
+        <p class="muted" style="font-size:12px">Clic en una fila para editarla. El botón ⋯ de cada usuario tiene las demás acciones (ver como, sus reportes, contraseña, activar/ocultar). Marca las casillas para aplicar acciones a varios a la vez.</p>
       </div>
     </div>
   </section>
@@ -211,6 +262,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=5c6a6ff2"></script>
+<script type="module" src="../js/app-admin.js?v=62605dd4"></script>
 </body>
 </html>

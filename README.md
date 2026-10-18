@@ -112,6 +112,14 @@ Panel › Formularios › Editar › **Webhook de Discord** (requiere gestión d
 
 En Admin → Resumen, el selector **PDF / Imagen PNG** y el botón **⬇ Exportar resumen** generan un reporte con el estilo de la página (`src/resumen-export.js`): cabecera, KPIs, barras por día y las tablas (por formulario, por usuario, patrullajes por integrante, bajas y reclutamientos por persona), con el periodo filtrado y quién lo generó. Se dibuja en canvas (A4, varias páginas si hace falta); el PDF se construye a mano (una imagen JPEG por página) sin librerías externas, y el PNG apila las páginas en una sola imagen.
 
+## Panel → Usuarios (buscador, menú ⋯ y acciones en bloque)
+
+- **Buscador** en vivo (usuario, nombre, rango, rol) con filtros *Todos / Activos / Inactivos / Ocultos / Sin rol* y por rol; contador "Mostrando X de Y".
+- Columna **Último reporte** (fecha y cantidad) vía RPC `actividad_usuarios()` (requiere `usuarios`, `asignar_roles` o `historial`).
+- Cada fila tiene un botón **⋯** con solo las acciones que tu permiso permite: Editar · Ver la página como este usuario · Ver sus reportes (abre Historial filtrado) · Restablecer contraseña · Mostrar/Ocultar en formularios · Activar/Desactivar. Clic en la fila = Editar.
+- **Casillas** por fila y "seleccionar todos los visibles": al marcar aparece una barra flotante con Activar · Desactivar · Mostrar · Ocultar · Asignar rol, con confirmación que lista los nombres. Nunca toca roles fuera de tus permisos ni desactiva tu propia cuenta.
+- En móvil la tabla se convierte en tarjetas. Roles y Formularios usan el mismo menú ⋯ en lugar de la fila de botones.
+
 ## "Ver como" (solo Administrador)
 
 En Admin → Usuarios, el rol Administrador tiene el botón **👁 Ver como** en cada usuario. Al pulsarlo, toda la página (inicio, formularios, panel, Mi cuenta…) se muestra exactamente como la vería esa persona, con una **franja amarilla fija** arriba ("Estás viendo como … · solo lectura · Salir de Ver como"). Sirve para comprobar quejas tipo "a mí no me aparece el formulario X".

@@ -51,41 +51,121 @@ const formsTexto = r => r.formularios.includes('*') ? 'Todos' : (r.formularios.m
 const msg = (id, t, ok=false) => { $('#'+id+'Err').textContent = ok?'':t; $('#'+id+'Ok').textContent = ok?t:''; };
 
 // ====================== USUARIOS ======================
+let USUARIOS=[], ACTIV={}, SEL=new Set();
+const fFecha = d => d ? d.split('-').reverse().join('-') : '';
+const puedoTocar = u => { const r = roles.find(x => x.id===u.rol_id); return u.id===yo.id || !r || rolAsignable(r); };
+const motivoNoTocar = u => { const r = roles.find(x => x.id===u.rol_id); return r && r.protegido ? 'Solo Administrador' : 'Fuera de tus permisos'; };
 async function cargarUsuarios(){
   if(tiene(yo,'auditoria')){ sb.from('auditoria').select('usuario,en').eq('accion','login_inactivo').gte('en', new Date(Date.now()-7*864e5).toISOString()).order('id',{ascending:false}).limit(50).then(({data})=>{ const av=$('#avisoInactivos'); if(!data||!data.length){ av.style.display='none'; return; } const qu=[...new Set(data.map(r=>r.usuario))]; av.style.display=''; av.innerHTML=`⚠️ <b>${data.length}</b> intento(s) de acceso con cuentas inactivas en los últimos 7 días: ${qu.map(esc).join(', ')}. <span class="muted">(Detalle en Auditoría › Usuarios)</span>`; }); }
   const { data, error } = await sb.from('perfiles').select('*').order('usuario');
-  if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=5 class="err">${esc(error.message)}</td></tr>`; return; }
+  if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=8 class="err">${esc(error.message)}</td></tr>`; return; }
+  USUARIOS = data || []; SEL = new Set([...SEL].filter(id => USUARIOS.some(u => u.id===id)));
+  sb.rpc('actividad_usuarios').then(({data}) => { ACTIV={}; (data||[]).forEach(a => ACTIV[a.usuario_id]=a); pintarUsuarios(); });
   $('#uRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option>${esc(r)}</option>`).join('');
   const rolesAsignables = roles.filter(rolAsignable);
   $('#uRol').innerHTML = '<option value="">— Sin rol —</option>' + rolesAsignables.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
+  $('#uBulkRol').innerHTML = '<option value="">Asignar rol…</option>' + rolesAsignables.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
+  $('#uFiltroRol').innerHTML = '<option value="">Todos los roles</option>' + roles.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
   $('#uRol').disabled = !tiene(yo,'asignar_roles'); $('#uRol').title = tiene(yo,'asignar_roles') ? '' : 'Necesitas el permiso de asignación de roles';
   ['#uNombre','#uRango','#uActivo','#uVisible'].forEach(s => $(s).disabled = !tiene(yo,'usuarios'));
   $('#uGuardar').style.display = (tiene(yo,'usuarios') || tiene(yo,'asignar_roles')) ? '' : 'none';
-  $('#tbUsuarios').innerHTML = data.map(u => {
+  $('#uBulk').querySelector('.rolw').style.display = tiene(yo,'asignar_roles') ? '' : 'none';
+  $('#uBulk').querySelectorAll('[data-bulk]:not([data-bulk=rol]):not([data-bulk=cancelar])').forEach(b => b.style.display = tiene(yo,'usuarios') ? '' : 'none');
+  pintarUsuarios();
+}
+function usuariosFiltrados(){
+  const q = ($('#uBuscar').value||'').trim().toLowerCase(), f = $('#uFiltro').value, fr = $('#uFiltroRol').value;
+  return USUARIOS.filter(u => {
     const r = roles.find(x => x.id===u.rol_id);
-    return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}</td>
-      <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
-      <td><span class="tag ${(u.activo&&u.visible!==false)?'on':'off'}" title="${u.activo?'':'Los usuarios inactivos nunca aparecen en los formularios'}">${u.visible===false?'Oculto':'Visible'}</span></td>
-      <td style="white-space:nowrap">${(tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ? `<button class="ghost sm" data-vc="${u.id}" data-u="${esc(nombreCompleto(u))}" title="Ver toda la página tal como la ve este usuario (solo lectura)">👁 Ver como</button> ` : ''}${(r && !rolAsignable(r) && u.id!==yo.id) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `${(tiene(yo,'usuarios')||tiene(yo,'asignar_roles')) ? `<button class="ghost sm" data-e="${u.id}">Editar</button>` : ''}
-      ${tiene(yo,'usuarios') ? `<button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button> <button class="ghost sm" data-vis="${u.id}" data-v="${u.visible===false?1:0}" title="Mostrar u ocultar en los desplegables de los formularios">${u.visible===false?'Mostrar en formularios':'Ocultar en formularios'}</button>` : ''}
-      ${(tiene(yo,'reset_password') && u.id!==yo.id) ? `<button class="ghost sm" data-rp="${u.id}" data-u="${esc(u.usuario)}">Contraseña</button>` : ''}`}</td></tr>`;
-  }).join('') || '<tr><td colspan=6 class="muted">Sin usuarios</td></tr>';
-  document.querySelectorAll('[data-vc]').forEach(b => b.onclick = async () => {
-    if(!confirm(`Vas a ver la página como "${b.dataset.u}" (solo lectura). Verás una franja amarilla arriba para salir del modo. Esta acción queda en la auditoría.\n\n¿Continuar?`)) return;
-    try{ await entrarVerComo(b.dataset.vc); }catch(x){ alert(x.message); }
-  });
-  document.querySelectorAll('[data-vis]').forEach(b => b.onclick = async () => {
-    const { error } = await sb.from('perfiles').update({ visible: b.dataset.v==='1' }).eq('id', b.dataset.vis);
-    if(error) alert(error.message); cargarUsuarios();
-  });
-  document.querySelectorAll('[data-e]').forEach(b => b.onclick = () => editarUsuario(data.find(u => u.id===b.dataset.e)));
-  document.querySelectorAll('[data-rp]').forEach(b => b.onclick = () => resetearPassword(b.dataset.rp, b.dataset.u));
-  document.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
-    if(b.dataset.a===yo.id && b.dataset.v==='0'){ alert('No puedes desactivar tu propia cuenta.'); return; }
-    const { error } = await sb.from('perfiles').update({ activo: b.dataset.v==='1' }).eq('id', b.dataset.a);
-    if(error) alert(error.message); cargarUsuarios();
+    if(q && ![u.usuario, u.nombre, u.rango, r && r.nombre].filter(Boolean).join(' ').toLowerCase().includes(q)) return false;
+    if(f==='activos' && !u.activo) return false; if(f==='inactivos' && u.activo) return false;
+    if(f==='ocultos' && u.visible!==false) return false; if(f==='sinrol' && u.rol_id) return false;
+    if(fr && u.rol_id!==fr) return false;
+    return true;
   });
 }
+function pintarUsuarios(){
+  const lista = usuariosFiltrados(); const vis = new Set(lista.map(u=>u.id));
+  $('#uContador').textContent = lista.length===USUARIOS.length ? `${USUARIOS.length} usuario(s)` : `Mostrando ${lista.length} de ${USUARIOS.length}`;
+  $('#tbUsuarios').innerHTML = lista.map(u => {
+    const r = roles.find(x => x.id===u.rol_id); const a = ACTIV[u.id];
+    return `<tr class="urow ${SEL.has(u.id)?'sel':''}" data-id="${u.id}">
+      <td class="chk"><input type="checkbox" data-sel="${u.id}" ${SEL.has(u.id)?'checked':''} ${puedoTocar(u)?'':'disabled title="'+motivoNoTocar(u)+'"'}></td>
+      <td class="u"><b>${esc(u.usuario)}</b>${u.id===yo.id?' <span class="muted" style="font-size:11px">(tú)</span>':''}</td>
+      <td class="nom">${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}</td>
+      <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
+      <td><span class="tag ${(u.activo&&u.visible!==false)?'on':'off'}" title="${u.activo?'':'Los usuarios inactivos nunca aparecen en los formularios'}">${u.visible===false?'Oculto':'Visible'}</span></td>
+      <td class="ult muted">${a ? `${fFecha(a.ultimo)} <span style="font-size:11px">(${a.reportes})</span>` : '—'}</td>
+      <td class="acc"><button type="button" class="btn-acc" data-menu="${u.id}" title="Acciones" aria-label="Acciones">⋯</button></td></tr>`;
+  }).join('') || '<tr><td colspan=8 class="muted">Sin usuarios que coincidan</td></tr>';
+  const todos = $('#uTodos'); const sel = lista.filter(u=>puedoTocar(u));
+  todos.checked = sel.length>0 && sel.every(u=>SEL.has(u.id)); todos.indeterminate = !todos.checked && sel.some(u=>SEL.has(u.id));
+  document.querySelectorAll('[data-sel]').forEach(c => c.onchange = () => { c.checked ? SEL.add(c.dataset.sel) : SEL.delete(c.dataset.sel); pintarUsuarios(); });
+  document.querySelectorAll('[data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); abrirMenuUsuario(b, USUARIOS.find(u=>u.id===b.dataset.menu)); });
+  document.querySelectorAll('tr.urow').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; const u = USUARIOS.find(x=>x.id===tr.dataset.id); if(u && puedoTocar(u) && (tiene(yo,'usuarios')||tiene(yo,'asignar_roles'))) editarUsuario(u); });
+  const n = [...SEL].filter(id => vis.has(id)).length; $('#uBulkN').textContent = SEL.size; $('#uBulk').classList.toggle('on', SEL.size>0);
+}
+['#uBuscar','#uFiltro','#uFiltroRol'].forEach(s => $(s).addEventListener('input', pintarUsuarios));
+$('#uTodos').onchange = () => { const lista = usuariosFiltrados().filter(puedoTocar); if($('#uTodos').checked) lista.forEach(u=>SEL.add(u.id)); else lista.forEach(u=>SEL.delete(u.id)); pintarUsuarios(); };
+
+// Menú ⋯ por usuario
+function abrirMenuUsuario(btn, u){
+  const r = roles.find(x => x.id===u.rol_id); const ok = puedoTocar(u); const ops = [];
+  if(ok && (tiene(yo,'usuarios')||tiene(yo,'asignar_roles'))) ops.push(['editar','✏️ Editar']);
+  if(tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ops.push(['vercomo','👁 Ver la página como este usuario']);
+  if(tiene(yo,'historial')) ops.push(['reportes','📋 Ver sus reportes']);
+  if(ok && tiene(yo,'reset_password') && u.id!==yo.id) ops.push(['password','🔑 Restablecer contraseña']);
+  if(ok && tiene(yo,'usuarios')){ ops.push(['visible', u.visible===false ? '👁 Mostrar en formularios' : '🙈 Ocultar en formularios']); if(u.id!==yo.id) ops.push([u.activo?'desactivar':'activar', u.activo ? '⛔ Desactivar cuenta' : '✅ Activar cuenta']); }
+  abrirMenu(btn, u.id, `<b style="color:var(--text)">${esc(u.usuario)}</b> · ${esc(r?r.nombre:'Sin rol')}${ok?'':` · <span style="color:#ff9f9f">${motivoNoTocar(u)}</span>`}`, ops.map(([k,t]) => [k, t, k==='desactivar']), op => accionUsuario(op, u));
+}
+// Menú flotante genérico: ops = [[clave, texto, peligro?]]
+function abrirMenu(btn, id, cab, ops, alElegir){
+  const m = $('#uMenu'); if(m.parentElement!==document.body) document.body.appendChild(m); if(!m.hidden && m.dataset.id===id){ cerrarMenu(); return; }
+  m.innerHTML = `<div class="cab">${cab}</div>` + (ops.map(([k,t,pel]) => `<button type="button" data-op="${k}" class="${pel?'peligro':''}">${t}</button>`).join('') || '<div class="cab" style="border:0">Sin acciones disponibles</div>');
+  m.dataset.id = id; m.hidden = false; btn.classList.add('on');
+  const rb = btn.getBoundingClientRect(), mw = m.offsetWidth; let x = rb.right - mw + window.scrollX, y = rb.bottom + 4 + window.scrollY; if(x < 8) x = 8;
+  if(rb.bottom + m.offsetHeight > window.innerHeight - 8) y = rb.top - m.offsetHeight - 4 + window.scrollY;
+  m.style.left = x+'px'; m.style.top = y+'px';
+  m.querySelectorAll('[data-op]').forEach(b => b.onclick = () => { cerrarMenu(); alElegir(b.dataset.op); });
+}
+const botonMenu = (id, extra='') => `<button type="button" class="btn-acc" data-menu="${esc(id)}" ${extra} title="Acciones" aria-label="Acciones">⋯</button>`;
+function cerrarMenu(){ const m = $('#uMenu'); m.hidden = true; document.querySelectorAll('.btn-acc.on').forEach(b=>b.classList.remove('on')); }
+document.addEventListener('click', e => { if(!e.target.closest('#uMenu')) cerrarMenu(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') cerrarMenu(); });
+window.addEventListener('resize', cerrarMenu);
+async function accionUsuario(op, u){
+  try{
+    if(op==='editar') editarUsuario(u);
+    else if(op==='vercomo'){ if(!confirm(`Vas a ver la página como "${nombreCompleto(u)}" (solo lectura). Verás una franja amarilla arriba para salir del modo. Esta acción queda en la auditoría.\n\n¿Continuar?`)) return; await entrarVerComo(u.id); }
+    else if(op==='reportes'){ abrir('historial'); $('#hUsuario').value = u.usuario; $('#hForm').value=''; $('#hDesde').value=''; $('#hHasta').value=''; buscarHist(); window.scrollTo({top:0,behavior:'smooth'}); }
+    else if(op==='password') resetearPassword(u.id, u.usuario);
+    else if(op==='visible'){ await actualizarPerfiles([u], { visible: u.visible===false }); }
+    else if(op==='activar'){ await actualizarPerfiles([u], { activo:true }); }
+    else if(op==='desactivar'){ if(!confirm(`¿Desactivar la cuenta de "${u.usuario}"? No podrá iniciar sesión ni aparecerá en los formularios.`)) return; await actualizarPerfiles([u], { activo:false }); }
+  }catch(x){ alert(x.message||String(x)); }
+}
+async function actualizarPerfiles(lista, cambios){
+  const errores = [];
+  for(const u of lista){ const { error } = await sb.from('perfiles').update(cambios).eq('id', u.id); if(error) errores.push(`${u.usuario}: ${error.message}`); }
+  await cargarUsuarios();
+  if(errores.length) throw new Error('Algunos cambios no se aplicaron:\n' + errores.join('\n'));
+}
+
+// Acciones en bloque
+document.querySelectorAll('[data-bulk]').forEach(b => b.onclick = async () => {
+  const op = b.dataset.bulk;
+  if(op==='cancelar'){ SEL.clear(); pintarUsuarios(); return; }
+  let lista = USUARIOS.filter(u => SEL.has(u.id) && puedoTocar(u));
+  if(op==='desactivar') lista = lista.filter(u => u.id!==yo.id);
+  if(!lista.length){ alert('No hay usuarios seleccionados sobre los que puedas aplicar esta acción.'); return; }
+  const nombres = lista.map(u=>u.usuario).join(', ');
+  const cambios = { activar:{activo:true}, desactivar:{activo:false}, mostrar:{visible:true}, ocultar:{visible:false} }[op];
+  let texto = { activar:'Activar', desactivar:'Desactivar', mostrar:'Mostrar en formularios', ocultar:'Ocultar en formularios' }[op];
+  let c = cambios;
+  if(op==='rol'){ const rid = $('#uBulkRol').value; if(!rid){ alert('Elige el rol que quieres asignar.'); return; } const r = roles.find(x=>x.id===rid); c = { rol_id: rid }; texto = `Asignar el rol "${r?r.nombre:rid}"`; }
+  if(!confirm(`${texto} a ${lista.length} usuario(s):\n${nombres}\n\n¿Continuar?`)) return;
+  try{ await actualizarPerfiles(lista, c); SEL.clear(); pintarUsuarios(); }catch(x){ alert(x.message); }
+});
 function editarUsuario(u){
   $('#tituloUsuario').textContent = 'Editar usuario'; $('#uGuardar').textContent = 'Guardar';
   $('#uId').value = u.id; $('#uUsuario').value = u.usuario; $('#uUsuario').disabled = true; $('#uNombre').value = u.nombre; $('#uRango').value = u.rango || '';
@@ -163,12 +243,13 @@ async function cargarRoles(){
   $('#rTodos').onchange();
   $('#tbRoles').innerHTML = roles.map(r => `<tr><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
     <td>${esc(r.rango_pm||'—')}</td><td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
-    <td style="white-space:nowrap">${(!rolAsignable(r)) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `<button class="ghost sm" data-re="${r.id}">Editar</button>${r.protegido?'':`<button class="ghost sm" data-rd="${r.id}">Eliminar</button>`}`}</td></tr>`).join('');
-  document.querySelectorAll('[data-re]').forEach(b => b.onclick = () => editarRol(roles.find(r => r.id===b.dataset.re)));
-  document.querySelectorAll('[data-rd]').forEach(b => b.onclick = async () => {
-    if(!confirm('¿Eliminar este rol? Los usuarios que lo tengan quedarán sin rol.')) return;
-    const { error } = await sb.from('roles').delete().eq('id', b.dataset.rd); if(error) alert(error.message); cargarRoles();
-  });
+    <td class="acc" style="text-align:right">${botonMenu(r.id, 'data-k="rol"')}</td></tr>`).join('');
+  document.querySelectorAll('#tbRoles [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const r = roles.find(x => x.id===b.dataset.menu); const ok = rolAsignable(r);
+    const ops = []; if(ok){ ops.push(['editar','✏️ Editar']); if(!r.protegido) ops.push(['eliminar','🗑 Eliminar rol', true]); }
+    abrirMenu(b, 'rol:'+r.id, `<b style="color:var(--text)">${esc(r.nombre)}</b>${ok?'':` · <span style="color:#ff9f9f">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>`}`, ops, async op => {
+      if(op==='editar') editarRol(r);
+      if(op==='eliminar'){ if(!confirm(`¿Eliminar el rol "${r.nombre}"? Los usuarios que lo tengan quedarán sin rol.`)) return; const { error } = await sb.from('roles').delete().eq('id', r.id); if(error) alert(error.message); cargarRoles(); }
+    }); });
 }
 function editarRol(r){
   $('#tituloRol').textContent='Editar rol'; $('#rGuardar').textContent='Guardar';
@@ -211,15 +292,18 @@ async function cargarForms(){
   $('#tbForms').innerHTML = formularios.map(f => `<tr><td style="font-size:22px">${esc(f.icono||'')}</td><td><b>${esc(f.titulo)}</b><br><span class="muted">${esc(f.id)}</span></td>
     <td><a href="../${esc(f.ruta)}" target="_blank">${esc(f.ruta)}</a></td><td>${f.orden}</td>
     <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span>${f.definicion ? ` <span class="tag" title="Creado con el diseñador">Plantilla v${f.version||1}</span>` : ''}</td>
-    <td style="white-space:nowrap">${(f.definicion && tiene(yo,'disenar_formularios')) ? `<a class="ghost sm" href="disenador.html?id=${esc(f.id)}" style="text-decoration:none;display:inline-block">Diseñar</a> ` : ''}${tiene(yo,'gestion_reportes') ? `<button class="ghost sm" data-fe="${f.id}">Editar</button>
-    <button class="ghost sm" data-fa="${f.id}" data-v="${f.activo?0:1}">${f.activo?'Ocultar':'Mostrar'}</button>
-    <button class="ghost sm" data-fd="${f.id}">Eliminar</button>` : '<span class="muted">Solo lectura</span>'}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
-  document.querySelectorAll('[data-fe]').forEach(b => b.onclick = () => editarForm(formularios.find(f => f.id===b.dataset.fe)));
-  document.querySelectorAll('[data-fa]').forEach(b => b.onclick = async () => { const { error } = await sb.from('formularios').update({ activo: b.dataset.v==='1' }).eq('id', b.dataset.fa); if(error) alert(error.message); cargarForms(); });
-  document.querySelectorAll('[data-fd]').forEach(b => b.onclick = async () => {
-    if(!confirm('¿Eliminar este formulario del catálogo? Los reportes del historial se conservan.')) return;
-    const { error } = await sb.from('formularios').delete().eq('id', b.dataset.fd); if(error) alert(error.message); cargarForms();
-  });
+    <td class="acc" style="text-align:right">${botonMenu(f.id)}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
+  document.querySelectorAll('#tbForms [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const f = formularios.find(x => x.id===b.dataset.menu);
+    const ops = [['abrir','↗ Abrir el formulario']];
+    if(f.definicion && tiene(yo,'disenar_formularios')) ops.push(['disenar','🎨 Diseñar plantilla']);
+    if(tiene(yo,'gestion_reportes')){ ops.push(['editar','✏️ Editar'], ['activo', f.activo ? '🙈 Ocultar del inicio' : '👁 Mostrar en el inicio'], ['eliminar','🗑 Eliminar del catálogo', true]); }
+    abrirMenu(b, 'form:'+f.id, `<b style="color:var(--text)">${esc(f.titulo)}</b>${tiene(yo,'gestion_reportes')?'':' · solo lectura'}`, ops, async op => {
+      if(op==='abrir') window.open('../'+f.ruta, '_blank');
+      if(op==='disenar') location.href = 'disenador.html?id='+encodeURIComponent(f.id);
+      if(op==='editar') editarForm(f);
+      if(op==='activo'){ const { error } = await sb.from('formularios').update({ activo: !f.activo }).eq('id', f.id); if(error) alert(error.message); cargarForms(); }
+      if(op==='eliminar'){ if(!confirm(`¿Eliminar "${f.titulo}" del catálogo? Los reportes del historial se conservan.`)) return; const { error } = await sb.from('formularios').delete().eq('id', f.id); if(error) alert(error.message); cargarForms(); }
+    }); });
 }
 function editarForm(f){
   $('#tituloForm').textContent='Editar formulario'; $('#fGuardar').textContent='Guardar';
