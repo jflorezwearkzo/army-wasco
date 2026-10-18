@@ -750,3 +750,13 @@ create policy anuncios_img_select on storage.objects for select using (bucket_id
 create policy anuncios_img_write on storage.objects for all using (bucket_id = 'anuncios' and public.tengo_permiso('anuncios')) with check (bucket_id = 'anuncios' and public.tengo_permiso('anuncios'));
 -- Auditoría genérica (registrar_auditoria) también en: turnos, anuncios, requisitos_ascenso, discord_canales, formularios_discord, configuracion, insignias.
 -- Los webhooks se guardan como "(oculto)" en el detalle; se excluyen busqueda/actualizado_en. Sanciones, ascensos, revisión, ver_como, avatar y respaldo auditan desde sus RPC.
+
+-- ---------- Permisos granulares por usuario y ficha de usuario ----------
+alter table public.perfiles add column if not exists permisos_extra jsonb not null default '{}'::jsonb;    -- se otorgan aunque el rol no los tenga (nunca ver_como)
+alter table public.perfiles add column if not exists permisos_negados jsonb not null default '{}'::jsonb;  -- se quitan aunque el rol los tenga
+alter table public.perfiles add column if not exists formularios_extra text[] not null default '{}';
+alter table public.perfiles add column if not exists notas_admin text;
+-- permisos_efectivos(uuid) = (rol ∪ extra) − negados. tengo_permiso(), puedo_usar_formulario() y dentro_de_mis_permisos() ya los usan.
+-- RPC fijar_permisos_usuario(p_usuario, p_extra, p_negados, p_formularios, p_notas): permiso "permisos_granulares" (por defecto solo Administrador);
+--   solo se otorgan permisos/formularios que el llamante tiene; no sobre uno mismo; a un Administrador solo otro Administrador. Audita "permisos_granulares".
+-- RPC ficha_usuario(p_usuario): cuenta (correo, último acceso, factores 2FA), actividad, efectivos y últimos 40 registros de auditoría relacionados.

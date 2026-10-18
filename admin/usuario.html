@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
+<title>Usuario · Administración · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="../js/tema.js?v=08a05794"></script>
+<link rel="stylesheet" href="../estilos.css">
+<style>
+  main{max-width:1200px;margin:0 auto;padding:20px}
+  .migas{font-size:13px;color:var(--muted);margin-bottom:10px}.migas a{color:var(--muted);text-decoration:none}.migas a:hover{color:var(--gold)}
+  .cab{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  .cab .av{width:84px;height:84px;border-radius:50%;background:var(--panel2);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:var(--gold);overflow:hidden;flex:0 0 auto}
+  .cab .av img{width:100%;height:100%;object-fit:cover}
+  .cab h1{margin:0;font-size:26px}.cab .sub{color:var(--muted);font-size:14px;margin-top:2px}
+  .cab .acc{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .layout{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}}
+  .lateral .caja{padding:14px 16px;margin-bottom:12px}
+  .caja h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+  .kv span:nth-child(odd){color:var(--muted)}
+  .pestanas{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line3);margin-bottom:14px}
+  .pestanas button{background:transparent;color:var(--muted);border-radius:6px 6px 0 0;padding:9px 14px;font-size:13px}
+  .pestanas button.on{background:var(--panel);color:var(--gold);border:1px solid var(--line3);border-bottom-color:var(--panel);margin-bottom:-1px}
+  section{display:none}section.on{display:block}
+  table td,table th{font-size:13px}
+  .origen{display:inline-block;padding:1px 7px;border-radius:8px;font-size:11px;text-transform:uppercase;letter-spacing:1px;background:var(--panel2);color:var(--muted)}
+  .origen.rol{background:var(--okbg);color:var(--ok)}.origen.extra{background:var(--avisobg);color:#e0a92a}.origen.neg{background:var(--errbg);color:var(--err2)}
+  .efe{font-size:18px}
+  input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
+  .nota{font-size:12px;color:var(--muted)}
+  .act{font-size:13px;padding:6px 0;border-bottom:1px solid var(--line3)}.act .f{color:var(--muted);font-size:11px}
+  dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;max-width:95vw;width:400px;padding:20px}
+  dialog::backdrop{background:#000a}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:300;background:#143a24;color:#c8f5d6;border:1px solid #2f7a4c;border-radius:10px;padding:10px 16px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:92vw}
+  .toast.on{opacity:1}.toast.err{background:#3a1717;color:#ffb4b4;border-color:#7a2f2f}
+</style>
+</head>
+<body>
+<main>
+  <div class="migas"><a href="./#usuarios">Administración</a> › <a href="./#usuarios">Usuarios</a> › <span id="migaNombre">…</span></div>
+  <div class="cab" id="cab"><p class="muted">Cargando…</p></div>
+  <div class="layout">
+    <div class="lateral">
+      <div class="caja"><h3>Cuenta</h3><div class="kv" id="kvCuenta"></div></div>
+      <div class="caja"><h3>Actividad</h3><div class="kv" id="kvAct"></div></div>
+      <div class="caja"><h3>Notas del administrador <button type="button" class="ghost sm" id="nGuardar" style="display:none">Guardar</button></h3><textarea id="notas" rows="4" placeholder="Solo lo ven quienes administran usuarios" style="font-size:13px"></textarea></div>
+    </div>
+    <div>
+      <div class="pestanas" id="pestanas"><button data-p="permisos" class="on">Permisos</button><button data-p="formularios">Formularios</button><button data-p="historial">Historial de cambios</button></div>
+      <section id="p-permisos" class="on">
+        <div class="caja">
+          <h3>Permisos efectivos <span class="nota" id="permNota" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h3>
+          <p class="nota" style="margin:0 0 10px">Efectivo = (heredado del rol ∪ extra) − negado. Los permisos extra solo los puede asignar quien tenga "Permisos granulares por usuario" y únicamente los que él mismo tiene. "Ver como" es exclusivo del rol Administrador y no se puede otorgar como extra.</p>
+          <div style="overflow:auto"><table><thead><tr><th>Permiso</th><th>Por rol</th><th>Extra</th><th>Negado</th><th>Efectivo</th></tr></thead><tbody id="tbPerm"></tbody></table></div>
+          <div class="fila" style="margin-top:12px;align-items:center"><button type="button" class="primary" id="pGuardar" style="flex:0 0 auto;display:none">Guardar permisos</button><span class="err" id="pErr" style="margin:0"></span></div>
+        </div>
+      </section>
+      <section id="p-formularios">
+        <div class="caja">
+          <h3>Acceso a formularios</h3>
+          <p class="nota" style="margin:0 0 10px">Los formularios del rol se heredan; aquí puedes añadir acceso a formularios adicionales para este usuario.</p>
+          <table><thead><tr><th>Formulario</th><th>Por rol</th><th>Extra</th><th>Efectivo</th></tr></thead><tbody id="tbForm"></tbody></table>
+          <div class="fila" style="margin-top:12px;align-items:center"><button type="button" class="primary" id="fGuardar" style="flex:0 0 auto;display:none">Guardar formularios</button><span class="err" id="fErr" style="margin:0"></span></div>
+        </div>
+      </section>
+      <section id="p-historial">
+        <div class="caja"><h3>Últimos cambios relacionados con este usuario</h3><div id="actividad"></div></div>
+      </section>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="toast" id="toast"></div>
+</main>
+<dialog id="dlgPass">
+  <h3 style="margin:0 0 6px;color:var(--gold)">Restablecer contraseña</h3>
+  <form id="fReset">
+    <label>Nueva contraseña</label><input id="rpPass" type="password" minlength="8" required autocomplete="new-password">
+    <small class="muted">Mínimo 8, con mayúscula, minúscula, número y símbolo.</small>
+    <label>Repetir</label><input id="rpPass2" type="password" minlength="8" required autocomplete="new-password">
+    <div class="fila" style="margin-top:14px"><button class="primary" id="rpOk">Restablecer</button><button type="button" class="ghost" data-close="dlgPass">Cancelar</button></div>
+    <div class="err" id="rpErr"></div>
+  </form>
+</dialog>
+<script type="module" src="../js/app-usuario.js?v=a826d4d2"></script>
+</body>
+</html>

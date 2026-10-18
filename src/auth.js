@@ -40,11 +40,19 @@ function vigilarInactividad(){
 export async function cargarYo(){
   const { data:{ session } } = await sb.auth.getSession();
   if(!session) return null;
-  const { data: p } = await sb.from('perfiles').select('id,usuario,nombre,rango,activo,rol_id').eq('id', session.user.id).maybeSingle();
+  const { data: p } = await sb.from('perfiles').select('id,usuario,nombre,rango,activo,rol_id,permisos_extra,permisos_negados,formularios_extra,avatar_path').eq('id', session.user.id).maybeSingle();
   if(!p) return null;
   let rol = null;
   if(p.rol_id){ const { data: r } = await sb.from('roles').select('id,nombre,permisos,formularios,rango_pm,protegido').eq('id', p.rol_id).maybeSingle(); rol = r; }
-  return { ...p, rol: rol || { id:null, nombre:'Sin rol', permisos:{}, formularios:[], rango_pm:null } };
+  return armarYo(p, rol, await permisosEfectivos(p.id));
+}
+// Permisos efectivos = (rol ∪ extra del usuario) − negados; los calcula el servidor (permisos_efectivos)
+async function permisosEfectivos(id){ try{ const { data } = await sb.rpc('permisos_efectivos', { p_usuario: id }); return data || null; }catch(e){ return null; } }
+function armarYo(p, rol, efectivos){
+  rol = rol || { id:null, nombre:'Sin rol', permisos:{}, formularios:[], rango_pm:null };
+  const permisos = efectivos || { ...(rol.permisos||{}), ...(p.permisos_extra||{}) };
+  const formularios = [...new Set([...(rol.formularios||[]), ...(p.formularios_extra||[])])];
+  return { ...p, rol: { ...rol, permisos_rol: rol.permisos||{}, formularios_rol: rol.formularios||[], permisos, formularios } };
 }
 export const tiene = (yo, permiso) => !!(yo && yo.rol && yo.rol.permisos && yo.rol.permisos[permiso]);
 export const puedeFormulario = (yo, id) => !!(yo && yo.rol && (yo.rol.formularios.includes('*') || yo.rol.formularios.includes(id)));
@@ -103,7 +111,7 @@ async function aplicarVerComo(yoReal){
   if(!tiene(yoReal, 'ver_como') || id === yoReal.id){ try{ sessionStorage.removeItem(K_VC); }catch(e){} return yoReal; }
   const { data, error } = await sb.rpc('ver_como', { p_usuario: id });
   if(error || !data || !data.perfil){ try{ sessionStorage.removeItem(K_VC); }catch(e){} return yoReal; }
-  const yo = { ...data.perfil, rol: data.rol || { id:null, nombre:'Sin rol', permisos:{}, formularios:[], rango_pm:null }, _verComo:true, _real:yoReal };
+  const yo = { ...armarYo(data.perfil, data.rol, await permisosEfectivos(data.perfil.id)), _verComo:true, _real:yoReal };
   activarSoloLectura();
   const pintar = () => {
     if(!document.body) return;

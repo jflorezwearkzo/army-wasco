@@ -5,9 +5,9 @@ import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord,
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','ver_como'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','permisos_granulares','ver_como'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', ver_como:'Ver la página como otro usuario (solo lectura)' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', permisos_granulares:'Permisos granulares por usuario (ficha de usuario)', ver_como:'Ver la página como otro usuario (solo lectura)' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
   ['roles',       'Roles',       ['crear_roles']],
@@ -138,7 +138,7 @@ function pintarUsuarios(){
     return `<tr class="urow ${SEL.has(u.id)?'sel':''}" data-id="${u.id}">
       <td class="chk"><input type="checkbox" data-sel="${u.id}" ${SEL.has(u.id)?'checked':''} ${puedoTocar(u)?'':'disabled title="'+motivoNoTocar(u)+'"'}></td>
       <td class="u"><b>${esc(u.usuario)}</b>${u.id===yo.id?' <span class="muted" style="font-size:11px">(tú)</span>':''}</td>
-      <td class="nom">${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}</td>
+      <td class="nom">${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}${(u.permisos_extra && Object.keys(u.permisos_extra).length) || (u.permisos_negados && Object.keys(u.permisos_negados).length) || (u.formularios_extra && u.formularios_extra.length) ? ' <span class="tag" style="background:var(--avisobg);color:#e0a92a" title="Tiene permisos granulares propios">+granular</span>' : ''}</td>
       <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
       <td><span class="tag ${(u.activo&&u.visible!==false)?'on':'off'}" title="${u.activo?'':'Los usuarios inactivos nunca aparecen en los formularios'}">${u.visible===false?'Oculto':'Visible'}</span></td>
       <td class="ult muted">${a ? `${fFecha(a.ultimo)} <span style="font-size:11px">(${a.reportes})</span>` : '—'}</td>
@@ -148,7 +148,7 @@ function pintarUsuarios(){
   todos.checked = sel.length>0 && sel.every(u=>SEL.has(u.id)); todos.indeterminate = !todos.checked && sel.some(u=>SEL.has(u.id));
   document.querySelectorAll('[data-sel]').forEach(c => c.onchange = () => { c.checked ? SEL.add(c.dataset.sel) : SEL.delete(c.dataset.sel); pintarUsuarios(); });
   document.querySelectorAll('[data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); abrirMenuUsuario(b, USUARIOS.find(u=>u.id===b.dataset.menu)); });
-  document.querySelectorAll('tr.urow').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; const u = USUARIOS.find(x=>x.id===tr.dataset.id); if(u && puedoTocar(u) && (tiene(yo,'usuarios')||tiene(yo,'asignar_roles'))) editarUsuario(u); });
+  document.querySelectorAll('tr.urow').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; location.href = 'usuario.html?id=' + encodeURIComponent(tr.dataset.id); });
   const n = [...SEL].filter(id => vis.has(id)).length; $('#uBulkN').textContent = SEL.size; $('#uBulk').classList.toggle('on', SEL.size>0);
   if(RESALTAR){ const id = RESALTAR; if(!vis.has(id)){ $('#uBuscar').value=''; $('#uFiltro').value=''; $('#uFiltroRol').value=''; pintarUsuarios(); return; } resaltar($('#tbUsuarios'), id); setTimeout(()=>{ if(RESALTAR===id) RESALTAR=null; }, 2600); }
 }
@@ -160,6 +160,7 @@ $('#uTodos').onchange = () => { const lista = usuariosFiltrados().filter(puedoTo
 // Menú ⋯ por usuario
 function abrirMenuUsuario(btn, u){
   const r = roles.find(x => x.id===u.rol_id); const ok = puedoTocar(u); const ops = [];
+  ops.push(['ficha','🪪 Abrir ficha del usuario']);
   if(ok && (tiene(yo,'usuarios')||tiene(yo,'asignar_roles'))) ops.push(['editar','✏️ Editar']);
   if(tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ops.push(['vercomo','👁 Ver la página como este usuario']);
   ops.push(['expediente','📁 Expediente (sanciones, ascensos, reportes)']);
@@ -187,6 +188,7 @@ window.addEventListener('resize', cerrarMenu);
 async function accionUsuario(op, u){
   try{
     if(op==='editar') editarUsuario(u);
+    else if(op==='ficha') location.href = 'usuario.html?id=' + encodeURIComponent(u.id);
     else if(op==='expediente') location.href = '../expediente.html?id=' + encodeURIComponent(u.id);
     else if(op==='vercomo'){ if(!confirm(`Vas a ver la página como "${nombreCompleto(u)}" (solo lectura). Verás una franja amarilla arriba para salir del modo. Esta acción queda en la auditoría.\n\n¿Continuar?`)) return; await entrarVerComo(u.id); }
     else if(op==='reportes'){ abrir('historial'); $('#hUsuario').value = u.usuario; $('#hForm').value=''; $('#hDesde').value=''; $('#hHasta').value=''; buscarHist(); window.scrollTo({top:0,behavior:'smooth'}); }
@@ -227,7 +229,7 @@ function editarUsuario(u){
   ctx.innerHTML = `<span>Rol: <b style="color:var(--text)">${esc(r?r.nombre:'Sin rol')}</b></span><span>Último reporte: <b style="color:var(--text)">${a ? `${fFecha(a.ultimo)} (${a.reportes})` : '—'}</b></span>`
     + ((tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ? `<a data-ctx="vercomo">👁 Ver como</a>` : '')
     + ((puedoTocar(u) && tiene(yo,'reset_password') && u.id!==yo.id) ? `<a data-ctx="password">🔑 Restablecer contraseña</a>` : '')
-    + (tiene(yo,'historial') ? `<a data-ctx="reportes">📋 Sus reportes</a>` : '') + `<a data-ctx="expediente">📁 Expediente</a>`;
+    + (tiene(yo,'historial') ? `<a data-ctx="reportes">📋 Sus reportes</a>` : '') + `<a data-ctx="expediente">📁 Expediente</a><a data-ctx="ficha">🪪 Ficha</a>`;
   ctx.querySelectorAll('[data-ctx]').forEach(x => x.onclick = () => { if(x.dataset.ctx!=='password') $('#dlgUsuario').close(); accionUsuario(x.dataset.ctx, u); });
   $('#uId').value = u.id; $('#uUsuario').value = u.usuario; $('#uUsuario').disabled = true; $('#uNombre').value = u.nombre; $('#uRango').value = u.rango || '';
   $('#uPass').value=''; $('#uPass').disabled = true; mostrarPass(false);
@@ -515,7 +517,7 @@ async function buscarHist(){
 }
 
 // ====================== AUDITORÍA ======================
-const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'Empezó a ver como', ver_como_fin:'Dejó de ver como', revision_aprobado:'Aprobó', revision_rechazado:'Rechazó', revision_pendiente:'Devolvió a pendiente', sancion_advertencia:'Advertencia a', sancion_sancion:'Sanción a', sancion_suspension:'Suspensión a', sancion_expulsion:'Expulsión de', sancion_anulada:'Anuló sanción de', discord_aviso:'Aviso Discord', avatar:'Cambió la foto de', respaldo:'Copia de seguridad', mfa_reset:'Quitó la verificación en dos pasos de', programada_config:'Configuró tarea', programada_recordatorio_turnos:'Recordatorio de turnos', programada_cierre_diario:'Cierre diario', programada_resumen_semanal:'Resumen semanal', programada_ranking_mensual:'Ranking mensual' };
+const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'Empezó a ver como', ver_como_fin:'Dejó de ver como', revision_aprobado:'Aprobó', revision_rechazado:'Rechazó', revision_pendiente:'Devolvió a pendiente', sancion_advertencia:'Advertencia a', sancion_sancion:'Sanción a', sancion_suspension:'Suspensión a', sancion_expulsion:'Expulsión de', sancion_anulada:'Anuló sanción de', discord_aviso:'Aviso Discord', avatar:'Cambió la foto de', respaldo:'Copia de seguridad', mfa_reset:'Quitó la verificación en dos pasos de', permisos_granulares:'Cambió permisos granulares de', programada_config:'Configuró tarea', programada_recordatorio_turnos:'Recordatorio de turnos', programada_cierre_diario:'Cierre diario', programada_resumen_semanal:'Resumen semanal', programada_ranking_mensual:'Ranking mensual' };
 const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta', sanciones:'sanción', turnos:'turno', anuncios:'anuncio', requisitos_ascenso:'requisito de ascenso', discord_canales:'canal de Discord', formularios_discord:'canal del formulario', configuracion:'configuración', insignias:'insignia', sistema:'sistema' };
 async function cargarAud(){ buscarAud(); }
 $('#aBuscar').onclick = buscarAud; $('#aTabla').onchange = buscarAud;

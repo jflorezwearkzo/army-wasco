@@ -184,6 +184,14 @@ Las fotos se reducen en el navegador a 1600 px por lado antes de dibujarlas (`ca
 
 Admin → **Automatización** → Canales de Discord: webhooks por propósito y, debajo, los **canales por formulario** (`formularios_discord`, lo mismo que el campo del editor de Formularios, centralizado aquí con botón Probar); también (`discord_canales`: avisos, anuncios, ranking, resumen, recordatorios) con botón Probar. La Edge Function `notificar-general` (`{canal, texto, embed, prueba}`) publica en ellos; exige sesión con alguno de los permisos que generan avisos y audita como `discord_aviso`. En el cliente: `avisoDiscord(canal, {texto, embed})`.
 
+## Ficha de usuario y permisos granulares
+
+Clic en una fila de Admin → Usuarios (o ⋯ → "Abrir ficha") abre `admin/usuario.html?id=…`, una subpágina tipo directorio: cuenta (usuario, correo de acceso, rol, rango, último acceso, 2FA), actividad (reportes, último, advertencias, turnos próximos), acciones (Editar, Expediente, Ver como, Contraseña, Quitar 2FA) y tres pestañas:
+- **Permisos**: cada permiso con origen *por rol*, casillas **Extra** (se otorga aunque el rol no lo tenga) y **Negado** (se quita aunque el rol lo tenga) y el **efectivo** resultante. Editar requiere el permiso **Permisos granulares por usuario** (`permisos_granulares`, por defecto solo Administrador); solo se pueden otorgar como extra permisos que uno mismo tiene; "Ver como" nunca; nadie se edita a sí mismo; a un Administrador solo otro Administrador.
+- **Formularios**: acceso extra a formularios además de los del rol.
+- **Historial de cambios**: auditoría relacionada con el usuario. Más un cuadro de **notas del administrador**.
+Servidor: `perfiles.permisos_extra / permisos_negados / formularios_extra / notas_admin`, `permisos_efectivos()` (usada por `tengo_permiso`, `puedo_usar_formulario` y el cliente en `cargarYo`), RPCs `fijar_permisos_usuario` (audita) y `ficha_usuario`. En la lista de usuarios, quien tiene ajustes propios muestra la etiqueta *+granular*.
+
 ## "Ver como" (solo Administrador)
 
 En Admin → Usuarios, el rol Administrador tiene el botón **👁 Ver como** en cada usuario. Al pulsarlo, toda la página (inicio, formularios, panel, Mi cuenta…) se muestra exactamente como la vería esa persona, con una **franja amarilla fija** arriba ("Estás viendo como … · solo lectura · Salir de Ver como"). Sirve para comprobar quejas tipo "a mí no me aparece el formulario X".

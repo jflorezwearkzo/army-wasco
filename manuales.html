@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=842e9885"></script>
+<script src="js/tema.js?v=08a05794"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -106,9 +106,10 @@
   <h2 class="sec">Usuarios<small>Crear, editar, activar, roles y contraseñas</small></h2>
   <div class="bloque"><h3>Crear un usuario</h3>
     <ol><li><span class="ruta">Administración → Usuarios → ＋ Nuevo usuario</span>.</li><li>Usuario para ingresar (minúsculas, sin espacios), nombre completo, rango, contraseña inicial y rol.</li><li>Entrégale el usuario y la contraseña por privado; él la cambia en Mi cuenta.</li></ol></div>
-  <div class="bloque"><h3>Buscar, filtrar y editar</h3><p>Buscador por usuario, nombre, rango o rol; filtros <i>Activos / Inactivos / Ocultos / Sin rol</i> y por rol. Clic en una fila abre la ficha; el botón <b>⋯</b> tiene las acciones: Editar, Ver la página como este usuario, Expediente, Ver sus reportes, Restablecer contraseña, Mostrar/Ocultar en formularios, Activar/Desactivar.</p>
+  <div class="bloque"><h3>Buscar, filtrar y editar</h3><p>Buscador por usuario, nombre, rango o rol; filtros <i>Activos / Inactivos / Ocultos / Sin rol</i> y por rol. Las columnas se ordenan con clic en la cabecera. Clic en una fila abre la <b>ficha del usuario</b> (subpágina con cuenta, último acceso, 2FA, permisos efectivos, formularios, notas e historial de cambios); el botón <b>⋯</b> tiene las acciones: Editar, Ver la página como este usuario, Expediente, Ver sus reportes, Restablecer contraseña, Mostrar/Ocultar en formularios, Activar/Desactivar.</p>
     <ul><li><b>Inactivo</b>: no puede entrar y no aparece en los formularios (los intentos de acceso quedan en Auditoría).</li><li><b>Oculto en formularios</b>: sigue entrando, pero no aparece en los desplegables de integrantes.</li><li><b>Último reporte</b>: fecha y cantidad de reportes aprobados.</li></ul></div>
   <div class="bloque"><h3>Acciones en bloque</h3><p>Marca las casillas (o la de la cabecera para todos los visibles) y abajo aparece la barra: Activar, Desactivar, Mostrar, Ocultar, Asignar rol. Pide confirmación con la lista de nombres. Nunca toca roles fuera de tus permisos ni tu propia cuenta.</p></div>
+  <div class="bloque" data-solo="permisos_granulares"><h3>Permisos granulares por usuario</h3><p>En la ficha del usuario, pestaña <i>Permisos</i>: cada permiso muestra si viene <b>por rol</b>, si está marcado como <b>extra</b> (se otorga aunque el rol no lo tenga) o <b>negado</b> (se quita aunque el rol lo tenga), y el resultado <b>efectivo</b>. Solo puedes otorgar como extra permisos que tú mismo tienes; "Ver como" nunca. En <i>Formularios</i> puedes dar acceso a formularios adicionales. Requiere el permiso "Permisos granulares por usuario" (por defecto solo Administrador) y queda en Auditoría.</p></div>
   <div class="bloque"><h3>Ver como (solo Administrador)</h3><p>Muestra toda la página tal como la ve ese usuario, en solo lectura, con una franja amarilla arriba para salir. Sirve para comprobar quejas tipo "no me aparece el formulario". Queda en Auditoría.</p></div>
   <div class="bloque"><h3>Restablecer contraseña</h3><p>⋯ → Restablecer contraseña: asigna una nueva y entrégasela por privado. Solo sobre usuarios con roles dentro de tus permisos.</p></div>
   <div class="bloque" data-solo="superadmin"><h3>Quitar verificación en dos pasos (solo Administrador)</h3><p>Si alguien perdió el celular con su app de autenticación: ⋯ → <b>Quitar verificación en dos pasos</b> (o el botón 🔓 en su expediente). Confirma y el usuario vuelve a entrar solo con su contraseña; después puede configurarla de nuevo en Mi cuenta. Queda en Auditoría.</p></div>
@@ -194,6 +195,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=f234d2c7"></script>
+<script type="module" src="js/app-manuales.js?v=b1324812"></script>
 </body>
 </html>
