@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
+<title>Expediente · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="js/tema.js?v=6d703728"></script>
+<link rel="stylesheet" href="estilos.css">
+<style>
+  main{max-width:1100px;margin:24px auto;padding:0 20px}
+  .cab{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .cab .av{width:72px;height:72px;border-radius:50%;background:var(--panel2);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:var(--gold)}
+  .cab h1{margin:0;font-size:26px}
+  .cab .sub{color:var(--muted);font-size:14px}
+  .cab .acc{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:16px}
+  .kpi{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:10px 12px}
+  .kpi b{display:block;font-size:24px;color:var(--gold)}
+  .kpi span{font-size:12px;color:var(--muted)}
+  .kpi.alerta b{color:var(--err)}
+  .dos{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  @media(max-width:860px){.dos{grid-template-columns:1fr}}
+  .caja h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:14px;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .lista{display:flex;flex-direction:column;gap:8px}
+  .item{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:8px 12px;font-size:14px}
+  .item .f{color:var(--muted);font-size:12px}
+  .item.inactiva{opacity:.55;text-decoration:line-through}
+  .item .tipo{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-right:6px}
+  .tipo.advertencia{background:var(--avisobg);color:#e0a92a}.tipo.sancion{background:var(--errbg);color:var(--err2)}.tipo.suspension{background:#2a1a3a;color:#d8a8ff}.tipo.expulsion{background:#4a1010;color:#ff8a8a}
+  .alerta3{background:var(--errbg);border:1px solid var(--err2);color:var(--err2);border-radius:8px;padding:10px 12px;margin-top:12px;font-weight:700}
+  .linea{position:relative;padding-left:18px}
+  .linea::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--line2)}
+  .linea .item{position:relative}
+  .linea .item::before{content:"";position:absolute;left:-17px;top:12px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+  table td{font-size:13px}
+  dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;max-width:95vw;width:420px;padding:20px}
+  dialog::backdrop{background:#000a}
+  dialog img{max-width:90vw;max-height:80vh;display:block}
+  #dlgImg{width:auto;max-width:95vw}
+</style>
+</head>
+<body>
+<main>
+  <div class="caja" id="cab"><p class="muted">Cargando expediente…</p></div>
+  <div class="kpis" id="kpis"></div>
+  <div id="alerta"></div>
+  <div class="dos">
+    <div class="caja"><h3>Sanciones y advertencias <button type="button" class="ghost sm" id="btnSancion" style="display:none">+ Registrar</button></h3><div class="lista" id="sanciones"></div></div>
+    <div class="caja"><h3>Ascensos y rangos <button type="button" class="ghost sm" id="btnRango" style="display:none">⬆ Cambiar rango</button></h3><div class="linea lista" id="ascensos"></div></div>
+  </div>
+  <div class="caja" style="margin-top:16px"><h3>Reportes recientes <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px" id="repN"></span></h3>
+    <div style="overflow:auto"><table><thead><tr><th>Folio</th><th>Fecha</th><th>Formulario</th><th>Resumen</th><th>Estado</th><th></th></tr></thead><tbody id="tbRep"></tbody></table></div>
+  </div>
+  <div class="err" id="err"></div>
+</main>
+
+<dialog id="dlgSancion">
+  <h3 style="margin-top:0;color:var(--gold)">Registrar sanción</h3>
+  <form id="fSancion">
+    <label>Tipo</label><select id="sTipo"><option value="advertencia">Advertencia (3 = expulsión)</option><option value="sancion">Sanción</option><option value="suspension">Suspensión</option><option value="expulsion">Expulsión</option></select>
+    <label>Motivo *</label><input id="sMotivo" required maxlength="200" placeholder="Ej.: No respetó el protocolo de patrullaje">
+    <label>Detalle</label><textarea id="sDetalle" rows="3" maxlength="1000"></textarea>
+    <label>Fecha</label><input id="sFecha" type="date">
+    <div class="fila" style="margin-top:14px"><button class="primary" id="sGuardar">Registrar</button><button type="button" class="ghost" data-close="dlgSancion">Cancelar</button></div>
+    <div class="err" id="sErr"></div>
+  </form>
+</dialog>
+<dialog id="dlgRango">
+  <h3 style="margin-top:0;color:var(--gold)">Cambiar rango</h3>
+  <form id="fRango">
+    <label>Nuevo rango</label><select id="rRango"></select>
+    <label>Motivo</label><input id="rMotivo" maxlength="200" placeholder="Ej.: Ascenso por desempeño en patrullajes">
+    <div class="fila" style="margin-top:14px"><button class="primary" id="rGuardar">Guardar</button><button type="button" class="ghost" data-close="dlgRango">Cancelar</button></div>
+    <div class="err" id="rErr"></div>
+  </form>
+</dialog>
+<dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
+<script type="module" src="js/app-expediente.js?v=b76ce598"></script>
+</body>
+</html>

@@ -637,3 +637,50 @@ create policy reportes_select_revisor on public.reportes for select using (publi
 create policy reportes_storage_select_revisor on storage.objects for select using (bucket_id = 'reportes' and public.tengo_permiso('aprobar_reportes'));
 -- reportes_vista añade: estado, revisado_en, comentario_revision, revisor (usuario), discord_enviado_en, requiere_aprobacion
 -- actividad_usuarios() cuenta solo reportes aprobados. El rol Administrador tiene aprobar_reportes.
+
+-- ---------- Sanciones y advertencias ----------
+create table if not exists public.sanciones (
+  id bigint generated always as identity primary key,
+  usuario_id uuid not null references public.perfiles(id) on delete cascade,
+  tipo text not null check (tipo in ('advertencia','sancion','suspension','expulsion')),
+  motivo text not null, detalle text, fecha date not null default current_date, impuesta_por uuid,
+  activa boolean not null default true, anulada_por uuid, anulada_en timestamptz, motivo_anulacion text,
+  creado_en timestamptz not null default now()
+);
+create index if not exists sanciones_usuario_idx on public.sanciones (usuario_id, activa);
+alter table public.sanciones enable row level security;
+create policy sanciones_select on public.sanciones for select using (coalesce(public.mi_perfil_activo(),false) and (usuario_id = auth.uid() or public.tengo_permiso('sanciones') or public.tengo_permiso('historial') or public.tengo_permiso('usuarios')));
+-- Escritura solo por RPC (permiso "sanciones"; auditan sancion_<tipo> y sancion_anulada):
+--   registrar_sancion(p_usuario, p_tipo, p_motivo, p_detalle, p_fecha) -> {id, advertencias_activas, usuario}
+--   anular_sancion(p_id, p_motivo) -> {id, advertencias_activas}
+-- (definiciones completas en producción; ver app-admin.js / app-expediente.js para su uso)
+
+-- ---------- Ascensos ----------
+create table if not exists public.ascensos (
+  id bigint generated always as identity primary key,
+  usuario_id uuid not null references public.perfiles(id) on delete cascade,
+  rango_anterior text, rango_nuevo text, motivo text, otorgado_por uuid,
+  fecha date not null default current_date, creado_en timestamptz not null default now()
+);
+create index if not exists ascensos_usuario_idx on public.ascensos (usuario_id, creado_en desc);
+alter table public.ascensos enable row level security;
+create policy ascensos_select on public.ascensos for select using (coalesce(public.mi_perfil_activo(),false) and (usuario_id = auth.uid() or public.tengo_permiso('usuarios') or public.tengo_permiso('historial') or public.tengo_permiso('sanciones')));
+-- Todo cambio de perfiles.rango queda registrado (trigger perfiles_registrar_ascenso; motivo vía set_config('pm.motivo_ascenso'))
+create or replace function public.perfiles_registrar_ascenso() returns trigger language plpgsql security definer set search_path=public as $$
+begin
+  if new.rango is distinct from old.rango then
+    insert into public.ascensos (usuario_id, rango_anterior, rango_nuevo, motivo, otorgado_por)
+    values (new.id, old.rango, new.rango, nullif(current_setting('pm.motivo_ascenso', true),''), auth.uid());
+  end if;
+  return new;
+end $$;
+create or replace trigger perfiles_registrar_ascenso after update of rango on public.perfiles for each row execute function public.perfiles_registrar_ascenso();
+-- RPC cambiar_rango(p_usuario, p_rango, p_motivo) (permiso usuarios) -> {usuario, rango_anterior, rango_nuevo}
+create table if not exists public.requisitos_ascenso (rango text primary key, dias_minimos int not null default 0, reportes_minimos int not null default 0, nota text);
+alter table public.requisitos_ascenso enable row level security;
+create policy requisitos_select on public.requisitos_ascenso for select using (coalesce(public.mi_perfil_activo(),false));
+create policy requisitos_write on public.requisitos_ascenso for all using (public.tengo_permiso('usuarios')) with check (public.tengo_permiso('usuarios'));
+-- RPC datos_ascensos() (permiso usuarios): usuario_id, usuario, nombre, rango, desde, reportes (aprobados desde el último ascenso), advertencias activas
+-- RPC expediente(p_usuario) (propio, o permisos historial/usuarios/sanciones): perfil, rol, stats, por_formulario, participaciones,
+--   advertencias_activas, sanciones, ascensos, en_rango_desde, reportes_recientes
+-- El rol Administrador tiene "sanciones".

@@ -158,6 +158,7 @@ export function barraUsuario(yo){
       ${esAdminDeAlgo(yo) ? `<a class="oro" href="${RAIZ}admin/">Administración</a>` : ''}
       <a href="${RAIZ}reglamento.html">Reglamento</a>
       <a href="${RAIZ}cuenta.html">Mi cuenta</a>
+      <a href="${RAIZ}expediente.html">Mi expediente</a>
       <a href="#" id="btnTema" title="Cambiar entre tema oscuro y claro">🌗 Tema</a>
       <a href="${RAIZ}privacidad.html" style="font-size:12px">Privacidad</a>
       <a href="#" id="btnSalir">Salir</a>

@@ -1,23 +1,26 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
-import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','ver_como'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','ver_como'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', ver_como:'Ver la página como otro usuario (solo lectura)' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', ver_como:'Ver la página como otro usuario (solo lectura)' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
   ['roles',       'Roles',       ['crear_roles']],
   ['formularios', 'Formularios', ['crear_reportes','gestion_reportes']],
   ['revision',    'Revisión',    ['aprobar_reportes']],
+  ['disciplina',  'Disciplina',  ['sanciones']],
+  ['ascensos',    'Ascensos',    ['usuarios']],
   ['historial',   'Historial',   ['historial','eliminar_historial']],
   ['resumen',     'Resumen',     ['historial']],
   ['automatizacion','Automatización',['gestion_reportes']],
   ['auditoria',   'Auditoría',   ['auditoria']],
 ];
 let roles = [], formularios = [], rangosPM = [];
+let USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={};
 
 // ---------- Pestañas según permisos ----------
 const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id);
@@ -31,7 +34,7 @@ function abrir(t, sub=''){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
-  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision})[t]();
+  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos})[t]();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
 // Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
@@ -82,7 +85,6 @@ const formsTexto = r => r.formularios.includes('*') ? 'Todos' : (r.formularios.m
 const msg = (id, t, ok=false) => { $('#'+id+'Err').textContent = ok?'':t; $('#'+id+'Ok').textContent = ok?t:''; };
 
 // ====================== USUARIOS ======================
-let USUARIOS=[], ACTIV={}, SEL=new Set();
 const fFecha = d => d ? d.split('-').reverse().join('-') : '';
 const puedoTocar = u => { const r = roles.find(x => x.id===u.rol_id); return u.id===yo.id || !r || rolAsignable(r); };
 const motivoNoTocar = u => { const r = roles.find(x => x.id===u.rol_id); return r && r.protegido ? 'Solo Administrador' : 'Fuera de tus permisos'; };
@@ -147,6 +149,7 @@ function abrirMenuUsuario(btn, u){
   const r = roles.find(x => x.id===u.rol_id); const ok = puedoTocar(u); const ops = [];
   if(ok && (tiene(yo,'usuarios')||tiene(yo,'asignar_roles'))) ops.push(['editar','✏️ Editar']);
   if(tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ops.push(['vercomo','👁 Ver la página como este usuario']);
+  ops.push(['expediente','📁 Expediente (sanciones, ascensos, reportes)']);
   if(tiene(yo,'historial')) ops.push(['reportes','📋 Ver sus reportes']);
   if(ok && tiene(yo,'reset_password') && u.id!==yo.id) ops.push(['password','🔑 Restablecer contraseña']);
   if(ok && tiene(yo,'usuarios')){ ops.push(['visible', u.visible===false ? '👁 Mostrar en formularios' : '🙈 Ocultar en formularios']); if(u.id!==yo.id) ops.push([u.activo?'desactivar':'activar', u.activo ? '⛔ Desactivar cuenta' : '✅ Activar cuenta']); }
@@ -170,6 +173,7 @@ window.addEventListener('resize', cerrarMenu);
 async function accionUsuario(op, u){
   try{
     if(op==='editar') editarUsuario(u);
+    else if(op==='expediente') location.href = '../expediente.html?id=' + encodeURIComponent(u.id);
     else if(op==='vercomo'){ if(!confirm(`Vas a ver la página como "${nombreCompleto(u)}" (solo lectura). Verás una franja amarilla arriba para salir del modo. Esta acción queda en la auditoría.\n\n¿Continuar?`)) return; await entrarVerComo(u.id); }
     else if(op==='reportes'){ abrir('historial'); $('#hUsuario').value = u.usuario; $('#hForm').value=''; $('#hDesde').value=''; $('#hHasta').value=''; buscarHist(); window.scrollTo({top:0,behavior:'smooth'}); }
     else if(op==='password') resetearPassword(u.id, u.usuario);
@@ -208,7 +212,7 @@ function editarUsuario(u){
   ctx.innerHTML = `<span>Rol: <b style="color:var(--text)">${esc(r?r.nombre:'Sin rol')}</b></span><span>Último reporte: <b style="color:var(--text)">${a ? `${fFecha(a.ultimo)} (${a.reportes})` : '—'}</b></span>`
     + ((tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ? `<a data-ctx="vercomo">👁 Ver como</a>` : '')
     + ((puedoTocar(u) && tiene(yo,'reset_password') && u.id!==yo.id) ? `<a data-ctx="password">🔑 Restablecer contraseña</a>` : '')
-    + (tiene(yo,'historial') ? `<a data-ctx="reportes">📋 Sus reportes</a>` : '');
+    + (tiene(yo,'historial') ? `<a data-ctx="reportes">📋 Sus reportes</a>` : '') + `<a data-ctx="expediente">📁 Expediente</a>`;
   ctx.querySelectorAll('[data-ctx]').forEach(x => x.onclick = () => { if(x.dataset.ctx!=='password') $('#dlgUsuario').close(); accionUsuario(x.dataset.ctx, u); });
   $('#uId').value = u.id; $('#uUsuario').value = u.usuario; $('#uUsuario').disabled = true; $('#uNombre').value = u.nombre; $('#uRango').value = u.rango || '';
   $('#uPass').value=''; $('#uPass').disabled = true; mostrarPass(false);
@@ -471,7 +475,7 @@ async function buscarHist(){
 }
 
 // ====================== AUDITORÍA ======================
-const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como' };
+const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como', revision_aprobado:'✅ Aprobó', revision_rechazado:'⛔ Rechazó', revision_pendiente:'↩ Devolvió a pendiente', sancion_advertencia:'⚠️ Advertencia a', sancion_sancion:'⛔ Sanción a', sancion_suspension:'⏸️ Suspensión a', sancion_expulsion:'🚫 Expulsión de', sancion_anulada:'↩ Anuló sanción de', discord_aviso:'📣 Aviso Discord' };
 const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta' };
 async function cargarAud(){ buscarAud(); }
 $('#aBuscar').onclick = buscarAud; $('#aTabla').onchange = buscarAud;
@@ -615,4 +619,65 @@ async function cargarRevision(){
     toast(`${r.folio||id}: ${est2}.${extra}`, false);
     cargarRevision(); contarPendientes();
   });
+}
+
+// ====================== DISCIPLINA (sanciones) ======================
+async function cargarDisciplina(){
+  if(!USUARIOS.length){ const { data } = await sb.from('perfiles').select('*').order('usuario'); USUARIOS = data || []; }
+  const { data, error } = await sb.from('sanciones').select('*').order('fecha', { ascending:false }).order('id', { ascending:false }).limit(1000);
+  if(error){ $('#dErr').textContent = error.message; return; } $('#dErr').textContent=''; SANC = data || [];
+  const nombre = id => { const u = USUARIOS.find(x => x.id===id); return u ? nombreCompleto(u) : '—'; };
+  const usuarioDe = id => { const u = USUARIOS.find(x => x.id===id); return u ? u.usuario : '—'; };
+  const adv = {}; SANC.filter(x => x.activa && x.tipo==='advertencia').forEach(x => adv[x.usuario_id] = (adv[x.usuario_id]||0)+1);
+  const tres = Object.entries(adv).filter(([,n]) => n >= 3);
+  $('#dAlerta').innerHTML = tres.length ? `<div style="background:var(--errbg);border:1px solid var(--err2);color:var(--err2);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px"><b>⚠️ Con 3 o más advertencias activas:</b> ${tres.map(([id,n]) => `<a href="../expediente.html?id=${esc(id)}" style="color:inherit">${esc(nombre(id))} (${n})</a>`).join(', ')}</div>` : '';
+  const pintar = () => {
+    const q = ($('#dBuscar').value||'').toLowerCase().trim(), f = $('#dFiltro').value, t = $('#dTipo').value;
+    const lista = SANC.filter(x => (f==='todas' || x.activa) && (!t || x.tipo===t) && (!q || [usuarioDe(x.usuario_id), nombre(x.usuario_id), x.motivo, x.detalle].filter(Boolean).join(' ').toLowerCase().includes(q)));
+    $('#tbSanc').innerHTML = lista.map(x => `<tr style="${x.activa?'':'opacity:.55'}"><td class="muted" style="white-space:nowrap">${fFecha(x.fecha)}</td>
+      <td><a href="../expediente.html?id=${esc(x.usuario_id)}" style="color:var(--text)"><b>${esc(usuarioDe(x.usuario_id))}</b></a><br><span class="muted" style="font-size:12px">${esc(nombre(x.usuario_id))}${adv[x.usuario_id] ? ` · ${adv[x.usuario_id]} adv.` : ''}</span></td>
+      <td><span class="tag ${x.tipo==='advertencia'?'pend':'off'}">${esc(x.tipo)}</span>${x.activa?'':'<br><span class="muted" style="font-size:11px">anulada</span>'}</td>
+      <td>${esc(x.motivo)}${x.detalle?`<br><span class="muted" style="font-size:12px">${esc(x.detalle)}</span>`:''}${!x.activa && x.motivo_anulacion ? `<br><span class="muted" style="font-size:12px">Anulación: ${esc(x.motivo_anulacion)}</span>`:''}</td>
+      <td class="muted">${esc(usuarioDe(x.impuesta_por))}</td>
+      <td>${x.activa ? `<button class="ghost sm" data-anular="${x.id}">Anular</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin sanciones</td></tr>';
+    document.querySelectorAll('[data-anular]').forEach(b => b.onclick = async () => { const m = prompt('Motivo de la anulación:'); if(!m || !m.trim()) return; const { error } = await sb.rpc('anular_sancion', { p_id: +b.dataset.anular, p_motivo: m }); if(error) alert(error.message); else toast('Sanción anulada.'); cargarDisciplina(); });
+  };
+  ['#dBuscar','#dFiltro','#dTipo'].forEach(x => $(x).oninput = pintar); pintar();
+  $('#sUsuario').innerHTML = '<option value="">— Elige —</option>' + USUARIOS.filter(u => u.activo && u.id!==yo.id).map(u => `<option value="${u.id}">${esc(nombreCompleto(u))} (${esc(u.usuario)})</option>`).join('');
+}
+$('#dNueva').onclick = () => { $('#fSancion').reset(); $('#sFecha').value = hoyISO(); $('#sErr').textContent=''; $('#dlgSancion').showModal(); };
+$('#fSancion').onsubmit = async e => {
+  e.preventDefault(); $('#sErr').textContent=''; const uid = $('#sUsuario').value; if(!uid){ $('#sErr').textContent='Elige el usuario.'; return; }
+  const tipo = $('#sTipo').value, motivo = $('#sMotivo').value.trim(); $('#sGuardar').disabled = true;
+  const { data, error } = await sb.rpc('registrar_sancion', { p_usuario: uid, p_tipo: tipo, p_motivo: motivo, p_detalle: $('#sDetalle').value.trim() || null, p_fecha: $('#sFecha').value || null });
+  $('#sGuardar').disabled = false; if(error){ $('#sErr').textContent = error.message; return; }
+  $('#dlgSancion').close(); const u = USUARIOS.find(x => x.id===uid); const n = +data.advertencias_activas || 0;
+  const titulo = { advertencia:'⚠️ Advertencia', sancion:'⛔ Sanción', suspension:'⏸️ Suspensión', expulsion:'🚫 Expulsión' }[tipo] || tipo;
+  avisoDiscord('avisos', { embed: { title: `${titulo} · ${nombreCompleto(u)}`, description: motivo, color: tipo==='advertencia' ? 0xe0a92a : 0xe03a3a, fields: [{ name:'Impuesta por', value: nombreCompleto(yo), inline:true }, ...(tipo==='advertencia' ? [{ name:'Advertencias activas', value:`${n} de 3`, inline:true }] : [])], footer: { text: (tipo==='advertencia' && n>=3) ? 'Ha alcanzado 3 advertencias: corresponde la expulsión según el reglamento.' : 'Policía Militar · Army de Wasco' } } });
+  toast(`${titulo} registrada para ${u ? u.usuario : ''}.${(tipo==='advertencia' && n>=3) ? ' ⚠️ Ya tiene 3 advertencias.' : ''}`); cargarDisciplina();
+};
+
+// ====================== ASCENSOS ======================
+async function cargarAscensos(){
+  const [{ data: req }, { data, error }] = await Promise.all([sb.from('requisitos_ascenso').select('*'), sb.rpc('datos_ascensos')]);
+  if(error){ $('#aErr').textContent = error.message; return; } $('#aErr').textContent='';
+  REQ = {}; (req||[]).forEach(r => REQ[r.rango] = r);
+  const filas = (data||[]).map(u => { const i = RANGOS.indexOf(u.rango); const sig = i < 0 ? RANGOS[0] : RANGOS[i+1] || null; const r = sig ? (REQ[sig] || { dias_minimos:0, reportes_minimos:0 }) : null;
+    const d = u.desde ? Math.floor((Date.now() - new Date(u.desde+'T00:00:00'))/864e5) : 0;
+    const cumple = !!sig && d >= (r.dias_minimos||0) && +u.reportes >= (r.reportes_minimos||0) && +u.advertencias === 0;
+    return { ...u, sig, r, d, cumple }; });
+  const pintar = () => {
+    const q = ($('#aBuscar').value||'').toLowerCase().trim(), f = $('#aFiltro').value;
+    const lista = filas.filter(x => (f==='todos' || x.cumple) && (!q || [x.usuario, x.nombre, x.rango].filter(Boolean).join(' ').toLowerCase().includes(q))).sort((a,b) => (b.cumple-a.cumple) || (b.d-a.d));
+    $('#tbAsc').innerHTML = lista.map(x => `<tr><td><a href="../expediente.html?id=${esc(x.usuario_id)}" style="color:var(--text)"><b>${esc(x.usuario)}</b></a><br><span class="muted" style="font-size:12px">${esc(x.nombre||'')}</span></td>
+      <td>${esc(x.rango||'Sin rango')}</td><td>${x.sig ? esc(x.sig) : '<span class="muted">Rango máximo</span>'}</td>
+      <td>${x.d}${x.r ? ` <span class="muted">/ ${x.r.dias_minimos||0}</span>` : ''}</td><td>${x.reportes}${x.r ? ` <span class="muted">/ ${x.r.reportes_minimos||0}</span>` : ''}</td>
+      <td>${+x.advertencias ? `<span class="tag off">${x.advertencias}</span>` : '<span class="muted">0</span>'}</td>
+      <td>${x.cumple ? '<span class="tag on">Cumple</span>' : x.sig ? '<span class="tag">Aún no</span>' : '—'}</td>
+      <td><a class="ghost sm" href="../expediente.html?id=${esc(x.usuario_id)}" style="text-decoration:none;display:inline-block">Expediente</a></td></tr>`).join('') || '<tr><td colspan=8 class="muted">Nadie cumple los requisitos por ahora</td></tr>';
+  };
+  ['#aBuscar','#aFiltro'].forEach(x => $(x).oninput = pintar); pintar();
+  $('#tbReq').innerHTML = RANGOS.map(r => { const q = REQ[r] || {}; return `<tr data-r="${esc(r)}"><td><b>${esc(r)}</b></td><td><input type="number" min="0" data-q="dias" value="${q.dias_minimos||0}" style="width:90px"></td><td><input type="number" min="0" data-q="rep" value="${q.reportes_minimos||0}" style="width:90px"></td><td><input data-q="nota" value="${esc(q.nota||'')}" placeholder="opcional"></td><td><button class="ghost sm" data-qg="${esc(r)}">Guardar</button></td></tr>`; }).join('');
+  document.querySelectorAll('[data-qg]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); const fila = { rango: b.dataset.qg, dias_minimos: +tr.querySelector('[data-q=dias]').value||0, reportes_minimos: +tr.querySelector('[data-q=rep]').value||0, nota: tr.querySelector('[data-q=nota]').value.trim()||null };
+    const { error } = await sb.from('requisitos_ascenso').upsert(fila); if(error){ $('#qErr').textContent = error.message; return; } $('#qErr').textContent=''; toast(`Requisitos de ${fila.rango} guardados.`); cargarAscensos(); });
 }

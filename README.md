@@ -121,6 +121,18 @@ En Admin → Resumen, el selector **PDF / Imagen PNG** y el botón **⬇ Exporta
 - En móvil la tabla se convierte en tarjetas. Roles y Formularios usan el mismo menú ⋯ en lugar de la fila de botones.
 - **Crear y editar en sub-ventana**: las tres pestañas (Usuarios, Roles, Formularios) van a ancho completo con un botón **＋ Nuevo …** en la cabecera; el formulario de crear/editar se abre en un diálogo modal dentro del panel (Esc o ✕ cierra; en móvil ocupa la pantalla con "← Volver"). La URL refleja el estado (`#usuarios/nuevo`, `#usuarios/editar/<id>`, `#roles/…`, `#formularios/…`) y se puede recargar o compartir. Al guardar, el diálogo se cierra, aparece un aviso flotante y la fila guardada queda resaltada unos segundos. El diálogo de usuario muestra su rol, último reporte y accesos rápidos a Ver como, Restablecer contraseña y Sus reportes.
 
+## Expediente por integrante
+
+`expediente.html?id=<uuid>` (sin id: el propio; enlace "Mi expediente" en la barra y en Mi cuenta; en Admin desde el menú ⋯ de cada usuario). Muestra perfil y rol, rango y desde cuándo, KPIs (reportes aprobados, últimos 30 días, bajas, reclutamientos, patrullajes, AKs, participaciones como integrante, advertencias activas, pendientes/rechazados), sanciones, ascensos y reportes recientes. Los demás expedientes requieren `historial`, `usuarios` o `sanciones` (RPC `expediente`).
+
+## Sanciones y advertencias
+
+Permiso **Sanciones y advertencias** (`sanciones`). Se registran desde el expediente o desde Admin → **Disciplina** (tipos: advertencia, sanción, suspensión, expulsión; motivo obligatorio; fecha). Nunca se borran: se **anulan** con motivo. Con **3 advertencias activas** el expediente y la pestaña muestran la alerta de expulsión. Cada registro publica un embed en el canal de Discord *avisos* (si está configurado) y queda en Auditoría (`sancion_<tipo>`, `sancion_anulada`). Tablas `sanciones`; RPCs `registrar_sancion`, `anular_sancion`.
+
+## Ascensos
+
+Todo cambio de rango queda en `ascensos` (trigger sobre `perfiles.rango`), con motivo y quién lo otorgó cuando se hace desde el expediente ("⬆ Cambiar rango", permiso `usuarios`; publica en Discord *avisos*). Admin → **Ascensos**: lista de elegibles al siguiente rango según **requisitos por rango** editables (días mínimos en el rango anterior y reportes aprobados desde el último ascenso; quien tiene advertencias activas no cumple). RPC `datos_ascensos`, tabla `requisitos_ascenso`.
+
 ## Revisión y aprobación de reportes
 
 - Se activa **por formulario**: Admin → Formularios → Editar → "Requiere aprobación de un revisor" (badge *Con revisión* en la lista). Mientras no se active, todo funciona como antes (los reportes nacen aprobados).
