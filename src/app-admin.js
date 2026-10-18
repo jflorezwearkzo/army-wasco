@@ -494,7 +494,7 @@ async function buscarHist(){
 }
 
 // ====================== AUDITORÍA ======================
-const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como', revision_aprobado:'✅ Aprobó', revision_rechazado:'⛔ Rechazó', revision_pendiente:'↩ Devolvió a pendiente', sancion_advertencia:'⚠️ Advertencia a', sancion_sancion:'⛔ Sanción a', sancion_suspension:'⏸️ Suspensión a', sancion_expulsion:'🚫 Expulsión de', sancion_anulada:'↩ Anuló sanción de', discord_aviso:'📣 Aviso Discord', avatar:'📷 Cambió la foto de', respaldo:'💾 Copia de seguridad', programada_config:'⏰ Configuró tarea', programada_recordatorio_turnos:'⏰ Recordatorio de turnos', programada_cierre_diario:'⏰ Cierre diario', programada_resumen_semanal:'⏰ Resumen semanal', programada_ranking_mensual:'⏰ Ranking mensual' };
+const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'Empezó a ver como', ver_como_fin:'Dejó de ver como', revision_aprobado:'Aprobó', revision_rechazado:'Rechazó', revision_pendiente:'Devolvió a pendiente', sancion_advertencia:'Advertencia a', sancion_sancion:'Sanción a', sancion_suspension:'Suspensión a', sancion_expulsion:'Expulsión de', sancion_anulada:'Anuló sanción de', discord_aviso:'Aviso Discord', avatar:'Cambió la foto de', respaldo:'Copia de seguridad', programada_config:'Configuró tarea', programada_recordatorio_turnos:'Recordatorio de turnos', programada_cierre_diario:'Cierre diario', programada_resumen_semanal:'Resumen semanal', programada_ranking_mensual:'Ranking mensual' };
 const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta', sanciones:'sanción', turnos:'turno', anuncios:'anuncio', requisitos_ascenso:'requisito de ascenso', discord_canales:'canal de Discord', formularios_discord:'canal del formulario', configuracion:'configuración', insignias:'insignia', sistema:'sistema' };
 async function cargarAud(){ buscarAud(); }
 $('#aBuscar').onclick = buscarAud; $('#aTabla').onchange = buscarAud;
@@ -510,10 +510,11 @@ async function buscarAud(){
     if(r.accion==='update') return Object.entries(r.detalle||{}).map(([k,v]) => `${k}: ${fmtV(v.antes)} → ${fmtV(v.despues)}`).join(' · ');
     const d = r.detalle||{}; return Object.entries(d).filter(([k]) => !['id','creado_en','sellado_en'].includes(k)).slice(0,6).map(([k,v]) => `${k}: ${fmtV(v)}`).join(' · ');
   };
-  const fmtV = v => v===null||v===undefined ? '—' : (typeof v==='object' ? JSON.stringify(v) : String(v)).slice(0,60);
+  const sinEmoji = t => String(t).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,'').replace(/\s{2,}/g,' ').trim();
+  const fmtV = v => v===null||v===undefined ? '—' : sinEmoji((typeof v==='object' ? JSON.stringify(v) : String(v))).slice(0,60);
   $('#tbAud').innerHTML = data.map(r => `<tr><td class="muted" style="white-space:nowrap">${new Date(r.en).toLocaleString('es-CO')}</td>
     <td><b>${esc(r.usuario||'sistema')}</b></td><td>${esc(ACCION[r.accion]||r.accion)} ${esc(TABLA[r.tabla]||r.tabla)}</td>
-    <td>${esc(r.registro||'')}</td><td class="muted" style="font-size:12px">${esc(resumen(r))}</td></tr>`).join('') || '<tr><td colspan=5 class="muted">Sin eventos</td></tr>';
+    <td>${esc(sinEmoji(r.registro||''))}</td><td class="muted" style="font-size:12px">${esc(sinEmoji(resumen(r)))}</td></tr>`).join('') || '<tr><td colspan=5 class="muted">Sin eventos</td></tr>';
 }
 
 // ====================== RESUMEN ======================
