@@ -22,14 +22,40 @@ const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id
 if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
 $('#rPermisos').innerHTML = PERMS.filter(p => p!=='ver_como').map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('') + `<p class="muted" style="margin:6px 0 0;font-size:12px">👁 "Ver la página como otro usuario" es exclusivo del rol Administrador.</p>`;
 $('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre]) => `<button data-t="${id}">${nombre}</button>`).join('');
-function abrir(t){
+let TAB_ACTUAL = null;
+function abrir(t, sub=''){
+  if(!tabs.includes(t)) t = tabs[0];
+  const nuevo = t!==TAB_ACTUAL; TAB_ACTUAL = t;
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
-  ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud})[t]();
+  const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
+  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud})[t]();
 }
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => abrir(b.dataset.t));
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
+// Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
+const DLG = { usuarios:'dlgUsuario', roles:'dlgRol', formularios:'dlgForm' };
+function abrirDialogo(t, sub){ const d = $('#'+DLG[t]); if(!d.open) d.showModal(); d.scrollTop = 0; abrir(t, sub); const f = d.querySelector('input:not([disabled]):not([type=hidden]),select:not([disabled])'); if(f && window.innerWidth>720) setTimeout(()=>f.focus(), 50); }
+function cerrarDialogos(){ Object.values(DLG).forEach(id => { const d = $('#'+id); if(d.open) d.close(); }); }
+Object.values(DLG).forEach(id => { const d = $('#'+id); d.addEventListener('close', () => { if(TAB_ACTUAL && location.hash.includes('/')) history.replaceState(null, '', '#'+TAB_ACTUAL); }); d.addEventListener('cancel', e => { e.preventDefault(); d.close(); }); });
+async function irAHash(){
+  const [t, accion, id] = location.hash.replace(/^#/, '').split('/');
+  if(!t || !tabs.includes(t)){ abrir(tabs[0]); return; }
+  await abrir(t);
+  if(!accion || !DLG[t]) return;
+  if(accion==='nuevo'){ ({usuarios:nuevoUsuario, roles:nuevoRol, formularios:nuevoForm})[t](); return; }
+  if(accion==='editar' && id){
+    if(t==='usuarios'){ if(!USUARIOS.length) await cargarUsuarios(); const u = USUARIOS.find(x => x.id===id); if(u) editarUsuario(u); }
+    if(t==='roles'){ const r = roles.find(x => x.id===id); if(r) editarRol(r); }
+    if(t==='formularios'){ const f = formularios.find(x => x.id===id); if(f) editarForm(f); }
+  }
+}
+window.addEventListener('hashchange', irAHash);
+// Aviso flotante y resaltado de la fila recién guardada
+let toastT=null; function toast(texto, err=false){ const t=$('#toast'); t.textContent=texto; t.className='toast on'+(err?' err':''); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'), 3200); }
+let RESALTAR = null;
+function resaltar(tbody, id){ const tr = tbody.querySelector(`tr[data-id="${CSS.escape(id)}"]`); if(!tr) return; tr.classList.add('resalta'); tr.scrollIntoView({ block:'center', behavior:'smooth' }); setTimeout(()=>tr.classList.remove('resalta'), 2600); }
 await cargarCatalogos();
-abrir(tabs[0]);
+irAHash();
 
 async function cargarCatalogos(){
   roles = (await sb.from('roles').select('*').order('nombre')).data || [];
@@ -69,6 +95,7 @@ async function cargarUsuarios(){
   $('#uRol').disabled = !tiene(yo,'asignar_roles'); $('#uRol').title = tiene(yo,'asignar_roles') ? '' : 'Necesitas el permiso de asignación de roles';
   ['#uNombre','#uRango','#uActivo','#uVisible'].forEach(s => $(s).disabled = !tiene(yo,'usuarios'));
   $('#uGuardar').style.display = (tiene(yo,'usuarios') || tiene(yo,'asignar_roles')) ? '' : 'none';
+  $('#uNuevo').style.display = tiene(yo,'usuarios') ? '' : 'none';
   $('#uBulk').querySelector('.rolw').style.display = tiene(yo,'asignar_roles') ? '' : 'none';
   $('#uBulk').querySelectorAll('[data-bulk]:not([data-bulk=rol]):not([data-bulk=cancelar])').forEach(b => b.style.display = tiene(yo,'usuarios') ? '' : 'none');
   pintarUsuarios();
@@ -104,7 +131,9 @@ function pintarUsuarios(){
   document.querySelectorAll('[data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); abrirMenuUsuario(b, USUARIOS.find(u=>u.id===b.dataset.menu)); });
   document.querySelectorAll('tr.urow').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; const u = USUARIOS.find(x=>x.id===tr.dataset.id); if(u && puedoTocar(u) && (tiene(yo,'usuarios')||tiene(yo,'asignar_roles'))) editarUsuario(u); });
   const n = [...SEL].filter(id => vis.has(id)).length; $('#uBulkN').textContent = SEL.size; $('#uBulk').classList.toggle('on', SEL.size>0);
+  if(RESALTAR){ const id = RESALTAR; if(!vis.has(id)){ $('#uBuscar').value=''; $('#uFiltro').value=''; $('#uFiltroRol').value=''; pintarUsuarios(); return; } resaltar($('#tbUsuarios'), id); setTimeout(()=>{ if(RESALTAR===id) RESALTAR=null; }, 2600); }
 }
+$('#uNuevo').onclick = () => nuevoUsuario();
 ['#uBuscar','#uFiltro','#uFiltroRol'].forEach(s => $(s).addEventListener('input', pintarUsuarios));
 $('#uTodos').onchange = () => { const lista = usuariosFiltrados().filter(puedoTocar); if($('#uTodos').checked) lista.forEach(u=>SEL.add(u.id)); else lista.forEach(u=>SEL.delete(u.id)); pintarUsuarios(); };
 
@@ -166,17 +195,26 @@ document.querySelectorAll('[data-bulk]').forEach(b => b.onclick = async () => {
   if(!confirm(`${texto} a ${lista.length} usuario(s):\n${nombres}\n\n¿Continuar?`)) return;
   try{ await actualizarPerfiles(lista, c); SEL.clear(); pintarUsuarios(); }catch(x){ alert(x.message); }
 });
+function mostrarPass(on){ const i=$('#uPass'); [i.previousElementSibling, i, i.nextElementSibling].forEach(e => { if(e) e.style.display = on ? '' : 'none'; }); }
+function nuevoUsuario(){ limpiarUsuario(); abrirDialogo('usuarios', 'nuevo'); }
 function editarUsuario(u){
-  $('#tituloUsuario').textContent = 'Editar usuario'; $('#uGuardar').textContent = 'Guardar';
+  $('#tituloUsuario').textContent = 'Editar usuario · ' + u.usuario; $('#uGuardar').textContent = 'Guardar';
+  const r = roles.find(x => x.id===u.rol_id), a = ACTIV[u.id], ctx = $('#uCtx'); ctx.style.display='';
+  ctx.innerHTML = `<span>Rol: <b style="color:var(--text)">${esc(r?r.nombre:'Sin rol')}</b></span><span>Último reporte: <b style="color:var(--text)">${a ? `${fFecha(a.ultimo)} (${a.reportes})` : '—'}</b></span>`
+    + ((tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ? `<a data-ctx="vercomo">👁 Ver como</a>` : '')
+    + ((puedoTocar(u) && tiene(yo,'reset_password') && u.id!==yo.id) ? `<a data-ctx="password">🔑 Restablecer contraseña</a>` : '')
+    + (tiene(yo,'historial') ? `<a data-ctx="reportes">📋 Sus reportes</a>` : '');
+  ctx.querySelectorAll('[data-ctx]').forEach(x => x.onclick = () => { if(x.dataset.ctx!=='password') $('#dlgUsuario').close(); accionUsuario(x.dataset.ctx, u); });
   $('#uId').value = u.id; $('#uUsuario').value = u.usuario; $('#uUsuario').disabled = true; $('#uNombre').value = u.nombre; $('#uRango').value = u.rango || '';
-  $('#uPass').value=''; $('#uPass').disabled = true; $('#uPass').placeholder = 'Solo el propio usuario cambia su contraseña';
+  $('#uPass').value=''; $('#uPass').disabled = true; mostrarPass(false);
   $('#uRol').value = u.rol_id || ''; $('#uActivo').checked = u.activo; $('#uVisible').checked = u.visible!==false; msg('u','');
+  abrirDialogo('usuarios', 'editar/'+u.id);
 }
 function limpiarUsuario(){
   $('#fUsuario').reset(); $('#tituloUsuario').textContent = 'Nuevo usuario'; $('#uGuardar').textContent = 'Crear';
-  $('#uId').value=''; $('#uUsuario').disabled=false; $('#uPass').disabled=false; $('#uPass').placeholder=''; $('#uActivo').checked=true; msg('u','');
+  $('#uId').value=''; $('#uUsuario').disabled=false; $('#uPass').disabled=false; mostrarPass(true); $('#uActivo').checked=true; $('#uVisible').checked=true; $('#uCtx').style.display='none'; msg('u','');
 }
-$('#uCancelar').onclick = limpiarUsuario;
+$('#uCancelar').onclick = () => $('#dlgUsuario').close();
 $('#fUsuario').onsubmit = async e => {
   e.preventDefault(); msg('u','');
   const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rango=$('#uRango').value||null, rol=$('#uRol').value, activo=$('#uActivo').checked, visible=$('#uVisible').checked;
@@ -197,9 +235,9 @@ $('#fUsuario').onsubmit = async e => {
       // pequeño reintento: el trigger puede tardar unos ms
       let ok=false; for(let i=0;i<5 && !ok;i++){ const r = await sb.from('perfiles').update(cambios).eq('id', data.user.id).select('id'); ok = !r.error && r.data && r.data.length; if(!ok) await new Promise(r=>setTimeout(r,400)); }
       if(!ok) throw new Error('El usuario se creó pero no se pudo activar; edítalo desde la lista.');
-      limpiarUsuario(); msg('u',`Usuario "${usuario}" creado.`, true); cargarUsuarios(); return;
+      RESALTAR = data.user.id; $('#dlgUsuario').close(); limpiarUsuario(); toast(`Usuario "${usuario}" creado.`); cargarUsuarios(); return;
     }
-    limpiarUsuario(); msg('u','Usuario actualizado.', true); cargarUsuarios();
+    RESALTAR = id; $('#dlgUsuario').close(); limpiarUsuario(); toast('Usuario actualizado.'); cargarUsuarios();
   }catch(x){ msg('u', x.message || String(x)); }
 };
 
@@ -214,7 +252,7 @@ $('#fReset').onsubmit = async e => {
     const { data, error } = await sb.functions.invoke('reset-password', { body:{ usuario_id: rpObjetivo, password: a } });
     if(error){ let m=error.message; try{ const j=await error.context.json(); if(j.error) m=j.error; }catch{} throw new Error(m); }
     if(data && data.error) throw new Error(data.error);
-    $('#dlgPass').close(); msg('u','Contraseña restablecida.', true);
+    $('#dlgPass').close(); toast('Contraseña restablecida.');
   }catch(x){ err.textContent=x.message; }
   btn.disabled=false;
 };
@@ -241,9 +279,12 @@ async function cargarRoles(){
   document.querySelectorAll('.rp').forEach(c => { c.disabled = !sup && !mp[c.value]; c.parentElement.title = c.disabled ? 'No tienes este permiso' : ''; c.parentElement.style.opacity = c.disabled ? '.5' : ''; });
   $('#rTodos').onchange = () => document.querySelectorAll('.rf').forEach(c => { c.disabled = $('#rTodos').checked || (!sup && !mf.includes('*') && !mf.includes(c.value)); });
   $('#rTodos').onchange();
-  $('#tbRoles').innerHTML = roles.map(r => `<tr><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
+  $('#rNuevo').style.display = tiene(yo,'crear_roles') ? '' : 'none';
+  $('#tbRoles').innerHTML = roles.map(r => `<tr data-id="${esc(r.id)}"><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
     <td>${esc(r.rango_pm||'—')}</td><td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
     <td class="acc" style="text-align:right">${botonMenu(r.id, 'data-k="rol"')}</td></tr>`).join('');
+  document.querySelectorAll('#tbRoles tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; const r = roles.find(x => x.id===tr.dataset.id); if(r && rolAsignable(r)) editarRol(r); });
+  if(RESALTAR){ resaltar($('#tbRoles'), RESALTAR); RESALTAR=null; }
   document.querySelectorAll('#tbRoles [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const r = roles.find(x => x.id===b.dataset.menu); const ok = rolAsignable(r);
     const ops = []; if(ok){ ops.push(['editar','✏️ Editar']); if(!r.protegido) ops.push(['eliminar','🗑 Eliminar rol', true]); }
     abrirMenu(b, 'rol:'+r.id, `<b style="color:var(--text)">${esc(r.nombre)}</b>${ok?'':` · <span style="color:#ff9f9f">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>`}`, ops, async op => {
@@ -251,15 +292,18 @@ async function cargarRoles(){
       if(op==='eliminar'){ if(!confirm(`¿Eliminar el rol "${r.nombre}"? Los usuarios que lo tengan quedarán sin rol.`)) return; const { error } = await sb.from('roles').delete().eq('id', r.id); if(error) alert(error.message); cargarRoles(); }
     }); });
 }
+function nuevoRol(){ limpiarRol(); abrirDialogo('roles', 'nuevo'); }
+$('#rNuevo').onclick = () => nuevoRol();
 function editarRol(r){
-  $('#tituloRol').textContent='Editar rol'; $('#rGuardar').textContent='Guardar';
+  $('#tituloRol').textContent='Editar rol · '+r.nombre; $('#rGuardar').textContent='Guardar';
   $('#rId').value=r.id; $('#rId').disabled=true; $('#rNombre').value=r.nombre; $('#rDesc').value=r.descripcion||''; $('#rRangoPM').value=r.rango_pm||'';
   document.querySelectorAll('.rp').forEach(c => c.checked = !!(r.permisos||{})[c.value]);
   $('#rTodos').checked = r.formularios.includes('*'); $('#rTodos').onchange();
   document.querySelectorAll('.rf').forEach(c => c.checked = r.formularios.includes(c.value)); msg('r','');
+  abrirDialogo('roles', 'editar/'+r.id);
 }
 function limpiarRol(){ $('#fRol').reset(); $('#tituloRol').textContent='Nuevo rol'; $('#rGuardar').textContent='Crear'; $('#rId').disabled=false; $('#rTodos').onchange(); msg('r',''); }
-$('#rCancelar').onclick = limpiarRol;
+$('#rCancelar').onclick = () => $('#dlgRol').close();
 $('#fRol').onsubmit = async e => {
   e.preventDefault(); msg('r','');
   const rol = { id:$('#rId').value.trim().toLowerCase(), nombre:$('#rNombre').value.trim(), descripcion:$('#rDesc').value.trim(), rango_pm:$('#rRangoPM').value||null,
@@ -267,7 +311,7 @@ $('#fRol').onsubmit = async e => {
     formularios: $('#rTodos').checked ? ['*'] : [...document.querySelectorAll('.rf:checked')].map(c => c.value) };
   if(rol.id==='admin' && !(rol.permisos.crear_roles && rol.permisos.asignar_roles && rol.permisos.auditoria)){ msg('r','El rol admin debe conservar los permisos de roles.'); return; }
   const { error } = await sb.from('roles').upsert(rol); if(error){ msg('r', error.message); return; }
-  limpiarRol(); msg('r','Rol guardado.', true); cargarRoles();
+  RESALTAR = rol.id; $('#dlgRol').close(); limpiarRol(); toast('Rol guardado.'); cargarRoles();
 };
 
 function limpiarRangoPM(){ $('#fRangoPM').reset(); $('#pmOriginal').value=''; $('#pmOrden').value=100; $('#pmGuardar').textContent='Crear'; msg('pm',''); }
@@ -286,13 +330,15 @@ $('#fRangoPM').onsubmit = async e => {
 // ====================== FORMULARIOS ======================
 async function cargarForms(){
   await cargarCatalogos();
-  $('#fForm').parentElement.style.display = (tiene(yo,'crear_reportes')||tiene(yo,'gestion_reportes')) ? '' : 'none';
+  $('#fNuevo').style.display = tiene(yo,'crear_reportes') ? '' : 'none';
   $('#fDiscordW').style.display = tiene(yo,'gestion_reportes') ? '' : 'none';
   const ld=document.getElementById('linkDisenador'); if(ld) ld.style.display = tiene(yo,'disenar_formularios') ? '' : 'none';
-  $('#tbForms').innerHTML = formularios.map(f => `<tr><td style="font-size:22px">${esc(f.icono||'')}</td><td><b>${esc(f.titulo)}</b><br><span class="muted">${esc(f.id)}</span></td>
+  $('#tbForms').innerHTML = formularios.map(f => `<tr data-id="${esc(f.id)}"><td style="font-size:22px">${esc(f.icono||'')}</td><td><b>${esc(f.titulo)}</b><br><span class="muted">${esc(f.id)}</span></td>
     <td><a href="../${esc(f.ruta)}" target="_blank">${esc(f.ruta)}</a></td><td>${f.orden}</td>
     <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span>${f.definicion ? ` <span class="tag" title="Creado con el diseñador">Plantilla v${f.version||1}</span>` : ''}</td>
     <td class="acc" style="text-align:right">${botonMenu(f.id)}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
+  document.querySelectorAll('#tbForms tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; const f = formularios.find(x => x.id===tr.dataset.id); if(f && tiene(yo,'gestion_reportes')) editarForm(f); });
+  if(RESALTAR){ resaltar($('#tbForms'), RESALTAR); RESALTAR=null; }
   document.querySelectorAll('#tbForms [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const f = formularios.find(x => x.id===b.dataset.menu);
     const ops = [['abrir','↗ Abrir el formulario']];
     if(f.definicion && tiene(yo,'disenar_formularios')) ops.push(['disenar','🎨 Diseñar plantilla']);
@@ -305,12 +351,15 @@ async function cargarForms(){
       if(op==='eliminar'){ if(!confirm(`¿Eliminar "${f.titulo}" del catálogo? Los reportes del historial se conservan.`)) return; const { error } = await sb.from('formularios').delete().eq('id', f.id); if(error) alert(error.message); cargarForms(); }
     }); });
 }
+function nuevoForm(){ limpiarForm(); abrirDialogo('formularios', 'nuevo'); }
+$('#fNuevo').onclick = () => nuevoForm();
 function editarForm(f){
-  $('#tituloForm').textContent='Editar formulario'; $('#fGuardar').textContent='Guardar';
+  $('#tituloForm').textContent='Editar formulario · '+f.titulo; $('#fGuardar').textContent='Guardar';
   $('#fId').value=f.id; $('#fId').disabled=true; $('#fTitulo').value=f.titulo; $('#fDesc').value=f.descripcion||''; $('#fIcono').value=f.icono||'';
   $('#fOrden').value=f.orden; $('#fRuta').value=f.ruta; $('#fActivo').checked=f.activo; msg('f','');
   $('#fWebhook').value=''; $('#fWebhookOn').checked=true; $('#fDiscordMsg').textContent='';
   if(tiene(yo,'gestion_reportes')) sb.from('formularios_discord').select('webhook,activo').eq('formulario_id',f.id).maybeSingle().then(({data})=>{ if(data){ $('#fWebhook').value=data.webhook; $('#fWebhookOn').checked=data.activo; } });
+  abrirDialogo('formularios', 'editar/'+f.id);
 }
 $('#fProbar').onclick = async () => {
   const id=$('#fId').value.trim().toLowerCase(); if(!id){ $('#fDiscordMsg').textContent='Guarda primero el formulario.'; return; }
@@ -327,7 +376,7 @@ async function guardarDiscord(id){
   if(error) throw error;
 }
 function limpiarForm(){ $('#fForm').reset(); $('#fDiscordMsg').textContent=''; $('#tituloForm').textContent='Nuevo formulario'; $('#fGuardar').textContent='Crear'; $('#fId').disabled=false; $('#fIcono').value='📋'; $('#fOrden').value=100; msg('f',''); }
-$('#fCancelar').onclick = limpiarForm;
+$('#fCancelar').onclick = () => $('#dlgForm').close();
 $('#fForm').onsubmit = async e => {
   e.preventDefault(); msg('f','');
   if($('#fId').disabled ? !tiene(yo,'gestion_reportes') : !tiene(yo,'crear_reportes')){ msg('f', $('#fId').disabled ? 'No tienes permiso de gestión de reportes.' : 'No tienes permiso de creación de reportes.'); return; }
@@ -335,7 +384,7 @@ $('#fForm').onsubmit = async e => {
     orden:parseInt($('#fOrden').value)||100, ruta:$('#fRuta').value.trim(), activo:$('#fActivo').checked };
   const { error } = await sb.from('formularios').upsert(f); if(error){ msg('f', error.message); return; }
   try{ await guardarDiscord(f.id); }catch(x){ msg('f','Formulario guardado, pero el webhook no: '+x.message); cargarForms(); return; }
-  limpiarForm(); msg('f','Formulario guardado.', true); cargarForms();
+  RESALTAR = f.id; $('#dlgForm').close(); limpiarForm(); toast('Formulario guardado.'); cargarForms();
 };
 
 // ====================== CSV ======================
