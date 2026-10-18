@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
+<title>Manuales · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="js/tema.js?v=843b6126"></script>
+<link rel="stylesheet" href="estilos.css">
+<style>
+  main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
+  .layout{display:grid;grid-template-columns:250px 1fr;gap:22px;align-items:start}
+  .lateral{position:sticky;top:60px;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:10px 8px}
+  .lateral .grp{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 10px 4px}
+  .lateral a{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;padding:7px 10px;border-radius:7px;font-size:14px}
+  .lateral a span{width:20px;text-align:center}
+  .lateral a:hover{background:var(--panel3)}
+  .lateral a.act{background:var(--avisobg);color:var(--gold);border:1px solid var(--avisoline)}
+  .contenido{min-width:0}
+  .movil{display:none;width:100%;margin:0 0 14px;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:8px;font:inherit}
+  @media (max-width:800px){.layout{grid-template-columns:1fr}.lateral{display:none}.movil{display:block}}
+  .cabecera{text-align:center;margin-bottom:22px}
+  .cabecera h1{margin:0;color:var(--gold);font-size:34px}
+  .cabecera h1 small{display:block;font-size:.4em;font-style:normal;color:var(--muted);letter-spacing:5px;margin-top:6px}
+  .cabecera p{color:var(--muted);margin:10px 0 0}
+  h2.sec{color:var(--gold);font-size:18px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px}
+  h2.sec small{display:block;letter-spacing:0;text-transform:none;color:var(--muted);font-size:13px;margin-top:3px}
+  .bloque{background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:14px 18px;margin-bottom:12px}
+  .bloque h3{margin:0 0 8px;color:var(--gold);font-size:15px}
+  .bloque p{margin:6px 0;line-height:1.5}
+  .bloque ol,.bloque ul{margin:6px 0 6px 20px;line-height:1.55}
+  .bloque li{margin:3px 0}
+  .bloque kbd,.bloque code{background:var(--bg2);border:1px solid var(--line2);border-radius:4px;padding:1px 6px;font-size:13px;font-family:inherit}
+  .tip{border-left:3px solid var(--gold);background:var(--avisobg);border-radius:6px;padding:8px 12px;margin:8px 0;font-size:14px}
+  .ojo{border-left:3px solid var(--err2);background:var(--errbg);border-radius:6px;padding:8px 12px;margin:8px 0;font-size:14px}
+  .ruta{display:inline-block;background:var(--panel2);border-radius:6px;padding:2px 8px;font-size:13px;color:var(--gold)}
+  .sec-panel[hidden]{display:none}
+  .permiso{font-size:12px;color:var(--muted);margin:-6px 0 12px}
+</style>
+</head>
+<body>
+<main>
+  <div class="cabecera"><p class="unidad">Army de Wasco · Policía Militar</p><h1>Manuales<small>Instrucciones de uso</small></h1><p id="intro">Guías paso a paso de la página. Solo ves los manuales de las funciones a las que tienes acceso.</p></div>
+  <select id="navMovil" class="movil"></select>
+  <div class="layout">
+    <nav class="lateral" id="nav"></nav>
+    <div class="contenido" id="contenido">
+
+<!-- ======================= PARA TODOS ======================= -->
+<section class="sec-panel" id="sec-inicio" data-titulo="Inicio y tablón" data-icono="🏠" data-grupo="Para todos" data-permisos="*" hidden>
+  <h2 class="sec">Inicio y tablón de anuncios<small>Lo primero que ves al entrar</small></h2>
+  <div class="bloque"><h3>Qué hay en el inicio</h3>
+    <ul><li><b>Tablón de anuncios</b>: comunicados del mando. Los que no has leído aparecen marcados como <b>NUEVO</b>; pulsa <i>Marcar como leído</i> cuando lo hayas visto (el mando ve cuántos lo leyeron).</li>
+      <li><b>Mis próximos turnos</b>: tus turnos de patrullaje de los próximos 14 días. ✅ significa que ese día ya enviaste tu Reporte de Fin de Día.</li>
+      <li><b>Tarjetas de formularios</b>: los reportes que tu rol puede enviar. Si falta alguno, pídelo al administrador.</li>
+      <li><b>Reglamento</b>: procedimientos de PM, macros, normas y mapas.</li></ul></div>
+  <div class="bloque"><h3>Barra superior</h3>
+    <p><span class="ruta">Mi cuenta</span> contraseña, verificación en dos pasos, instalar la app y <b>Mis reportes</b>. <span class="ruta">Mi expediente</span> tu hoja de vida en el Army. <span class="ruta">Ranking</span> tablero del mes. <span class="ruta">🌗 Tema</span> cambia entre oscuro y claro. <span class="ruta">Salir</span> cierra tu sesión en este dispositivo.</p>
+    <div class="tip">La sesión se cierra sola tras 2 horas sin actividad. En el celular, la barra se pliega en el botón con tu nombre.</div></div>
+</section>
+
+<section class="sec-panel" id="sec-reportes" data-titulo="Enviar un reporte" data-icono="📝" data-grupo="Para todos" data-permisos="*" hidden>
+  <h2 class="sec">Enviar un reporte<small>Bajas, reclutamiento, patrullaje, toma de territorio y formularios del diseñador</small></h2>
+  <div class="bloque"><h3>Paso a paso</h3>
+    <ol><li>En el inicio, abre el formulario que corresponda.</li>
+      <li>Tu nombre y rango salen prellenados; en Patrullaje y Toma de Territorio tú eres siempre el integrante 1.</li>
+      <li>Llena los campos marcados con <b>*</b>. Los integrantes se eligen escribiendo el nombre (solo aparecen miembros activos y visibles). No se puede repetir un integrante.</li>
+      <li>Adjunta las fotos de evidencia (botón <i>📷 Cámara</i> en el celular). Se reducen solas antes de subir.</li>
+      <li>Revisa la <b>vista previa</b> a la derecha (o abajo en el celular): es exactamente la imagen que se exportará.</li>
+      <li>Pulsa <b>Exportar imagen</b>. La pantalla se bloquea mientras se registra en el servidor, se descarga la imagen, se guarda en el historial y se publica en Discord. Al terminar sale "✅ Reporte exportado" con el folio y el formulario se limpia solo.</li></ol>
+    <div class="tip">Cada reporte recibe un <b>folio único</b> (PM-000123) y un sello con tu usuario y la hora del servidor. No se puede editar después: si te equivocaste, avisa a un revisor o administrador.</div></div>
+  <div class="bloque"><h3>Borradores</h3><p>Lo que escribes se guarda en tu navegador. Si cierras y vuelves, verás un aviso con <i>Continuar</i> o <i>Descartar</i>. Se borra al exportar o al pulsar <i>Limpiar</i>; caduca a los 7 días. Las fotos no se guardan en el borrador.</p></div>
+  <div class="bloque"><h3>Pendiente de revisión</h3><p>Algunos formularios exigen que un revisor apruebe el reporte. En ese caso el mensaje final dice <i>Queda pendiente de revisión</i>: ya está guardado, pero no cuenta en el Resumen ni se publica en Discord hasta que lo aprueben. Lo ves en <span class="ruta">Mi cuenta → Mis reportes</span> con su estado; si lo rechazan, verás el motivo.</p></div>
+  <div class="bloque"><h3>Patrullaje de fin de día</h3><p>Indica cuántos patrullajes hiciste: se genera una imagen (y un folio) por cada uno. La hora va en formato militar (24 h). En <i>Código</i> puedes buscar el folio de otro reporte relacionado.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-cuenta" data-titulo="Mi cuenta y seguridad" data-icono="🔐" data-grupo="Para todos" data-permisos="*" hidden>
+  <h2 class="sec">Mi cuenta y seguridad<small>Contraseña, verificación en dos pasos, app</small></h2>
+  <div class="bloque"><h3>Cambiar la contraseña</h3><p>Escribe la actual y la nueva dos veces. Mínimo 8 caracteres con mayúscula, minúscula, número y símbolo. Si la olvidaste, pide a un administrador que la restablezca.</p></div>
+  <div class="bloque"><h3>Verificación en dos pasos (opcional, recomendada para administradores)</h3>
+    <ol><li>Instala una app de autenticación (Google Authenticator, Authy, Microsoft Authenticator).</li><li>En Mi cuenta pulsa <b>Activar verificación en dos pasos</b> y escanea el código QR (o escribe la clave manual).</li><li>Escribe el código de 6 dígitos que muestra la app y confirma.</li></ol>
+    <p>Desde entonces, al iniciar sesión te pedirá el código después de la contraseña. Para desactivarla, Mi cuenta → <i>Desactivar</i> (pide el código).</p>
+    <div class="ojo">Si pierdes el celular con la app, no podrás entrar. Un administrador puede restablecer tu contraseña y quitar el factor desde Supabase.</div></div>
+  <div class="bloque"><h3>Instalar como app</h3><p>Android/Chrome: Mi cuenta → <b>Instalar como app</b> (o el aviso "Agregar a pantalla de inicio"). iPhone: Safari → Compartir → <i>Añadir a pantalla de inicio</i>. Funciona sin conexión para abrir los formularios; para exportar hace falta internet.</p></div>
+  <div class="bloque"><h3>Cerrar sesión en todos mis dispositivos</h3><p>Útil si entraste en un computador ajeno. Está al final de Mi cuenta.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-expediente" data-titulo="Mi expediente y ranking" data-icono="📁" data-grupo="Para todos" data-permisos="*" hidden>
+  <h2 class="sec">Mi expediente y ranking<small>Tu historial en el Army</small></h2>
+  <div class="bloque"><h3>Expediente</h3><p>Muestra tu rango y desde cuándo, reportes aprobados, bajas, reclutamientos, patrullajes, AKs, participaciones como integrante en reportes de otros, advertencias activas, sanciones, ascensos y tus últimos reportes.</p>
+    <p><b>Foto del personaje</b>: pulsa el círculo para subir una imagen de <b>tu personaje dentro del juego</b> (uniforme, vehículo, captura del RP). <b>Nunca una foto real</b> tuya ni de nadie: el administrador retirará las que incumplan esto.</p></div>
+  <div class="bloque"><h3>Ranking</h3><p>Podio del mes por categoría (reportes, bajas, patrullajes, reclutamientos, AKs, participaciones) y tabla completa. Solo cuentan reportes aprobados. El día 1 de cada mes se publican los ganadores en Discord y reciben una <b>insignia</b> que queda en el Salón de insignias.</p></div>
+</section>
+
+<!-- ======================= ADMINISTRACIÓN ======================= -->
+<section class="sec-panel" id="sec-usuarios" data-titulo="Usuarios" data-icono="👤" data-grupo="Administración" data-permisos="usuarios,asignar_roles,reset_password" hidden>
+  <h2 class="sec">Usuarios<small>Crear, editar, activar, roles y contraseñas</small></h2>
+  <div class="bloque"><h3>Crear un usuario</h3>
+    <ol><li><span class="ruta">Administración → Usuarios → ＋ Nuevo usuario</span>.</li><li>Usuario para ingresar (minúsculas, sin espacios), nombre completo, rango, contraseña inicial y rol.</li><li>Entrégale el usuario y la contraseña por privado; él la cambia en Mi cuenta.</li></ol></div>
+  <div class="bloque"><h3>Buscar, filtrar y editar</h3><p>Buscador por usuario, nombre, rango o rol; filtros <i>Activos / Inactivos / Ocultos / Sin rol</i> y por rol. Clic en una fila abre la ficha; el botón <b>⋯</b> tiene las acciones: Editar, Ver la página como este usuario, Expediente, Ver sus reportes, Restablecer contraseña, Mostrar/Ocultar en formularios, Activar/Desactivar.</p>
+    <ul><li><b>Inactivo</b>: no puede entrar y no aparece en los formularios (los intentos de acceso quedan en Auditoría).</li><li><b>Oculto en formularios</b>: sigue entrando, pero no aparece en los desplegables de integrantes.</li><li><b>Último reporte</b>: fecha y cantidad de reportes aprobados.</li></ul></div>
+  <div class="bloque"><h3>Acciones en bloque</h3><p>Marca las casillas (o la de la cabecera para todos los visibles) y abajo aparece la barra: Activar, Desactivar, Mostrar, Ocultar, Asignar rol. Pide confirmación con la lista de nombres. Nunca toca roles fuera de tus permisos ni tu propia cuenta.</p></div>
+  <div class="bloque"><h3>Ver como (solo Administrador)</h3><p>Muestra toda la página tal como la ve ese usuario, en solo lectura, con una franja amarilla arriba para salir. Sirve para comprobar quejas tipo "no me aparece el formulario". Queda en Auditoría.</p></div>
+  <div class="bloque"><h3>Restablecer contraseña</h3><p>⋯ → Restablecer contraseña: asigna una nueva y entrégasela por privado. Solo sobre usuarios con roles dentro de tus permisos.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-roles" data-titulo="Roles y permisos" data-icono="🛡️" data-grupo="Administración" data-permisos="crear_roles" hidden>
+  <h2 class="sec">Roles y permisos<small>Qué puede hacer cada rol</small></h2>
+  <div class="bloque"><h3>Crear o editar un rol</h3><p><span class="ruta">Administración → Roles → ＋ Nuevo rol</span>: identificador, nombre, descripción, <b>Rango PM</b> (lo heredan sus usuarios en los reportes), permisos y formularios a los que accede. Solo puedes otorgar permisos que tú tienes.</p></div>
+  <div class="bloque"><h3>Permisos</h3>
+    <ul><li><b>Gestión de usuarios</b>: crear/editar/activar usuarios, cambiar rangos, requisitos de ascenso.</li><li><b>Asignación de roles</b> y <b>Restablecer contraseñas</b>.</li><li><b>Creación de roles</b>: esta pestaña.</li><li><b>Creación de reportes</b> / <b>Gestión de reportes</b>: catálogo de formularios, webhooks de Discord, canales y tareas de Automatización.</li><li><b>Creación de formularios (diseñador)</b>: plantillas personalizadas.</li><li><b>Ver historial</b> / <b>Eliminar historial</b>: pestañas Historial y Resumen; ver expedientes ajenos.</li><li><b>Revisar y aprobar reportes</b>: pestaña Revisión.</li><li><b>Sanciones y advertencias</b>: pestaña Disciplina y registrar sanciones desde el expediente.</li><li><b>Turnos: asignar y editar</b> / <b>Turnos: solo ver</b>.</li><li><b>Anuncios: publicar y editar</b> / <b>Anuncios: solo ver</b>.</li><li><b>Ver auditoría</b>.</li><li><b>Ver como</b>: exclusivo del rol Administrador.</li></ul></div>
+  <div class="bloque"><h3>Rangos PM</h3><p>Lista de rangos de la Policía Militar (Auxiliar, Co-líder, Líder…). Si renombras uno, los roles que lo usan se actualizan.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-formularios" data-titulo="Formularios" data-icono="📋" data-grupo="Administración" data-permisos="crear_reportes,gestion_reportes,disenar_formularios" hidden>
+  <h2 class="sec">Formularios<small>Catálogo, aprobación, Discord y diseñador</small></h2>
+  <div class="bloque"><h3>Catálogo</h3><p>Cada fila es un formulario del inicio. ⋯ → <i>Abrir</i>, <i>Editar</i>, <i>Ocultar/Mostrar en el inicio</i>, <i>Diseñar plantilla</i> (si fue creado con el diseñador), <i>Eliminar del catálogo</i> (los reportes del historial se conservan).</p></div>
+  <div class="bloque"><h3>Requiere aprobación de un revisor</h3><p>Al editar un formulario, marca esta casilla para que sus reportes nuevos queden <b>pendientes</b> hasta que alguien con permiso de revisión los apruebe. Hasta entonces no cuentan en el Resumen ni se publican en Discord. Desmárcala y todo vuelve a ser inmediato.</p></div>
+  <div class="bloque"><h3>Webhook de Discord</h3><p>En el editor (o en <span class="ruta">Automatización → Canales por formulario</span>) pega el webhook del canal donde se publican los reportes de ese formulario y pulsa <i>Enviar prueba</i>. El enlace nunca se muestra a los usuarios.</p></div>
+  <div class="bloque"><h3>Diseñador de plantillas</h3>
+    <ol><li><span class="ruta">Formularios → 🎨 Diseñador de plantillas</span>, ＋ Nuevo formulario.</li><li>Sube la imagen de fondo (la plantilla) y dibuja cajas sobre ella: texto, párrafo, fecha, hora, número, opción, sí/no, rango, persona, lista de personas, lista, casillas, fórmula y foto.</li><li>En cada caja: etiqueta, obligatorio, bloqueado, "en resumen", reglas (mostrar u obligar según otro campo), columnas automáticas en listas, fórmulas (contar, copiar, unir, código, total, página).</li><li>Para reportes de varias páginas activa <i>Reporte en varias páginas</i> y marca los campos que se repiten por página.</li><li><i>Vista previa</i> con datos de ejemplo y <i>Guardar</i>. El formulario queda oculto hasta que lo marques visible.</li></ol>
+    <div class="tip"><i>Duplicar</i> crea una copia de un formulario existente para empezar desde ahí.</div></div>
+</section>
+
+<section class="sec-panel" id="sec-revision" data-titulo="Revisión de reportes" data-icono="✅" data-grupo="Administración" data-permisos="aprobar_reportes" hidden>
+  <h2 class="sec">Revisión de reportes<small>Aprobar o rechazar</small></h2>
+  <div class="bloque"><h3>Cómo revisar</h3>
+    <ol><li><span class="ruta">Administración → Revisión</span>. La pestaña muestra cuántos hay pendientes.</li><li>Cada tarjeta trae autor, fecha y resumen; pulsa la imagen para verla en grande.</li><li><b>Aprobar</b> (comentario opcional): el reporte cuenta en el Resumen y, si el formulario tiene webhook, se publica en Discord.</li><li><b>Rechazar</b> (motivo obligatorio): no cuenta; el autor ve el motivo en Mis reportes.</li><li><i>Volver a pendiente</i> deshace una decisión.</li></ol>
+    <div class="tip">No puedes revisar tus propios reportes (salvo el Administrador). Todo queda en Auditoría.</div></div>
+</section>
+
+<section class="sec-panel" id="sec-disciplina" data-titulo="Disciplina" data-icono="⚠️" data-grupo="Administración" data-permisos="sanciones" hidden>
+  <h2 class="sec">Disciplina<small>Advertencias, sanciones, suspensiones y expulsiones</small></h2>
+  <div class="bloque"><h3>Registrar una sanción</h3>
+    <ol><li><span class="ruta">Administración → Disciplina → ＋ Registrar sanción</span> (o desde el expediente del integrante).</li><li>Busca al integrante escribiendo su nombre, elige el tipo, escribe el motivo (obligatorio) y el detalle.</li><li>Se publica en el canal de Discord de avisos (si está configurado) y queda en el expediente y en Auditoría.</li></ol>
+    <div class="ojo"><b>3 advertencias activas = expulsión</b> según el reglamento. El expediente y la pestaña lo marcan en rojo; la decisión final es del mando.</div></div>
+  <div class="bloque"><h3>Anular</h3><p>Las sanciones no se borran: se <b>anulan</b> con un motivo y dejan de contar. Filtra <i>Todas</i> para ver las anuladas.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-ascensos" data-titulo="Ascensos" data-icono="🎖️" data-grupo="Administración" data-permisos="usuarios" hidden>
+  <h2 class="sec">Ascensos<small>Requisitos y elegibles</small></h2>
+  <div class="bloque"><h3>Requisitos por rango</h3><p>Abajo en la pestaña: para cada rango, días mínimos en el rango anterior y reportes aprobados mínimos desde el último ascenso. Déjalos en 0 si ese ascenso es a criterio del mando.</p></div>
+  <div class="bloque"><h3>Elegibles</h3><p>La tabla muestra quién cumple para el siguiente rango (y quién no, con <i>Todos los activos</i>). Quien tenga advertencias activas no cumple.</p></div>
+  <div class="bloque"><h3>Cambiar el rango</h3><p>Desde el expediente → <b>⬆ Cambiar rango</b>: elige el nuevo rango y el motivo. Queda en el historial de ascensos y se avisa en Discord. También puedes cambiarlo al editar el usuario, pero sin motivo.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-turnos" data-titulo="Turnos" data-icono="🚔" data-grupo="Administración" data-permisos="turnos,ver_turnos" hidden>
+  <h2 class="sec">Turnos de patrullaje<small>Agenda por día, semana o mes</small></h2>
+  <div class="bloque"><h3>Ver la agenda</h3><p>Botones <i>Día / Semana / Mes</i>, flechas ‹ › y <i>Hoy</i>. En Mes, clic en el número del día abre ese día. ✅ = ya envió su Reporte de Fin de Día; ⏳ = turno pasado sin reporte.</p></div>
+  <div class="bloque" data-solo="turnos"><h3>Asignar un turno</h3>
+    <ol><li><b>＋ Asignar turno</b> o el ＋ de cualquier día.</li><li>Busca al integrante por nombre, fecha (calendario), hora de inicio y fin, notas.</li><li><i>Repetir cada semana durante N semanas</i> crea la serie de una vez.</li><li>Clic en un turno para editarlo o eliminarlo.</li></ol>
+    <div class="tip">El recordatorio automático (Automatización) publica cada día en Discord quién tiene turno y quién aún no reportó.</div></div>
+</section>
+
+<section class="sec-panel" id="sec-anuncios" data-titulo="Anuncios" data-icono="📣" data-grupo="Administración" data-permisos="anuncios,ver_anuncios" hidden>
+  <h2 class="sec">Tablón de anuncios<small>Comunicados para todos</small></h2>
+  <div class="bloque" data-solo="anuncios"><h3>Publicar</h3>
+    <ol><li><span class="ruta">Administración → Anuncios → ＋ Nuevo anuncio</span>.</li><li>Título, contenido, una imagen opcional, fecha de caducidad, <i>📌 Fijar arriba</i>, <i>Visible</i> y <i>Publicar en Discord al guardar</i>.</li><li>Guardar. Aparece en el inicio de todos como NUEVO hasta que cada uno lo marque leído.</li></ol></div>
+  <div class="bloque"><h3>Seguimiento</h3><p>La columna <i>Leído por</i> muestra cuántos lo han marcado frente al total de activos. Con ⋯ puedes editar, publicar en Discord, ocultar, fijar o eliminar.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-historial" data-titulo="Historial y Resumen" data-icono="📊" data-grupo="Administración" data-permisos="historial,eliminar_historial" hidden>
+  <h2 class="sec">Historial y Resumen<small>Buscar reportes y ver las cifras</small></h2>
+  <div class="bloque"><h3>Historial</h3><p>Filtra por formulario, usuario, fechas y estado. <b>Buscar en el contenido</b> encuentra nombres, integrantes y observaciones dentro del reporte (pulsa Enter); un folio como <code>PM-000012</code> se busca directo. <i>Ver</i> abre la imagen; <i>🖼 Galería</i> muestra las imágenes en mosaico; <i>⬇ Exportar CSV</i> descarga lo filtrado.</p>
+    <div class="ojo" data-solo="eliminar_historial">Eliminar un reporte es definitivo (imagen incluida) y queda en Auditoría.</div></div>
+  <div class="bloque"><h3>Resumen</h3><p>KPIs del periodo (reportes, por día, usuarios activos, bajas, reclutamientos, patrullajes, AKs) y tablas por día, formulario, usuario, integrantes, bajas y reclutamientos por persona. Solo cuenta reportes aprobados. <b>⬇ Exportar resumen</b> en PDF o imagen para compartirlo.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-automatizacion" data-titulo="Automatización" data-icono="⏰" data-grupo="Administración" data-permisos="gestion_reportes" hidden>
+  <h2 class="sec">Automatización<small>Discord, tareas programadas y copia de seguridad</small></h2>
+  <div class="bloque"><h3>Canales de Discord</h3>
+    <ol><li>En Discord: ajustes del canal → Integraciones → Webhooks → Nuevo webhook → Copiar URL.</li><li>En <span class="ruta">Automatización → Canales</span> pega la URL en el canal que corresponda (avisos, anuncios, ranking, resumen, recordatorios) o en el formulario, Guardar y <b>Probar</b>.</li></ol>
+    <p>Sin webhook la página funciona igual; simplemente no publica.</p></div>
+  <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b> y <b>Ranking mensual</b> (otorga las insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato para probar.</p></div>
+  <div class="bloque" data-solo="superadmin"><h3>Copia de seguridad (solo Administrador)</h3><p>Descarga un ZIP con todas las tablas (JSON y CSV) y las imágenes del historial. Hazla periódicamente y guárdala fuera de la página. No incluye contraseñas ni webhooks.</p></div>
+</section>
+
+<section class="sec-panel" id="sec-auditoria" data-titulo="Auditoría" data-icono="🔎" data-grupo="Administración" data-permisos="auditoria" hidden>
+  <h2 class="sec">Auditoría<small>Quién hizo qué</small></h2>
+  <div class="bloque"><h3>Qué registra</h3><p>Creación, cambios y eliminaciones de usuarios, roles, formularios, reportes, turnos, anuncios, sanciones, ascensos, revisiones, canales de Discord (sin mostrar el enlace), tareas programadas, Ver como, restablecimientos de contraseña, intentos de acceso con cuentas inactivas, avatares y copias de seguridad. Cada fila dice quién, cuándo, sobre qué registro y qué cambió (antes → después).</p></div>
+  <div class="bloque"><h3>Cómo usarla</h3><p>Filtra por tipo y usuario; <i>⬇ Exportar CSV</i> para revisarla fuera. Se conserva 30 días.</p></div>
+</section>
+
+    </div>
+  </div>
+</main>
+<script type="module" src="js/app-manuales.js?v=a3b95bbd"></script>
+</body>
+</html>

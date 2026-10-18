@@ -171,6 +171,7 @@ export function barraUsuario(yo){
       <span class="yo">👤 <b>${esc(nombreCompleto(yo))}</b> · ${esc(yo.rol.nombre)}</span>
       ${esAdminDeAlgo(yo) ? `<a class="oro" href="${RAIZ}admin/">Administración</a>` : ''}
       <a href="${RAIZ}reglamento.html">Reglamento</a>
+      <a href="${RAIZ}manuales.html">Manuales</a>
       <a href="${RAIZ}cuenta.html">Mi cuenta</a>
       <a href="${RAIZ}expediente.html">Mi expediente</a>
       <a href="${RAIZ}ranking.html">Ranking</a>
