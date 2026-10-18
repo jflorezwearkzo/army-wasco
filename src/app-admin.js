@@ -9,18 +9,18 @@ const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
   crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', permisos_granulares:'Permisos granulares por usuario (ficha de usuario)', ver_como:'Ver la página como otro usuario (solo lectura)' };
 const TABS = [
-  ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
-  ['roles',       'Roles',       ['crear_roles']],
-  ['formularios', 'Formularios', ['crear_reportes','gestion_reportes']],
-  ['revision',    'Revisión',    ['aprobar_reportes']],
-  ['disciplina',  'Disciplina',  ['sanciones']],
-  ['ascensos',    'Ascensos',    ['usuarios']],
-  ['turnos',      'Turnos',      ['turnos','ver_turnos']],
-  ['anuncios',    'Anuncios',    ['anuncios','ver_anuncios']],
-  ['historial',   'Historial',   ['historial','eliminar_historial']],
-  ['resumen',     'Resumen',     ['historial']],
-  ['automatizacion','Automatización',['gestion_reportes']],
-  ['auditoria',   'Auditoría',   ['auditoria']],
+  ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password','permisos_granulares'], 'Identidad', '👤'],
+  ['roles',       'Roles y permisos', ['crear_roles'], 'Identidad', '🛡️'],
+  ['formularios', 'Formularios', ['crear_reportes','gestion_reportes','disenar_formularios'], 'Reportes', '📋'],
+  ['revision',    'Revisión',    ['aprobar_reportes'], 'Reportes', '✅'],
+  ['historial',   'Historial',   ['historial','eliminar_historial'], 'Reportes', '🗂️'],
+  ['resumen',     'Resumen',     ['historial'], 'Reportes', '📊'],
+  ['disciplina',  'Disciplina',  ['sanciones'], 'Personal', '⚠️'],
+  ['ascensos',    'Ascensos',    ['usuarios'], 'Personal', '🎖️'],
+  ['turnos',      'Turnos',      ['turnos','ver_turnos'], 'Personal', '🚔'],
+  ['anuncios',    'Anuncios',    ['anuncios','ver_anuncios'], 'Personal', '📣'],
+  ['automatizacion','Automatización',['gestion_reportes'], 'Sistema', '⏰'],
+  ['auditoria',   'Auditoría',   ['auditoria'], 'Sistema', '🔎'],
 ];
 let roles = [], formularios = [], rangosPM = [];
 let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
@@ -29,17 +29,20 @@ let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[]
 const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id);
 if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
 $('#rPermisos').innerHTML = PERMS.filter(p => p!=='ver_como').map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('') + `<p class="muted" style="margin:6px 0 0;font-size:12px">👁 "Ver la página como otro usuario" es exclusivo del rol Administrador.</p>`;
-$('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre]) => `<button data-t="${id}">${nombre}</button>`).join('');
+{ let g = null; $('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre,,grupo,ic]) => (g!==grupo ? (g=grupo, `<div class="grp">${grupo}</div>`) : '') + `<button data-t="${id}"><span class="ic">${ic}</span><span class="tx">${nombre}</span></button>`).join('');
+  g = null; $('#tabsMovil').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre,,grupo]) => (g!==grupo ? (g=grupo, `<optgroup label="${grupo}">`) : '') + `<option value="${id}">${nombre}</option>`).join('');
+  $('#tabsMovil').onchange = () => { cerrarDialogos(); abrir($('#tabsMovil').value); }; }
 let TAB_ACTUAL = null;
 function abrir(t, sub=''){
   if(!tabs.includes(t)) t = tabs[0];
   const nuevo = t!==TAB_ACTUAL; TAB_ACTUAL = t;
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
+  document.querySelectorAll('nav#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
+  const def = TABS.find(x => x[0]===t); $('#tabsMovil').value = t; $('#migas').innerHTML = `Administración › <b>${def ? def[3] : ''}</b> › <b>${def ? def[1] : t}</b>`;
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
   if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios})[t]();
 }
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
+document.querySelectorAll('nav#tabs button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
 // Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
 const DLG = { usuarios:'dlgUsuario', roles:'dlgRol', formularios:'dlgForm' };
 function abrirDialogo(t, sub){ const d = $('#'+DLG[t]); if(!d.open) d.showModal(); d.scrollTop = 0; abrir(t, sub); const f = d.querySelector('input:not([disabled]):not([type=hidden]),select:not([disabled])'); if(f && window.innerWidth>720) setTimeout(()=>f.focus(), 50); }
@@ -65,7 +68,7 @@ function resaltar(tbody, id){ const tr = tbody.querySelector(`tr[data-id="${CSS.
 await cargarCatalogos();
 irAHash();
 // Contador de pendientes en la pestaña Revisión
-async function contarPendientes(){ if(!tiene(yo,'aprobar_reportes')) return; const { count } = await sb.from('reportes').select('id', { count:'exact', head:true }).eq('estado','pendiente'); const b = document.querySelector('nav button[data-t="revision"]'); if(b) b.innerHTML = 'Revisión' + (count ? ` <span class="tag pend" style="margin-left:4px">${count}</span>` : ''); }
+async function contarPendientes(){ if(!tiene(yo,'aprobar_reportes')) return; const { count } = await sb.from('reportes').select('id', { count:'exact', head:true }).eq('estado','pendiente'); const b = document.querySelector('nav#tabs button[data-t="revision"]'); if(b) b.innerHTML = '<span class="ic">✅</span><span class="tx">Revisión</span>' + (count ? ` <span class="tag pend">${count}</span>` : ''); }
 contarPendientes(); setInterval(contarPendientes, 120000);
 
 async function cargarCatalogos(){
