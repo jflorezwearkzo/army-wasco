@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
+<title>Rol · Administración · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="../js/tema.js?v=64a177b2"></script>
+<link rel="stylesheet" href="../estilos.css">
+<link rel="stylesheet" href="ficha.css">
+</head>
+<body>
+<main>
+  <div class="migas"><a href="./#roles">Administración</a> › <a href="./#roles">Roles y permisos</a> › <span id="migaNombre">…</span></div>
+  <div class="cab" id="cab"><p class="muted">Cargando…</p></div>
+  <div class="layout">
+    <div class="lateral">
+      <div class="caja"><h3>Rol</h3><div class="kv" id="kvRol"></div></div>
+      <div class="caja"><h3>Datos <button type="button" class="ghost sm" id="dGuardar" style="display:none">Guardar</button></h3>
+        <label>Nombre</label><input id="rNombre"><label>Descripción</label><input id="rDesc"><label>Rango PM</label><select id="rRangoPM"></select></div>
+    </div>
+    <div>
+      <div class="pestanas" id="pestanas"><button data-p="permisos" class="on">Permisos</button><button data-p="formularios">Formularios</button><button data-p="miembros">Miembros</button><button data-p="historial">Historial de cambios</button></div>
+      <section id="p-permisos" class="on"><div class="caja"><h3>Permisos del rol <span class="nota" id="permNota" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h3>
+        <p class="nota" style="margin:0 0 10px">Los heredan todos los usuarios del rol. Solo puedes otorgar permisos que tú tienes. "Ver como" es exclusivo del rol Administrador.</p>
+        <table><thead><tr><th>Permiso</th><th>Otorgado</th></tr></thead><tbody id="tbPerm"></tbody></table>
+        <div class="fila" style="margin-top:12px;align-items:center"><button type="button" class="primary" id="pGuardar" style="flex:0 0 auto;display:none">Guardar permisos</button><span class="err" id="pErr" style="margin:0"></span></div></div></section>
+      <section id="p-formularios"><div class="caja"><h3>Acceso a formularios</h3>
+        <label style="margin-top:0"><input type="checkbox" id="fTodos" style="width:auto"> Todos los formularios (incluidos los futuros)</label>
+        <table style="margin-top:8px"><thead><tr><th>Formulario</th><th>Acceso</th></tr></thead><tbody id="tbForm"></tbody></table>
+        <div class="fila" style="margin-top:12px;align-items:center"><button type="button" class="primary" id="fGuardar" style="flex:0 0 auto;display:none">Guardar formularios</button><span class="err" id="fErr" style="margin:0"></span></div></div></section>
+      <section id="p-miembros"><div class="caja"><h3>Usuarios con este rol <span class="nota" id="nMiembros" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h3><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Estado</th><th>Granular</th></tr></thead><tbody id="tbMiembros"></tbody></table></div></section>
+      <section id="p-historial"><div class="caja"><h3>Últimos cambios de este rol</h3><div id="actividad"></div></div></section>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="toast" id="toast"></div>
+</main>
+<script type="module" src="../js/app-rol.js?v=cbe2e8bc"></script>
+</body>
+</html>

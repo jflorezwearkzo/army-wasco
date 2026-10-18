@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=308c5321"></script>
+<script src="js/tema.js?v=64a177b2"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -117,7 +117,7 @@
 
 <section class="sec-panel" id="sec-roles" data-titulo="Roles y permisos" data-icono="🛡️" data-grupo="Administración" data-permisos="crear_roles" hidden>
   <h2 class="sec">Roles y permisos<small>Qué puede hacer cada rol</small></h2>
-  <div class="bloque"><h3>Crear o editar un rol</h3><p><span class="ruta">Administración → Roles → ＋ Nuevo rol</span>: identificador, nombre, descripción, <b>Rango PM</b> (lo heredan sus usuarios en los reportes), permisos y formularios a los que accede. Solo puedes otorgar permisos que tú tienes.</p></div>
+  <div class="bloque"><h3>Crear o editar un rol</h3><p>Clic en un rol abre su <b>ficha</b> (datos, permisos, formularios, miembros e historial), donde se edita todo. <span class="ruta">Administración → Roles → ＋ Nuevo rol</span>: identificador, nombre, descripción, <b>Rango PM</b> (lo heredan sus usuarios en los reportes), permisos y formularios a los que accede. Solo puedes otorgar permisos que tú tienes.</p></div>
   <div class="bloque"><h3>Permisos</h3>
     <ul><li><b>Gestión de usuarios</b>: crear/editar/activar usuarios, cambiar rangos, requisitos de ascenso.</li><li><b>Asignación de roles</b> y <b>Restablecer contraseñas</b>.</li><li><b>Creación de roles</b>: esta pestaña.</li><li><b>Creación de reportes</b> / <b>Gestión de reportes</b>: catálogo de formularios, webhooks de Discord, canales y tareas de Automatización.</li><li><b>Creación de formularios (diseñador)</b>: plantillas personalizadas.</li><li><b>Ver historial</b> / <b>Eliminar historial</b>: pestañas Historial y Resumen; ver expedientes ajenos.</li><li><b>Revisar y aprobar reportes</b>: pestaña Revisión.</li><li><b>Sanciones y advertencias</b>: pestaña Disciplina y registrar sanciones desde el expediente.</li><li><b>Turnos: asignar y editar</b> / <b>Turnos: solo ver</b>.</li><li><b>Anuncios: publicar y editar</b> / <b>Anuncios: solo ver</b>.</li><li><b>Ver auditoría</b>.</li><li><b>Ver como</b>: exclusivo del rol Administrador.</li></ul></div>
   <div class="bloque"><h3>Rangos PM</h3><p>Lista de rangos de la Policía Militar (Auxiliar, Co-líder, Líder…). Si renombras uno, los roles que lo usan se actualizan.</p></div>
@@ -125,7 +125,7 @@
 
 <section class="sec-panel" id="sec-formularios" data-titulo="Formularios" data-icono="📋" data-grupo="Administración" data-permisos="crear_reportes,gestion_reportes,disenar_formularios" hidden>
   <h2 class="sec">Formularios<small>Catálogo, aprobación, Discord y diseñador</small></h2>
-  <div class="bloque"><h3>Catálogo</h3><p>Cada fila es un formulario del inicio. ⋯ → <i>Abrir</i>, <i>Editar</i>, <i>Ocultar/Mostrar en el inicio</i>, <i>Diseñar plantilla</i> (si fue creado con el diseñador), <i>Eliminar del catálogo</i> (los reportes del historial se conservan).</p></div>
+  <div class="bloque"><h3>Catálogo</h3><p>Cada fila es un formulario del inicio; clic en la fila abre su <b>ficha</b> (configuración, Discord, quién lo usa, reportes recientes, estadísticas e historial). ⋯ → <i>Abrir</i>, <i>Editar</i>, <i>Ocultar/Mostrar en el inicio</i>, <i>Diseñar plantilla</i> (si fue creado con el diseñador), <i>Eliminar del catálogo</i> (los reportes del historial se conservan).</p></div>
   <div class="bloque"><h3>Requiere aprobación de un revisor</h3><p>Al editar un formulario, marca esta casilla para que sus reportes nuevos queden <b>pendientes</b> hasta que alguien con permiso de revisión los apruebe. Hasta entonces no cuentan en el Resumen ni se publican en Discord. Desmárcala y todo vuelve a ser inmediato.</p></div>
   <div class="bloque"><h3>Webhook de Discord</h3><p>En el editor (o en <span class="ruta">Automatización → Canales por formulario</span>) pega el webhook del canal donde se publican los reportes de ese formulario y pulsa <i>Enviar prueba</i>. El enlace nunca se muestra a los usuarios.</p></div>
   <div class="bloque"><h3>Diseñador de plantillas</h3>
@@ -195,6 +195,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=9431af88"></script>
+<script type="module" src="js/app-manuales.js?v=b94411ad"></script>
 </body>
 </html>

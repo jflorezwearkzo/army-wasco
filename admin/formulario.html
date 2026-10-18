@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
+<title>Formulario · Administración · Policía Militar</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="../js/tema.js?v=64a177b2"></script>
+<link rel="stylesheet" href="../estilos.css">
+<link rel="stylesheet" href="ficha.css">
+</head>
+<body>
+<main>
+  <div class="migas"><a href="./#formularios">Administración</a> › <a href="./#formularios">Formularios</a> › <span id="migaNombre">…</span></div>
+  <div class="cab" id="cab"><p class="muted">Cargando…</p></div>
+  <div class="layout">
+    <div class="lateral">
+      <div class="caja"><h3>Formulario</h3><div class="kv" id="kvForm"></div></div>
+      <div class="caja"><h3>Estadísticas</h3><div class="kv" id="kvStats"></div></div>
+    </div>
+    <div>
+      <div class="pestanas" id="pestanas"><button data-p="config" class="on">Configuración</button><button data-p="discord">Discord</button><button data-p="acceso">Quién lo usa</button><button data-p="reportes">Reportes recientes</button><button data-p="historial">Historial de cambios</button></div>
+      <section id="p-config" class="on"><div class="caja"><h3>Configuración <span class="nota" id="cfgNota" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h3>
+        <div class="fila"><div><label>Título</label><input id="cTitulo"></div><div style="flex:0 0 90px"><label>Icono</label><input id="cIcono"></div><div style="flex:0 0 90px"><label>Orden</label><input id="cOrden" type="number"></div></div>
+        <label>Descripción</label><textarea id="cDesc" rows="3"></textarea>
+        <label>Ruta de la página</label><input id="cRuta">
+        <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="cActivo"> Visible en el inicio</label><label title="Los reportes nuevos quedan pendientes hasta que un revisor los apruebe"><input type="checkbox" id="cAprob"> Requiere aprobación de un revisor</label></label>
+        <div class="fila" style="margin-top:12px;align-items:center"><button type="button" class="primary" id="cGuardar" style="flex:0 0 auto;display:none">Guardar</button><span class="err" id="cErr" style="margin:0"></span></div></div></section>
+      <section id="p-discord"><div class="caja"><h3>Canal de Discord</h3>
+        <p class="nota" style="margin:0 0 10px">Al sellar (o aprobar) un reporte de este formulario se publica la imagen en este canal. El enlace nunca se muestra a los usuarios.</p>
+        <label>Webhook</label><input id="dWebhook" type="url" placeholder="https://discord.com/api/webhooks/…">
+        <label style="margin-top:8px"><input type="checkbox" id="dOn" style="width:auto" checked> Publicar automáticamente</label>
+        <div class="fila" style="margin-top:12px;align-items:center"><button type="button" class="primary" id="dGuardar" style="flex:0 0 auto;display:none">Guardar</button><button type="button" class="ghost" id="dProbar" style="flex:0 0 auto;display:none">Enviar prueba</button><span class="nota" id="dMsg"></span></div></div></section>
+      <section id="p-acceso"><div class="caja"><h3>Roles y usuarios con acceso</h3><div id="acceso"></div></div></section>
+      <section id="p-reportes"><div class="caja"><h3>Últimos reportes</h3><table><thead><tr><th>Folio</th><th>Fecha</th><th>Usuario</th><th>Resumen</th><th>Estado</th></tr></thead><tbody id="tbRep"></tbody></table></div></section>
+      <section id="p-historial"><div class="caja"><h3>Últimos cambios de este formulario</h3><div id="actividad"></div></div></section>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div class="toast" id="toast"></div>
+</main>
+<script type="module" src="../js/app-formulario.js?v=aeb371dd"></script>
+</body>
+</html>

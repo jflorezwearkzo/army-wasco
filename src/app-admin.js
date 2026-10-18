@@ -321,11 +321,12 @@ async function cargarRoles(){
   $('#tbRoles').innerHTML = roles.map(r => `<tr data-id="${esc(r.id)}"><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
     <td>${esc(r.rango_pm||'—')}</td><td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
     <td class="acc" style="text-align:right">${botonMenu(r.id, 'data-k="rol"')}</td></tr>`).join('');
-  document.querySelectorAll('#tbRoles tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; const r = roles.find(x => x.id===tr.dataset.id); if(r && rolAsignable(r)) editarRol(r); });
+  document.querySelectorAll('#tbRoles tr[data-id]').forEach(tr => { tr.style.cursor='pointer'; tr.onclick = e => { if(e.target.closest('input,button,a')) return; location.href = 'rol.html?id=' + encodeURIComponent(tr.dataset.id); }; });
   if(RESALTAR){ resaltar($('#tbRoles'), RESALTAR); RESALTAR=null; }
   document.querySelectorAll('#tbRoles [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const r = roles.find(x => x.id===b.dataset.menu); const ok = rolAsignable(r);
-    const ops = []; if(ok){ ops.push(['editar','✏️ Editar']); if(!r.protegido) ops.push(['eliminar','🗑 Eliminar rol', true]); }
+    const ops = [['ficha','🪪 Abrir ficha del rol']]; if(ok){ ops.push(['editar','✏️ Editar']); if(!r.protegido) ops.push(['eliminar','🗑 Eliminar rol', true]); }
     abrirMenu(b, 'rol:'+r.id, `<b style="color:var(--text)">${esc(r.nombre)}</b>${ok?'':` · <span style="color:var(--err2)">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>`}`, ops, async op => {
+      if(op==='ficha') location.href = 'rol.html?id=' + encodeURIComponent(r.id);
       if(op==='editar') editarRol(r);
       if(op==='eliminar'){ if(!confirm(`¿Eliminar el rol "${r.nombre}"? Los usuarios que lo tengan quedarán sin rol.`)) return; const { error } = await sb.from('roles').delete().eq('id', r.id); if(error) alert(error.message); cargarRoles(); }
     }); });
@@ -375,13 +376,14 @@ async function cargarForms(){
     <td><a href="../${esc(f.ruta)}" target="_blank">${esc(f.ruta)}</a></td><td>${f.orden}</td>
     <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span>${f.requiere_aprobacion ? ` <span class="tag pend" title="Los reportes nuevos quedan pendientes de revisión">Con revisión</span>` : ''}${f.definicion ? ` <span class="tag" title="Creado con el diseñador">Plantilla v${f.version||1}</span>` : ''}</td>
     <td class="acc" style="text-align:right">${botonMenu(f.id)}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
-  document.querySelectorAll('#tbForms tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; const f = formularios.find(x => x.id===tr.dataset.id); if(f && tiene(yo,'gestion_reportes')) editarForm(f); });
+  document.querySelectorAll('#tbForms tr[data-id]').forEach(tr => { tr.style.cursor='pointer'; tr.onclick = e => { if(e.target.closest('input,button,a')) return; location.href = 'formulario.html?id=' + encodeURIComponent(tr.dataset.id); }; });
   if(RESALTAR){ resaltar($('#tbForms'), RESALTAR); RESALTAR=null; }
   document.querySelectorAll('#tbForms [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const f = formularios.find(x => x.id===b.dataset.menu);
-    const ops = [['abrir','↗ Abrir el formulario']];
+    const ops = [['ficha','🪪 Abrir ficha del formulario'], ['abrir','↗ Abrir el formulario']];
     if(f.definicion && tiene(yo,'disenar_formularios')) ops.push(['disenar','🎨 Diseñar plantilla']);
     if(tiene(yo,'gestion_reportes')){ ops.push(['editar','✏️ Editar'], ['activo', f.activo ? '🙈 Ocultar del inicio' : '👁 Mostrar en el inicio'], ['eliminar','🗑 Eliminar del catálogo', true]); }
     abrirMenu(b, 'form:'+f.id, `<b style="color:var(--text)">${esc(f.titulo)}</b>${tiene(yo,'gestion_reportes')?'':' · solo lectura'}`, ops, async op => {
+      if(op==='ficha') location.href = 'formulario.html?id=' + encodeURIComponent(f.id);
       if(op==='abrir') window.open('../'+f.ruta, '_blank');
       if(op==='disenar') location.href = 'disenador.html?id='+encodeURIComponent(f.id);
       if(op==='editar') editarForm(f);

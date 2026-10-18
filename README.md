@@ -184,6 +184,14 @@ Las fotos se reducen en el navegador a 1600 px por lado antes de dibujarlas (`ca
 
 Admin → **Automatización** → Canales de Discord: webhooks por propósito y, debajo, los **canales por formulario** (`formularios_discord`, lo mismo que el campo del editor de Formularios, centralizado aquí con botón Probar); también (`discord_canales`: avisos, anuncios, ranking, resumen, recordatorios) con botón Probar. La Edge Function `notificar-general` (`{canal, texto, embed, prueba}`) publica en ellos; exige sesión con alguno de los permisos que generan avisos y audita como `discord_aviso`. En el cliente: `avisoDiscord(canal, {texto, embed})`.
 
+## Panel de administración: navegación lateral y fichas
+
+El panel (`admin/index.html`) usa un **menú lateral** agrupado (Identidad: Usuarios, Roles y permisos · Reportes: Formularios, Revisión, Historial, Resumen · Personal: Disciplina, Ascensos, Turnos, Anuncios · Sistema: Automatización, Auditoría), migas de pan y selector en el celular; solo aparecen las secciones permitidas por el rol. Las listas de **Usuarios, Roles y Formularios** abren al clic una **ficha** propia (subpágina con cabecera, resumen lateral, acciones y pestañas), al estilo de un directorio:
+- `admin/usuario.html?id=` — ver sección siguiente.
+- `admin/rol.html?id=` — datos (nombre, descripción, rango PM), **Permisos** (casillas; solo se otorgan los que uno tiene; "Ver como" exclusivo del protegido), **Formularios** (todos o lista), **Miembros** (usuarios del rol, con enlace a su ficha y marca +granular) e **Historial de cambios**. Eliminar rol desde la cabecera. El rol protegido solo lo edita otro Administrador.
+- `admin/formulario.html?id=` — **Configuración** (título, icono, orden, descripción, ruta, visible, requiere aprobación), **Discord** (webhook + prueba), **Quién lo usa** (roles con acceso y usuarios con acceso extra), **Reportes recientes**, **Historial de cambios**, más estadísticas (aprobados, pendientes, rechazados, últimos 30 días, quién más reporta) y acciones Abrir / Diseñar / Ocultar / Eliminar.
+Los diálogos de "＋ Nuevo" y "Editar" del panel siguen disponibles desde el menú ⋯. Estilos compartidos en `admin/ficha.css`.
+
 ## Ficha de usuario y permisos granulares
 
 Clic en una fila de Admin → Usuarios (o ⋯ → "Abrir ficha") abre `admin/usuario.html?id=…`, una subpágina tipo directorio: cuenta (usuario, correo de acceso, rol, rango, último acceso, 2FA), actividad (reportes, último, advertencias, turnos próximos), acciones (Editar, Expediente, Ver como, Contraseña, Quitar 2FA) y tres pestañas:
