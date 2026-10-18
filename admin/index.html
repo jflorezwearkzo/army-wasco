@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=6dfef033"></script>
+<script src="../js/tema.js?v=842e9885"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1200px;margin:0 auto;padding:20px}
@@ -116,6 +116,11 @@
   .u-herr input[type=search]{flex:2;min-width:200px}
   .u-herr select{flex:1;min-width:140px;width:auto}
   table.usuarios th.chk,table.usuarios td.chk{width:28px;padding-right:0}
+  table.usuarios th[data-ord]{cursor:pointer;user-select:none;white-space:nowrap}
+  table.usuarios th[data-ord]:hover{color:var(--text)}
+  table.usuarios th[data-ord].on{color:var(--text)}
+  table.usuarios th[data-ord].on::after{content:" ▲";font-size:10px}
+  table.usuarios th[data-ord].on.desc::after{content:" ▼"}
   table.usuarios th.acc,table.usuarios td.acc{width:40px;text-align:right}
   table.usuarios tr.sel td{background:#13231c}
   table.usuarios tr.urow{cursor:pointer}
@@ -163,7 +168,7 @@
           <select id="uFiltroRol" title="Filtrar por rol"><option value="">Todos los roles</option></select>
         </div>
         <div class="u-tabla">
-        <table class="usuarios"><thead><tr><th class="chk"><input type="checkbox" id="uTodos" title="Seleccionar todos los visibles"></th><th>Usuario</th><th>Rango y nombre</th><th>Rol</th><th>Estado</th><th>En formularios</th><th>Último reporte</th><th class="acc"></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
+        <table class="usuarios"><thead><tr><th class="chk"><input type="checkbox" id="uTodos" title="Seleccionar todos los visibles"></th><th data-ord="usuario">Usuario</th><th data-ord="nombre">Rango y nombre</th><th data-ord="rol">Rol</th><th data-ord="estado">Estado</th><th data-ord="visible">En formularios</th><th data-ord="ultimo">Último reporte</th><th class="acc"></th></tr></thead><tbody id="tbUsuarios"></tbody></table>
         </div>
         <div class="u-bulk" id="uBulk">
           <b><span id="uBulkN">0</span> seleccionado(s)</b>
@@ -458,6 +463,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=bbd55f63"></script>
+<script type="module" src="../js/app-admin.js?v=63ea1e2d"></script>
 </body>
 </html>

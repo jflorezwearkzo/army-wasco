@@ -23,7 +23,7 @@ const TABS = [
   ['auditoria',   'Auditoría',   ['auditoria']],
 ];
 let roles = [], formularios = [], rangosPM = [];
-let USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
+let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
 
 // ---------- Pestañas según permisos ----------
 const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id);
@@ -123,6 +123,15 @@ function usuariosFiltrados(){
 }
 function pintarUsuarios(){
   const lista = usuariosFiltrados(); const vis = new Set(lista.map(u=>u.id));
+  const claveOrd = u => { const r = roles.find(x => x.id===u.rol_id); const a = ACTIV[u.id]; switch(U_ORD){
+    case 'nombre': return [u.rango||'', u.nombre||u.usuario].join(' ').toLowerCase();
+    case 'rol': return r ? r.nombre.toLowerCase() : '\uffff';
+    case 'estado': return u.activo ? 0 : 1;
+    case 'visible': return (u.activo && u.visible!==false) ? 0 : 1;
+    case 'ultimo': return a ? (a.ultimo||'') + ' ' + String(a.reportes).padStart(6,'0') : '';
+    default: return (u.usuario||'').toLowerCase(); } };
+  lista.sort((a,b) => { const x = claveOrd(a), y = claveOrd(b); const c = typeof x==='number' ? x-y : String(x).localeCompare(String(y), 'es'); return U_DESC ? -c : c; });
+  document.querySelectorAll('table.usuarios th[data-ord]').forEach(th => { th.classList.toggle('on', th.dataset.ord===U_ORD); th.classList.toggle('desc', th.dataset.ord===U_ORD && U_DESC); });
   $('#uContador').textContent = lista.length===USUARIOS.length ? `${USUARIOS.length} usuario(s)` : `Mostrando ${lista.length} de ${USUARIOS.length}`;
   $('#tbUsuarios').innerHTML = lista.map(u => {
     const r = roles.find(x => x.id===u.rol_id); const a = ACTIV[u.id];
@@ -145,6 +154,7 @@ function pintarUsuarios(){
 }
 $('#uNuevo').onclick = () => nuevoUsuario();
 ['#uBuscar','#uFiltro','#uFiltroRol'].forEach(s => $(s).addEventListener('input', pintarUsuarios));
+document.querySelectorAll('table.usuarios th[data-ord]').forEach(th => th.onclick = () => { if(U_ORD===th.dataset.ord) U_DESC = !U_DESC; else { U_ORD = th.dataset.ord; U_DESC = false; } pintarUsuarios(); });
 $('#uTodos').onchange = () => { const lista = usuariosFiltrados().filter(puedoTocar); if($('#uTodos').checked) lista.forEach(u=>SEL.add(u.id)); else lista.forEach(u=>SEL.delete(u.id)); pintarUsuarios(); };
 
 // Menú ⋯ por usuario
