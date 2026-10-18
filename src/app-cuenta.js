@@ -21,7 +21,7 @@
   const fmt=iso=>{ if(!iso) return ''; const [y,m,d]=String(iso).slice(0,10).split('-'); return `${d}-${m}-${y}`; };
   let MIS=[];
   async function cargarMis(){
-    const { data } = await sb.from('reportes_vista').select('id,folio,fecha,formulario,formulario_id,resumen,creado_en,imagen_path').eq('usuario_id', yo.id).order('id',{ascending:false}).limit(500);
+    const { data } = await sb.from('reportes_vista').select('id,folio,fecha,formulario,formulario_id,resumen,creado_en,imagen_path,estado,comentario_revision,revisor,requiere_aprobacion').eq('usuario_id', yo.id).order('id',{ascending:false}).limit(500);
     MIS=data||[]; const forms=[...new Map(MIS.map(r=>[r.formulario_id,r.formulario])).entries()];
     document.getElementById('mForm').innerHTML='<option value="">Todos los formularios</option>'+forms.map(([id,t])=>`<option value="${esc(id)}">${esc(t||id)}</option>`).join('');
     pintarMis();
@@ -30,7 +30,7 @@
     const f=document.getElementById('mForm').value, q=document.getElementById('mBuscar').value.trim().toLowerCase();
     const lista=MIS.filter(r=>(!f||r.formulario_id===f)&&(!q||(r.folio||'').toLowerCase().includes(q)||(r.resumen||'').toLowerCase().includes(q)));
     document.getElementById('mTotal').textContent=`${lista.length} de ${MIS.length}`;
-    document.getElementById('tbMis').innerHTML=lista.map(r=>`<tr><td><b>${esc(r.folio||'')}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||'')}</td><td>${esc(r.resumen||'')}</td><td class="muted">${r.creado_en?new Date(r.creado_en).toLocaleString('es-CO'):''}</td><td>${r.imagen_path?`<button class="ghost" data-img="${esc(r.imagen_path)}" data-folio="${esc(r.folio||'')}" style="padding:4px 8px;font-size:12px">Descargar</button>`:'<span class="muted">—</span>'}</td></tr>`).join('')||'<tr><td colspan=6 class="muted">Aún no tienes reportes.</td></tr>';
+    document.getElementById('tbMis').innerHTML=lista.map(r=>`<tr><td><b>${esc(r.folio||'')}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||'')}</td><td>${esc(r.resumen||'')}${r.estado==='pendiente'?' <span class="tag" style="background:var(--avisobg);color:#e0a92a">Pendiente de revisión</span>':r.estado==='rechazado'?` <span class="tag off">Rechazado</span>${r.comentario_revision?`<br><span class="muted" style="font-size:12px">Motivo (${esc(r.revisor||'revisor')}): ${esc(r.comentario_revision)}</span>`:''}`:(r.requiere_aprobacion?' <span class="tag on">Aprobado</span>':'')}${r.estado==='aprobado'&&r.comentario_revision?`<br><span class="muted" style="font-size:12px">${esc(r.revisor||'')}: ${esc(r.comentario_revision)}</span>`:''}</td><td class="muted">${r.creado_en?new Date(r.creado_en).toLocaleString('es-CO'):''}</td><td>${r.imagen_path?`<button class="ghost" data-img="${esc(r.imagen_path)}" data-folio="${esc(r.folio||'')}" style="padding:4px 8px;font-size:12px">Descargar</button>`:'<span class="muted">—</span>'}</td></tr>`).join('')||'<tr><td colspan=6 class="muted">Aún no tienes reportes.</td></tr>';
     document.querySelectorAll('[data-img]').forEach(b=>b.onclick=async()=>{ b.disabled=true; try{ const u=await urlImagen(b.dataset.img); const a=document.createElement('a'); a.href=u; a.download=`reporte-${b.dataset.folio}.${(b.dataset.img.split('.').pop()||'png')}`; a.target='_blank'; a.click(); }catch(x){ alert('No se pudo obtener la imagen: '+x.message); } b.disabled=false; });
   }
   document.getElementById('mForm').onchange=pintarMis; document.getElementById('mBuscar').oninput=pintarMis;

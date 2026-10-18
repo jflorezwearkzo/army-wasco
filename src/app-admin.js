@@ -1,16 +1,17 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
-import { requerir, barraUsuario, tiene, sb, esc, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','ver_como'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','ver_como'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', ver_como:'Ver la página como otro usuario (solo lectura)' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', ver_como:'Ver la página como otro usuario (solo lectura)' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
   ['roles',       'Roles',       ['crear_roles']],
   ['formularios', 'Formularios', ['crear_reportes','gestion_reportes']],
+  ['revision',    'Revisión',    ['aprobar_reportes']],
   ['historial',   'Historial',   ['historial','eliminar_historial']],
   ['resumen',     'Resumen',     ['historial']],
   ['automatizacion','Automatización',['gestion_reportes']],
@@ -30,7 +31,7 @@ function abrir(t, sub=''){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
-  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion})[t]();
+  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision})[t]();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
 // Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
@@ -57,6 +58,9 @@ let RESALTAR = null;
 function resaltar(tbody, id){ const tr = tbody.querySelector(`tr[data-id="${CSS.escape(id)}"]`); if(!tr) return; tr.classList.add('resalta'); tr.scrollIntoView({ block:'center', behavior:'smooth' }); setTimeout(()=>tr.classList.remove('resalta'), 2600); }
 await cargarCatalogos();
 irAHash();
+// Contador de pendientes en la pestaña Revisión
+async function contarPendientes(){ if(!tiene(yo,'aprobar_reportes')) return; const { count } = await sb.from('reportes').select('id', { count:'exact', head:true }).eq('estado','pendiente'); const b = document.querySelector('nav button[data-t="revision"]'); if(b) b.innerHTML = 'Revisión' + (count ? ` <span class="tag pend" style="margin-left:4px">${count}</span>` : ''); }
+contarPendientes(); setInterval(contarPendientes, 120000);
 
 async function cargarCatalogos(){
   roles = (await sb.from('roles').select('*').order('nombre')).data || [];
@@ -336,7 +340,7 @@ async function cargarForms(){
   const ld=document.getElementById('linkDisenador'); if(ld) ld.style.display = tiene(yo,'disenar_formularios') ? '' : 'none';
   $('#tbForms').innerHTML = formularios.map(f => `<tr data-id="${esc(f.id)}"><td style="font-size:22px">${esc(f.icono||'')}</td><td><b>${esc(f.titulo)}</b><br><span class="muted">${esc(f.id)}</span></td>
     <td><a href="../${esc(f.ruta)}" target="_blank">${esc(f.ruta)}</a></td><td>${f.orden}</td>
-    <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span>${f.definicion ? ` <span class="tag" title="Creado con el diseñador">Plantilla v${f.version||1}</span>` : ''}</td>
+    <td><span class="tag ${f.activo?'on':'off'}">${f.activo?'Visible':'Oculto'}</span>${f.requiere_aprobacion ? ` <span class="tag pend" title="Los reportes nuevos quedan pendientes de revisión">Con revisión</span>` : ''}${f.definicion ? ` <span class="tag" title="Creado con el diseñador">Plantilla v${f.version||1}</span>` : ''}</td>
     <td class="acc" style="text-align:right">${botonMenu(f.id)}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin formularios</td></tr>';
   document.querySelectorAll('#tbForms tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('input,button,a')) return; const f = formularios.find(x => x.id===tr.dataset.id); if(f && tiene(yo,'gestion_reportes')) editarForm(f); });
   if(RESALTAR){ resaltar($('#tbForms'), RESALTAR); RESALTAR=null; }
@@ -357,7 +361,7 @@ $('#fNuevo').onclick = () => nuevoForm();
 function editarForm(f){
   $('#tituloForm').textContent='Editar formulario · '+f.titulo; $('#fGuardar').textContent='Guardar';
   $('#fId').value=f.id; $('#fId').disabled=true; $('#fTitulo').value=f.titulo; $('#fDesc').value=f.descripcion||''; $('#fIcono').value=f.icono||'';
-  $('#fOrden').value=f.orden; $('#fRuta').value=f.ruta; $('#fActivo').checked=f.activo; msg('f','');
+  $('#fOrden').value=f.orden; $('#fRuta').value=f.ruta; $('#fActivo').checked=f.activo; $('#fAprob').checked=!!f.requiere_aprobacion; msg('f','');
   $('#fWebhook').value=''; $('#fWebhookOn').checked=true; $('#fDiscordMsg').textContent='';
   if(tiene(yo,'gestion_reportes')) sb.from('formularios_discord').select('webhook,activo').eq('formulario_id',f.id).maybeSingle().then(({data})=>{ if(data){ $('#fWebhook').value=data.webhook; $('#fWebhookOn').checked=data.activo; } });
   abrirDialogo('formularios', 'editar/'+f.id);
@@ -382,7 +386,7 @@ $('#fForm').onsubmit = async e => {
   e.preventDefault(); msg('f','');
   if($('#fId').disabled ? !tiene(yo,'gestion_reportes') : !tiene(yo,'crear_reportes')){ msg('f', $('#fId').disabled ? 'No tienes permiso de gestión de reportes.' : 'No tienes permiso de creación de reportes.'); return; }
   const f = { id:$('#fId').value.trim().toLowerCase(), titulo:$('#fTitulo').value.trim(), descripcion:$('#fDesc').value.trim(), icono:$('#fIcono').value.trim(),
-    orden:parseInt($('#fOrden').value)||100, ruta:$('#fRuta').value.trim(), activo:$('#fActivo').checked };
+    orden:parseInt($('#fOrden').value)||100, ruta:$('#fRuta').value.trim(), activo:$('#fActivo').checked, requiere_aprobacion:$('#fAprob').checked };
   const { error } = await sb.from('formularios').upsert(f); if(error){ msg('f', error.message); return; }
   try{ await guardarDiscord(f.id); }catch(x){ msg('f','Formulario guardado, pero el webhook no: '+x.message); cargarForms(); return; }
   RESALTAR = f.id; $('#dlgForm').close(); limpiarForm(); toast('Formulario guardado.'); cargarForms();
@@ -395,7 +399,7 @@ function descargarCsv(nombre, columnas, filas){
   const csv = '\ufeff' + [columnas.map(c=>c[0]).join(';'), ...filas.map(r => columnas.map(c => esc_(typeof c[1]==='function' ? c[1](r) : r[c[1]])).join(';'))].join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' })); a.download = `${nombre}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
 }
-$('#hCsv').onclick = () => descargarCsv('historial', [['Folio','folio'],['Fecha','fecha'],['Formulario','formulario'],['Usuario','usuario'],['Nombre',r=>[r.usuario_rango,r.usuario_nombre].filter(Boolean).join(' ')],['Resumen','resumen'],['Registrado',r=>r.creado_en?new Date(r.creado_en).toLocaleString('es-CO'):''],['Imagen','imagen_path'],['Datos','datos']], HIST_DATA);
+$('#hCsv').onclick = () => descargarCsv('historial', [['Folio','folio'],['Fecha','fecha'],['Formulario','formulario'],['Estado','estado'],['Revisor','revisor'],['Comentario revisión','comentario_revision'],['Usuario','usuario'],['Nombre',r=>[r.usuario_rango,r.usuario_nombre].filter(Boolean).join(' ')],['Resumen','resumen'],['Registrado',r=>r.creado_en?new Date(r.creado_en).toLocaleString('es-CO'):''],['Imagen','imagen_path'],['Datos','datos']], HIST_DATA);
 $('#aCsv').onclick = () => descargarCsv('auditoria', [['Cuándo',r=>new Date(r.en).toLocaleString('es-CO')],['Quién','usuario'],['Acción','accion'],['Tabla','tabla'],['Registro','registro'],['Detalle','detalle']], AUD_DATA);
 
 // ====================== HISTORIAL ======================
@@ -421,7 +425,7 @@ function ajustarFechas(){
   ha.min = de.value || rangoHist.min; de.max = ha.value || rangoHist.max;
   if(de.value && ha.value && ha.value < de.value) ha.value = de.value;
 }
-$('#hForm').onchange = buscarHist;
+$('#hForm').onchange = buscarHist; $('#hEstado').onchange = buscarHist;
 ['#hDesde','#hHasta'].forEach(s => $(s).onchange = () => { ajustarFechas(); buscarHist(); });
 ['#hDesde','#hHasta'].forEach(s => $(s).onclick = () => { try{ $(s).showPicker(); }catch(e){} });
 let tHist;
@@ -437,22 +441,24 @@ $('#hUsuario').oninput = () => { mostrarSugs(); clearTimeout(tHist); tHist = set
 $('#hUsuario').onfocus = mostrarSugs;
 $('#hUsuario').onblur = () => setTimeout(() => $('#hSugs').style.display='none', 150);
 $('#hUsuario').onkeydown = e => { if(e.key==='Escape') $('#hSugs').style.display='none'; };
-$('#hLimpiar').onclick = () => { $('#hForm').value=''; $('#hUsuario').value=''; $('#hDesde').value=''; $('#hHasta').value=''; ajustarFechas(); buscarHist(); };
+$('#hLimpiar').onclick = () => { $('#hForm').value=''; $('#hUsuario').value=''; $('#hDesde').value=''; $('#hHasta').value=''; $('#hEstado').value=''; ajustarFechas(); buscarHist(); };
 async function buscarHist(){
   let q = sb.from('reportes_vista').select('*').order('creado_en', { ascending:false }).limit(300);
   if($('#hForm').value) q = q.eq('formulario_id', $('#hForm').value);
   if($('#hUsuario').value.trim()) q = q.ilike('usuario', `%${$('#hUsuario').value.trim()}%`);
   if($('#hDesde').value) q = q.gte('fecha', $('#hDesde').value);
   if($('#hHasta').value) q = q.lte('fecha', $('#hHasta').value);
+  if($('#hEstado').value) q = q.eq('estado', $('#hEstado').value);
   const { data, error } = await q;
   if(error){ $('#hErr').textContent = error.message; return; }
   $('#hErr').textContent=''; HIST_DATA = data;
   const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
   $('#tbHist').innerHTML = data.map(r => `<tr><td><b>${esc(r.folio||r.id)}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||r.formulario_id||'—')}</td>
     <td>${esc(r.usuario||'—')}<br><span class="muted">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td>
+    <td>${etiquetaEstado(r)}</td>
     <td class="muted">${new Date(r.creado_en).toLocaleString('es-CO')}</td>
     <td>${r.imagen_path ? `<button class="ghost sm" data-hv="${esc(r.imagen_path)}" data-n="reporte-${esc(r.folio||r.id)}.${(r.imagen_path||'').split('.').pop()||'png'}">Ver</button>` : '—'}</td>
-    <td>${tiene(yo,'eliminar_historial') ? `<button class="ghost sm" data-hd="${r.id}" data-p="${esc(r.imagen_path||'')}">Eliminar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=8 class="muted">Sin reportes</td></tr>';
+    <td>${tiene(yo,'eliminar_historial') ? `<button class="ghost sm" data-hd="${r.id}" data-p="${esc(r.imagen_path||'')}">Eliminar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=9 class="muted">Sin reportes</td></tr>';
   document.querySelectorAll('[data-hv]').forEach(b => b.onclick = async () => {
     try{ const u = await urlImagen(b.dataset.hv); $('#dlgImg').src = u; $('#dlgDl').href = u; $('#dlgDl').download = b.dataset.n; $('#dlg').showModal(); }
     catch(x){ alert(x.message); }
@@ -493,7 +499,7 @@ let RES=null;
 async function cargarResumen(){
   if(!$('#rDesde').value){ const h=new Date(); $('#rHasta').value=iso(h); $('#rDesde').value=iso(new Date(h.getTime()-29*864e5)); }
   const desde=$('#rDesde').value, hasta=$('#rHasta').value;
-  const { data, error } = await sb.from('reportes_vista').select('id,fecha,formulario,formulario_id,usuario,usuario_nombre,usuario_rango,datos,creado_en').gte('fecha',desde).lte('fecha',hasta).order('fecha').limit(3000);
+  const { data, error } = await sb.from('reportes_vista').select('id,fecha,formulario,formulario_id,usuario,usuario_nombre,usuario_rango,datos,creado_en').eq('estado','aprobado').gte('fecha',desde).lte('fecha',hasta).order('fecha').limit(3000);
   if(error){ $('#rNota').textContent=error.message; return; }
   const R=data||[]; const quien=r=>[r.usuario_rango,r.usuario_nombre||r.usuario].filter(Boolean).join(' ');
   // KPIs
@@ -566,4 +572,47 @@ async function cargarAutomatizacion(){
     m.textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Prueba enviada.' : 'Error: '+((data&&(data.error||data.motivo))||'sin respuesta');
   });
   if(typeof cargarProgramadas === 'function') cargarProgramadas();
+}
+
+// ====================== REVISIÓN DE REPORTES ======================
+const etiquetaEstado = r => { const e = r.estado || 'aprobado'; const t = e==='pendiente' ? '<span class="tag pend">Pendiente</span>' : e==='rechazado' ? '<span class="tag off">Rechazado</span>' : (r.requiere_aprobacion ? '<span class="tag on">Aprobado</span>' : '<span class="tag on" title="Formulario sin revisión">Aprobado</span>');
+  return t + (r.comentario_revision ? `<br><span class="muted" style="font-size:11px" title="${esc(r.comentario_revision)}">${esc(r.revisor||'')}: ${esc(r.comentario_revision.slice(0,60))}${r.comentario_revision.length>60?'…':''}</span>` : (r.revisor ? `<br><span class="muted" style="font-size:11px">${esc(r.revisor)}</span>` : '')); };
+async function cargarRevision(){
+  $('#rvEstado').onchange = cargarRevision;
+  const est = $('#rvEstado').value || 'pendiente';
+  let q = sb.from('reportes_vista').select('*').eq('estado', est).order('creado_en', { ascending: est==='pendiente' }).limit(est==='pendiente' ? 200 : 60);
+  const { data, error } = await q;
+  if(error){ $('#rvErr').textContent = error.message; return; }
+  $('#rvErr').textContent=''; const lista = data || [];
+  $('#rvContador').textContent = est==='pendiente' ? `${lista.length} pendiente(s)` : `${lista.length} mostrado(s)`;
+  const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
+  $('#rvLista').innerHTML = lista.map(r => `<div class="rv" data-id="${r.id}">
+      <div class="img" data-rvimg="${esc(r.imagen_path||'')}" data-n="reporte-${esc(r.folio||r.id)}.${(r.imagen_path||'png').split('.').pop()}"><span class="cargar">${r.imagen_path ? '🔍 Ver imagen' : 'Sin imagen'}</span></div>
+      <div class="cuerpo">
+        <div><b>${esc(r.folio||r.id)}</b> · ${esc(r.formulario||r.formulario_id)} · ${fmt(r.fecha)}</div>
+        <div>${esc([r.usuario_rango, r.usuario_nombre||r.usuario].filter(Boolean).join(' '))} <span class="muted">(${esc(r.usuario||'')})</span></div>
+        <div class="muted">${esc(r.resumen||'')}</div>
+        <div class="muted" style="font-size:11px">Registrado ${new Date(r.creado_en).toLocaleString('es-CO')}${r.revisado_en ? ` · Revisado ${new Date(r.revisado_en).toLocaleString('es-CO')} por ${esc(r.revisor||'')}` : ''}${r.comentario_revision ? `<br>Motivo: ${esc(r.comentario_revision)}` : ''}</div>
+        <div class="acciones">
+          ${est!=='aprobado' ? `<button type="button" class="sm aprobar" data-rv="aprobado" data-id="${r.id}">✅ Aprobar</button>` : ''}
+          ${est!=='rechazado' ? `<button type="button" class="sm rechazar" data-rv="rechazado" data-id="${r.id}">⛔ Rechazar</button>` : ''}
+          ${est!=='pendiente' ? `<button type="button" class="ghost sm" data-rv="pendiente" data-id="${r.id}">↩ Volver a pendiente</button>` : ''}
+        </div>
+      </div></div>`).join('') || `<p class="muted">No hay reportes ${est==='pendiente'?'pendientes de revisión':est+'s'}.</p>`;
+  document.querySelectorAll('[data-rvimg]').forEach(d => d.onclick = async () => { if(!d.dataset.rvimg) return;
+    if(!d.querySelector('img')){ try{ const u = await urlImagen(d.dataset.rvimg); d.innerHTML = `<img src="${u}" alt="">`; d.dataset.u = u; }catch(x){ alert(x.message); return; } }
+    else { $('#dlgImg').src = d.dataset.u; $('#dlgDl').href = d.dataset.u; $('#dlgDl').download = d.dataset.n; $('#dlg').showModal(); } });
+  document.querySelectorAll('[data-rv]').forEach(b => b.onclick = async () => {
+    const id = +b.dataset.id, est2 = b.dataset.rv, r = lista.find(x => x.id===id); let comentario = null;
+    if(est2==='rechazado'){ comentario = prompt(`Motivo del rechazo de ${r.folio||id} (lo verá el autor):`); if(comentario===null) return; if(!comentario.trim()){ alert('Indica el motivo.'); return; } }
+    else if(est2==='aprobado'){ comentario = prompt(`Aprobar ${r.folio||id}. Comentario opcional para el autor:`, ''); if(comentario===null) return; }
+    else if(!confirm(`¿Devolver ${r.folio||id} a pendiente?`)) return;
+    b.disabled = true;
+    const { data: res, error } = await sb.rpc('revisar_reporte', { p_id: id, p_estado: est2, p_comentario: comentario||null });
+    if(error){ alert(error.message); b.disabled=false; return; }
+    let extra = '';
+    if(est2==='aprobado'){ const dc = await notificarDiscord(id, 'aprobado'); if(dc==='ok') extra = ' Publicado en Discord.'; else if(dc && dc.startsWith('error')) extra = ' (No se pudo publicar en Discord: '+dc.slice(7)+')'; }
+    toast(`${r.folio||id}: ${est2}.${extra}`, false);
+    cargarRevision(); contarPendientes();
+  });
 }

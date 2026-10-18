@@ -61,7 +61,7 @@ $('#btnExport').onclick=async()=>{
   const n=Math.max(1,paginas.length); const errores=[];
   for(let i=0;i<n;i++){ const v=valoresDe(i); const e=validar(DEF, v, fotosDe(i), fotos); if(e.length) errores.push(...(n>1?e.map(x=>`• ${ETQ} ${i+1}: ${x.replace(/^• /,'')}`):e)); if(!MULTI) break; }
   if(errores.length){ showErr([...new Set(errores)].join('\n')); return; }
-  showErr(''); const btn=$('#btnExport'); btn.disabled=true; const hechos=[]; let publicados=0; const ov=bloquearPantalla('Registrando el reporte en el servidor…');
+  showErr(''); const btn=$('#btnExport'); btn.disabled=true; const hechos=[]; let publicados=0, pendientes=0; const ov=bloquearPantalla('Registrando el reporte en el servidor…');
   try{
     for(let i=0;i<n;i++){
       btn.textContent=n>1?`Registrando ${i+1}/${n}…`:'Registrando…'; ov.texto((n>1?`${ETQ} ${i+1} de ${n}: `:'')+'registrando en el servidor…');
@@ -74,11 +74,11 @@ $('#btnExport').onclick=async()=>{
       const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
       const a=document.createElement('a'); a.download=`reporte-${ID}-${reg.folio}-${fecha}${n>1?`-p${i+1}`:''}.png`; a.href=URL.createObjectURL(blob); a.click();
       ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:ID, pngBlob:blob });
-      const dc=await notificarDiscord(reg.id); if(dc==='ok') publicados++;
+      const dc=await notificarDiscord(reg.id, reg.estado); if(dc==='ok') publicados++; if(dc==='pendiente') pendientes++;
       hechos.push(reg.folio); SELLO=null; if(i<n-1) await espera(700);
     }
     BORR.limpiar();
-    const msg = n>1 ? `${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'') : `Reporte ${hechos[0]} exportado y guardado en el historial.`+(publicados?' Publicado en Discord.':'');
+    const msg = n>1 ? `${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'')+(pendientes?` ${pendientes} pendiente(s) de revisión (un revisor debe aprobarlos).`:'') : `Reporte ${hechos[0]} exportado y guardado en el historial.`+(publicados?' Publicado en Discord.':'')+(pendientes?' Queda pendiente de revisión: un revisor debe aprobarlo.':'');
     showErr(msg, true); ov.exito(msg, ()=>location.reload(), 6);
   }catch(x){ ov.quitar(); SELLO=null; showErr((hechos.length?`Se exportaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
   draw(); btn.disabled=false; btn.textContent='Exportar imagen';

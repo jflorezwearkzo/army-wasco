@@ -597,3 +597,43 @@ create policy discord_canales_rw on public.discord_canales for all using (public
 insert into public.discord_canales (clave, nombre) values
   ('avisos','Avisos generales (sanciones, ascensos, seguridad)'),('anuncios','Tablón de anuncios'),('ranking','Ranking mensual'),
   ('resumen','Resumen semanal y cierre diario'),('recordatorios','Recordatorios de turnos y reportes') on conflict (clave) do nothing;
+
+-- ---------- Revisión y aprobación de reportes ----------
+alter table public.formularios add column if not exists requiere_aprobacion boolean not null default false;
+alter table public.reportes add column if not exists estado text not null default 'aprobado' check (estado in ('pendiente','aprobado','rechazado'));
+alter table public.reportes add column if not exists revisado_por uuid;
+alter table public.reportes add column if not exists revisado_en timestamptz;
+alter table public.reportes add column if not exists comentario_revision text;
+create index if not exists reportes_estado_idx on public.reportes (estado) where estado <> 'aprobado';
+-- Al crear: pendiente si el formulario exige aprobación
+create or replace function public.reportes_estado_inicial() returns trigger language plpgsql security definer set search_path=public as $$
+begin
+  new.estado := case when (select coalesce(requiere_aprobacion,false) from public.formularios where id = new.formulario_id) then 'pendiente' else 'aprobado' end;
+  new.revisado_por := null; new.revisado_en := null; new.comentario_revision := null;
+  return new;
+end $$;
+create or replace trigger reportes_estado_inicial before insert on public.reportes for each row execute function public.reportes_estado_inicial();
+-- validar_update_reporte (producción): si current_setting('pm.revision') = '1' solo cambian estado/revisado_*; el rol de servicio solo discord_enviado_en;
+-- el autor solo adjunta la imagen una vez. La revisión entra únicamente por este RPC:
+create or replace function public.revisar_reporte(p_id bigint, p_estado text, p_comentario text default null)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare r record; v_yo uuid := auth.uid();
+begin
+  if not coalesce(public.mi_perfil_activo(),false) or not coalesce(public.tengo_permiso('aprobar_reportes'),false) then raise exception 'No tienes permiso para revisar reportes'; end if;
+  if p_estado not in ('aprobado','rechazado','pendiente') then raise exception 'Estado inválido'; end if;
+  select * into r from public.reportes where id = p_id; if not found then raise exception 'Reporte no encontrado'; end if;
+  if r.usuario_id = v_yo and not public.soy_superadmin() then raise exception 'No puedes revisar tus propios reportes'; end if;
+  if p_estado = 'rechazado' and coalesce(trim(p_comentario),'') = '' then raise exception 'Indica el motivo del rechazo'; end if;
+  perform set_config('pm.revision','1',true);
+  update public.reportes set estado = p_estado, revisado_por = v_yo, revisado_en = now(), comentario_revision = nullif(trim(p_comentario),'') where id = p_id;
+  perform set_config('pm.revision','0',true);
+  insert into public.auditoria (usuario_id, usuario, accion, tabla, registro, detalle)
+    select v_yo, (select usuario from public.perfiles where id = v_yo), 'revision_'||p_estado, 'reportes', r.folio_v2, jsonb_build_object('reporte_id', p_id, 'autor', (select usuario from public.perfiles where id = r.usuario_id), 'comentario', p_comentario);
+  return jsonb_build_object('id', p_id, 'estado', p_estado, 'folio', r.folio_v2, 'usuario_id', r.usuario_id, 'formulario_id', r.formulario_id);
+end $$;
+revoke execute on function public.revisar_reporte(bigint, text, text) from anon, public;
+grant execute on function public.revisar_reporte(bigint, text, text) to authenticated;
+create policy reportes_select_revisor on public.reportes for select using (public.tengo_permiso('aprobar_reportes'));
+create policy reportes_storage_select_revisor on storage.objects for select using (bucket_id = 'reportes' and public.tengo_permiso('aprobar_reportes'));
+-- reportes_vista añade: estado, revisado_en, comentario_revision, revisor (usuario), discord_enviado_en, requiere_aprobacion
+-- actividad_usuarios() cuenta solo reportes aprobados. El rol Administrador tiene aprobar_reportes.

@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=43ec2e4f"></script>
+<script src="../js/tema.js?v=136b8952"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1200px;margin:0 auto;padding:20px}
@@ -65,6 +65,18 @@
     dialog.dlg-edit .volver{display:inline-block}
     dialog.dlg-edit .cab-dlg .cerrar{display:none}
   }
+  /* --- Revisión --- */
+  .rv-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .rv{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+  .rv .img{aspect-ratio:4/3;background:#000;display:flex;align-items:center;justify-content:center;cursor:zoom-in;position:relative}
+  .rv .img img{width:100%;height:100%;object-fit:contain}
+  .rv .img .cargar{color:var(--muted);font-size:13px}
+  .rv .cuerpo{padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+  .rv .cuerpo b{color:var(--gold)}
+  .rv .acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .rv .acciones .aprobar{background:var(--okbg);color:var(--ok);border:1px solid var(--ok)}
+  .rv .acciones .rechazar{background:var(--errbg);color:var(--err2);border:1px solid var(--err2)}
+  .tag.pend{background:var(--avisobg);color:#e0a92a}
   /* --- Usuarios: buscador, menú ⋯, selección múltiple --- */
   .u-herr{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   .u-herr input[type=search]{flex:2;min-width:200px}
@@ -211,7 +223,7 @@
             <input id="fWebhook" type="url" placeholder="https://discord.com/api/webhooks/…">
             <div style="display:flex;gap:10px;align-items:center;margin-top:6px"><label style="margin:0"><input type="checkbox" id="fWebhookOn" checked> Publicar automáticamente</label><button type="button" class="ghost sm" id="fProbar">Enviar prueba</button><span id="fDiscordMsg" class="muted"></span></div>
           </div>
-          <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="fActivo" checked> Visible en el inicio</label></label>
+          <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="fActivo" checked> Visible en el inicio</label><label title="Los reportes nuevos quedan pendientes hasta que alguien con permiso de revisión los apruebe; solo entonces cuentan en el Resumen y se publican en Discord"><input type="checkbox" id="fAprob"> Requiere aprobación de un revisor</label></label>
           <div class="fila" style="margin-top:14px"><button class="primary" id="fGuardar">Crear</button><button type="button" class="ghost" id="fCancelar">Cancelar</button></div>
           <div class="err" id="fErr"></div><div class="ok" id="fOk"></div>
         </form>
@@ -228,12 +240,24 @@
         <div style="position:relative"><label>Usuario</label><input id="hUsuario" placeholder="escribe para filtrar" autocomplete="off"><div class="sugs" id="hSugs"></div></div>
         <div><label>Desde</label><input id="hDesde" type="date"></div>
         <div><label>Hasta</label><input id="hHasta" type="date"></div>
+        <div><label>Estado</label><select id="hEstado"><option value="">Todos</option><option value="aprobado">Aprobados</option><option value="pendiente">Pendientes</option><option value="rechazado">Rechazados</option></select></div>
         <div><button type="button" class="ghost" id="hLimpiar" style="width:100%">Limpiar filtros</button></div>
       </div>
-      <table><thead><tr><th>Folio</th><th>Fecha</th><th>Formulario</th><th>Usuario</th><th>Resumen</th><th>Registrado</th><th>Imagen</th><th></th></tr></thead><tbody id="tbHist"></tbody></table>
+      <table><thead><tr><th>Folio</th><th>Fecha</th><th>Formulario</th><th>Usuario</th><th>Resumen</th><th>Estado</th><th>Registrado</th><th>Imagen</th><th></th></tr></thead><tbody id="tbHist"></tbody></table>
       <div class="err" id="hErr"></div>
     </div>
   </section>
+  <!-- ===================== REVISIÓN ===================== -->
+  <section id="t-revision">
+    <div class="caja">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Revisión de reportes <span class="muted" id="rvContador" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px"></span></span>
+        <span style="display:flex;gap:8px;align-items:center"><select id="rvEstado" style="width:auto"><option value="pendiente">Pendientes</option><option value="rechazado">Rechazados</option><option value="aprobado">Aprobados (últimos)</option></select></span></h3>
+      <p class="muted" id="rvAviso" style="margin-top:0;font-size:13px">Solo entran aquí los reportes de formularios con "Requiere aprobación de un revisor" (Formularios → Editar). Un reporte aprobado cuenta en el Resumen y se publica en Discord; uno rechazado queda en el historial con el motivo y no cuenta.</p>
+      <div id="rvLista" class="rv-lista"></div>
+      <div class="err" id="rvErr"></div>
+    </div>
+  </section>
+
   <!-- ===================== AUTOMATIZACIÓN ===================== -->
   <section id="t-automatizacion">
     <div class="caja">
@@ -299,6 +323,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=8bf1337a"></script>
+<script type="module" src="../js/app-admin.js?v=1d2ace6d"></script>
 </body>
 </html>

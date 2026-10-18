@@ -201,7 +201,7 @@ $('#btnExport').onclick=async()=>{
     const a=document.createElement('a'); a.download=`reporte-reclutamiento-${FOLIO}-${fmtFecha(d.fecha)}.png`; a.href=URL.createObjectURL(blob); a.click();
     // 3) Adjuntar al historial
     ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'reclutamiento', pngBlob:blob });
-    BORR.limpiar(); ov.texto('Publicando en Discord…'); const dc=await notificarDiscord(reg.id);
+    BORR.limpiar(); ov.texto('Publicando en Discord…'); const dc=await notificarDiscord(reg.id, reg.estado);
     const msg=`Reporte ${FOLIO} exportado y guardado en el historial.`+textoDiscord(dc);
     FOLIO=null; SELLO=null; limpiarFormulario(); $('#err').style.color='#7fd38a'; showErr(msg); ov.exito(msg);
   }catch(x){ ov.quitar(); $('#err').style.color=''; showErr('No se pudo completar: '+x.message); }

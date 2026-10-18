@@ -214,7 +214,7 @@ $('#btnExport').onclick=async()=>{
   const d=getData(), e=validate(d);
   if(e.length){ showErr(e.join('\n')); return; }
   showErr('');
-  const btn=$('#btnExport'); btn.disabled=true; const hechos=[]; let publicados=0; const ov=bloquearPantalla('Registrando…');
+  const btn=$('#btnExport'); btn.disabled=true; const hechos=[]; let publicados=0, pendientes=0; const ov=bloquearPantalla('Registrando…');
   try{
     for(let i=0;i<paginas.length;i++){
       btn.textContent=`Registrando ${i+1}/${paginas.length}…`; ov.texto(`Patrullaje ${i+1} de ${paginas.length}: registrando en el servidor…`);
@@ -228,11 +228,11 @@ $('#btnExport').onclick=async()=>{
       const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
       const a=document.createElement('a'); a.download=`reporte-patrullaje-${FOLIO}-${fmtFecha(d.fecha)}-p${p.n}.png`; a.href=URL.createObjectURL(blob); a.click();
       ov.texto(`Patrullaje ${i+1} de ${paginas.length}: guardando en el historial…`); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'patrullaje', pngBlob:blob });
-      const dc=await notificarDiscord(reg.id); if(dc==='ok') publicados++;
+      const dc=await notificarDiscord(reg.id, reg.estado); if(dc==='ok') publicados++; if(dc==='pendiente') pendientes++;
       hechos.push(FOLIO); FOLIO=null; SELLO=null;
       if(i<paginas.length-1) await espera(700);   // el navegador necesita un respiro entre descargas
     }
-    const msg=`${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'');
+    const msg=`${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'')+(pendientes?` ${pendientes} pendiente(s) de revisión (un revisor debe aprobarlos).`:'');
     limpiarFormulario(); showErr(msg,true); ov.exito(msg);
   }catch(x){ ov.quitar(); FOLIO=null; SELLO=null; showErr((hechos.length?`Se exportaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
   draw(); btn.disabled=false; btn.textContent='Exportar imágenes';

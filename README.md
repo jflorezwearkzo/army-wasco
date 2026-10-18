@@ -121,6 +121,13 @@ En Admin → Resumen, el selector **PDF / Imagen PNG** y el botón **⬇ Exporta
 - En móvil la tabla se convierte en tarjetas. Roles y Formularios usan el mismo menú ⋯ en lugar de la fila de botones.
 - **Crear y editar en sub-ventana**: las tres pestañas (Usuarios, Roles, Formularios) van a ancho completo con un botón **＋ Nuevo …** en la cabecera; el formulario de crear/editar se abre en un diálogo modal dentro del panel (Esc o ✕ cierra; en móvil ocupa la pantalla con "← Volver"). La URL refleja el estado (`#usuarios/nuevo`, `#usuarios/editar/<id>`, `#roles/…`, `#formularios/…`) y se puede recargar o compartir. Al guardar, el diálogo se cierra, aparece un aviso flotante y la fila guardada queda resaltada unos segundos. El diálogo de usuario muestra su rol, último reporte y accesos rápidos a Ver como, Restablecer contraseña y Sus reportes.
 
+## Revisión y aprobación de reportes
+
+- Se activa **por formulario**: Admin → Formularios → Editar → "Requiere aprobación de un revisor" (badge *Con revisión* en la lista). Mientras no se active, todo funciona como antes (los reportes nacen aprobados).
+- Con la opción activa, cada reporte nuevo queda **pendiente** (`reportes.estado`): se descarga y se guarda igual, pero no cuenta en el Resumen ni se publica en Discord hasta que alguien con el permiso **Revisar y aprobar reportes** (`aprobar_reportes`) lo apruebe. El autor lo ve en Mi cuenta → Mis reportes con la etiqueta y, si lo rechazan, con el motivo.
+- Pestaña **Revisión** del panel: tarjetas con imagen, autor y resumen; Aprobar (comentario opcional, publica en Discord si el formulario tiene webhook) / Rechazar (motivo obligatorio) / Volver a pendiente. La pestaña muestra el número de pendientes. Historial tiene filtro y columna de estado; el CSV incluye estado, revisor y comentario.
+- Servidor: trigger `reportes_estado_inicial`, RPC `revisar_reporte(id, estado, comentario)` (no permite revisar los propios salvo Administrador; audita `revision_aprobado/rechazado/pendiente`) y el trigger de inmutabilidad solo deja cambiar la revisión a través de ese RPC.
+
 ## Tema claro / oscuro
 
 Toda la interfaz usa variables CSS (`estilos.css`: `--bg`, `--panel`, `--line2`, `--gold`…) y `js/tema.js` aplica el tema guardado (`localStorage.pm_tema`) antes de pintar. Se cambia desde la barra superior ("🌗 Tema"). Las imágenes de los reportes no cambian: se dibujan sobre sus plantillas.

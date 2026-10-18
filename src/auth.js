@@ -174,9 +174,9 @@ export function barraUsuario(yo){
 export async function crearReporte({ formularioId, fecha, resumen, datos }){
   const { data, error } = await sb.from('reportes')
     .insert({ formulario_id: formularioId, usuario_id: (await sb.auth.getUser()).data.user.id, fecha: fecha || null, resumen, datos })
-    .select('id, folio_v2, datos').single();
+    .select('id, folio_v2, datos, estado').single();
   if(error) throw new Error('No se pudo registrar el reporte: ' + error.message);
-  return { id: data.id, folio: data.folio_v2, datos: data.datos };
+  return { id: data.id, folio: data.folio_v2, datos: data.datos, estado: data.estado || 'aprobado' };
 }
 // Paso 2: sube la imagen con el folio estampado y la adjunta al registro (solo una vez).
 // Carga una foto del usuario reducida a un tamaño razonable (máx. 1600 px por lado): menos memoria en el celular y
@@ -217,13 +217,14 @@ export async function adjuntarImagen({ yo, id, formularioId, pngBlob }){
 }
 // Publica el reporte en Discord si el formulario tiene webhook (lo hace el servidor; nunca falla el exportado por esto).
 // Devuelve: 'ok' | 'sin_webhook' | 'error: …'
-export async function notificarDiscord(reporteId){
+export async function notificarDiscord(reporteId, estado='aprobado'){
+  if(estado==='pendiente') return 'pendiente';   // se publica cuando un revisor lo apruebe
   try{ const { data, error } = await sb.functions.invoke('notificar-discord', { body:{ reporte_id: reporteId } });
     if(error) return 'error: ' + (error.message||'sin respuesta');
     if(data && data.ok) return 'ok'; if(data && data.motivo==='sin_webhook') return 'sin_webhook'; return 'error: ' + ((data&&data.error)||'desconocido'); }
   catch(e){ return 'error: ' + e.message; }
 }
-export const textoDiscord = r => r==='ok' ? ' Publicado en Discord.' : r && r.startsWith('error') ? ` (No se pudo publicar en Discord: ${r.slice(7)})` : '';
+export const textoDiscord = r => r==='ok' ? ' Publicado en Discord.' : r==='pendiente' ? ' Queda pendiente de revisión: un revisor debe aprobarlo para que cuente y se publique en Discord.' : r && r.startsWith('error') ? ` (No se pudo publicar en Discord: ${r.slice(7)})` : '';
 // Compatibilidad: flujo completo en una llamada (sin folio en la imagen)
 export async function guardarReporte({ yo, formularioId, fecha, resumen, datos, pngBlob }){
   const r = await crearReporte({ formularioId, fecha, resumen, datos });
