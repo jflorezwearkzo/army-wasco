@@ -1,5 +1,5 @@
 // Expediente por integrante: perfil, KPIs, sanciones, ascensos y reportes. ?id=<uuid> (sin id: el propio).
-import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, urlImagen, RANGOS, avisoDiscord, hoyISO, cargarFoto } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, urlImagen, RANGOS, avisoDiscord, hoyISO, cargarFoto, esSuperadmin } from './auth.js';
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 const ID = new URLSearchParams(location.search).get('id') || yo.id;
@@ -20,8 +20,16 @@ async function cargar(){
   $('#cab').innerHTML = `<div class="cab"><div><div class="av ${puedoAvatar?'editable':''}" id="avatar" title="${puedoAvatar?'Cambiar la foto del personaje':''}">${avUrl ? `<img src="${esc(avUrl)}" alt="">` : esc(ini)}</div>${puedoAvatar ? '<div class="av-nota">Foto del personaje en el RP, no de la vida real.</div>' : ''}</div>
     <div><h1>${esc(nombreCompleto(p))}</h1><div class="sub">@${esc(p.usuario)} · ${esc(rol.nombre || 'Sin rol')}${rol.rango_pm ? ' · ' + esc(rol.rango_pm) : ''} · <span class="tag ${p.activo?'on':'off'}">${p.activo?'Activo':'Inactivo'}</span></div>
       <div class="sub">Rango <b style="color:var(--text)">${esc(p.rango || 'sin rango')}</b> desde ${fmt(E.en_rango_desde)} (${dias(E.en_rango_desde)} días) · En el Army desde ${fmt(p.creado_en)}</div></div>
-    <div class="acc">${PROPIO ? '' : `<a class="ghost sm" href="admin/#usuarios/editar/${esc(p.id)}" style="text-decoration:none;display:inline-block">Editar usuario</a>`}<a class="ghost sm" href="${PROPIO?'cuenta.html':'admin/#usuarios'}" style="text-decoration:none;display:inline-block">← Volver</a></div></div>`;
+    <div class="acc">${PROPIO ? '' : `<a class="ghost sm" href="admin/#usuarios/editar/${esc(p.id)}" style="text-decoration:none;display:inline-block">Editar usuario</a>`}${(!PROPIO && esSuperadmin(yo)) ? `<button type="button" class="ghost sm" id="btnMfa" title="Solo Administrador">🔓 Quitar 2FA</button>` : ''}<a class="ghost sm" href="${PROPIO?'cuenta.html':'admin/#usuarios'}" style="text-decoration:none;display:inline-block">← Volver</a></div></div>`;
   if(puedoAvatar) $('#avatar').onclick = abrirAvatar;
+  const bm = $('#btnMfa'); if(bm) bm.onclick = async () => {
+    const { data: q, error: e0 } = await sb.functions.invoke('reset-mfa', { body:{ usuario_id: ID, consultar: true } });
+    if(e0 || !q || q.error){ alert('No se pudo consultar: ' + (e0 ? e0.message : (q && q.error) || 'sin respuesta')); return; }
+    if(!q.factores){ alert(`${p.usuario} no tiene verificación en dos pasos activa.`); return; }
+    if(!confirm(`${p.usuario} tiene la verificación en dos pasos activa. ¿Quitarla? Podrá entrar solo con su contraseña y volver a configurarla. Queda en Auditoría.`)) return;
+    const { data, error } = await sb.functions.invoke('reset-mfa', { body:{ usuario_id: ID } });
+    alert(error || !data || data.error ? 'No se pudo quitar: ' + (error ? error.message : (data && data.error) || 'sin respuesta') : `Verificación en dos pasos eliminada (${data.quitados} factor(es)).`);
+  };
   const adv = +E.advertencias_activas || 0;
   $('#kpis').innerHTML = [
     ['Reportes aprobados', s.reportes], ['Últimos 30 días', s.ultimos_30], ['Bajas', s.bajas], ['Reclutamientos', s.reclutamientos], ['Patrullajes', s.patrullajes], ['AKs tomados', s.aks],

@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=843b6126"></script>
+<script src="js/tema.js?v=6dfef033"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -89,7 +89,7 @@
   <div class="bloque"><h3>Verificación en dos pasos (opcional, recomendada para administradores)</h3>
     <ol><li>Instala una app de autenticación (Google Authenticator, Authy, Microsoft Authenticator).</li><li>En Mi cuenta pulsa <b>Activar verificación en dos pasos</b> y escanea el código QR (o escribe la clave manual).</li><li>Escribe el código de 6 dígitos que muestra la app y confirma.</li></ol>
     <p>Desde entonces, al iniciar sesión te pedirá el código después de la contraseña. Para desactivarla, Mi cuenta → <i>Desactivar</i> (pide el código).</p>
-    <div class="ojo">Si pierdes el celular con la app, no podrás entrar. Un administrador puede restablecer tu contraseña y quitar el factor desde Supabase.</div></div>
+    <div class="ojo">Si pierdes el celular con la app, no podrás entrar: pide al Administrador que te quite la verificación en dos pasos (Usuarios → ⋯ → Quitar verificación en dos pasos) y vuelve a configurarla.</div></div>
   <div class="bloque"><h3>Instalar como app</h3><p>Android/Chrome: Mi cuenta → <b>Instalar como app</b> (o el aviso "Agregar a pantalla de inicio"). iPhone: Safari → Compartir → <i>Añadir a pantalla de inicio</i>. Funciona sin conexión para abrir los formularios; para exportar hace falta internet.</p></div>
   <div class="bloque"><h3>Cerrar sesión en todos mis dispositivos</h3><p>Útil si entraste en un computador ajeno. Está al final de Mi cuenta.</p></div>
 </section>
@@ -111,6 +111,7 @@
   <div class="bloque"><h3>Acciones en bloque</h3><p>Marca las casillas (o la de la cabecera para todos los visibles) y abajo aparece la barra: Activar, Desactivar, Mostrar, Ocultar, Asignar rol. Pide confirmación con la lista de nombres. Nunca toca roles fuera de tus permisos ni tu propia cuenta.</p></div>
   <div class="bloque"><h3>Ver como (solo Administrador)</h3><p>Muestra toda la página tal como la ve ese usuario, en solo lectura, con una franja amarilla arriba para salir. Sirve para comprobar quejas tipo "no me aparece el formulario". Queda en Auditoría.</p></div>
   <div class="bloque"><h3>Restablecer contraseña</h3><p>⋯ → Restablecer contraseña: asigna una nueva y entrégasela por privado. Solo sobre usuarios con roles dentro de tus permisos.</p></div>
+  <div class="bloque" data-solo="superadmin"><h3>Quitar verificación en dos pasos (solo Administrador)</h3><p>Si alguien perdió el celular con su app de autenticación: ⋯ → <b>Quitar verificación en dos pasos</b> (o el botón 🔓 en su expediente). Confirma y el usuario vuelve a entrar solo con su contraseña; después puede configurarla de nuevo en Mi cuenta. Queda en Auditoría.</p></div>
 </section>
 
 <section class="sec-panel" id="sec-roles" data-titulo="Roles y permisos" data-icono="🛡️" data-grupo="Administración" data-permisos="crear_roles" hidden>
@@ -193,6 +194,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=a3b95bbd"></script>
+<script type="module" src="js/app-manuales.js?v=60d4a349"></script>
 </body>
 </html>

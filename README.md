@@ -127,7 +127,7 @@ Historial → "Buscar en el contenido": busca en resumen y en todos los datos de
 
 ## Verificación en dos pasos (2FA, opcional)
 
-Mi cuenta → "Verificación en dos pasos": activa un factor TOTP (Google Authenticator, Authy, Microsoft Authenticator…): QR + clave manual, confirmación con código. Con el factor activo, el login pide el código tras la contraseña y `requerir()` exige la sesión verificada (aal2) en todas las páginas. Se puede desactivar desde Mi cuenta (pide el código). No es obligatoria. Requiere que en Supabase esté habilitado **Authentication → Multi-Factor → TOTP**. Si alguien pierde la app, el administrador restablece su contraseña y el usuario vuelve a configurar el factor (o se elimina el factor desde el panel de Supabase).
+Mi cuenta → "Verificación en dos pasos": activa un factor TOTP (Google Authenticator, Authy, Microsoft Authenticator…): QR + clave manual, confirmación con código. Con el factor activo, el login pide el código tras la contraseña y `requerir()` exige la sesión verificada (aal2) en todas las páginas. Se puede desactivar desde Mi cuenta (pide el código). No es obligatoria. Requiere que en Supabase esté habilitado **Authentication → Multi-Factor → TOTP**. Si alguien pierde la app, el **Administrador** le quita la verificación desde Usuarios → ⋯ → "Quitar verificación en dos pasos" (o 🔓 en el expediente): Edge Function `reset-mfa` (exige `soy_superadmin()` con la sesión del llamante, borra los factores con la clave de servicio y audita `mfa_reset`).
 
 ## Copia de seguridad (solo Administrador)
 
