@@ -1,6 +1,6 @@
 // Ficha de usuario (subpágina de Administración → Usuarios): cuenta, actividad, permisos efectivos con extras/negados
 // por usuario, formularios extra, notas del administrador e historial de cambios.
-import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, esSuperadmin, entrarVerComo, enVerComo, validarPassword } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, esSuperadmin, entrarVerComo, enVerComo, validarPassword, RANGOS } from './auth.js';
 const yo = await requerir(); barraUsuario(yo);
 if(!['usuarios','asignar_roles','reset_password','permisos_granulares'].some(p => tiene(yo,p))){ document.querySelector('main').innerHTML = '<p class="err" style="padding:30px;text-align:center">No tienes permiso para ver fichas de usuario.</p>'; throw new Error('sin permiso'); }
 const $ = s => document.querySelector(s);
@@ -11,11 +11,12 @@ const fmtD = iso => iso ? String(iso).slice(0,10).split('-').reverse().join('-')
 let toastT=null; const toast = (t, err=false) => { const e=$('#toast'); e.textContent=t; e.className='toast on'+(err?' err':''); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('on'),3200); };
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
 document.querySelectorAll('#pestanas button').forEach(b => b.onclick = () => { document.querySelectorAll('#pestanas button').forEach(x => x.classList.toggle('on', x===b)); document.querySelectorAll('main section').forEach(s => s.classList.toggle('on', s.id==='p-'+b.dataset.p)); });
-let F = null, FORMS = [];
+let F = null, FORMS = [], ROLES = [];
 const PUEDE_GRAN = tiene(yo,'permisos_granulares') && !enVerComo(yo);
 
 async function cargar(){
-  const [{ data, error }, { data: forms }] = await Promise.all([sb.rpc('ficha_usuario', { p_usuario: ID }), sb.from('formularios').select('id,titulo,icono,activo').order('orden')]);
+  const [{ data, error }, { data: forms }, { data: rolesL }] = await Promise.all([sb.rpc('ficha_usuario', { p_usuario: ID }), sb.from('formularios').select('id,titulo,icono,activo').order('orden'), sb.from('roles').select('*').order('nombre')]);
+  ROLES = rolesL || [];
   if(error){ $('#cab').innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
   F = data; FORMS = forms || []; const p = F.perfil, rol = F.rol || {}; const propio = p.id === yo.id; const protegido = !!rol.protegido;
   document.title = `${nombreCompleto(p)} · Administración`; $('#migaNombre').textContent = p.usuario;
@@ -24,7 +25,8 @@ async function cargar(){
   const puedoEditar = (tiene(yo,'usuarios') || tiene(yo,'asignar_roles')) && (!protegido || esSuperadmin(yo));
   $('#cab').innerHTML = `<div class="av">${avUrl ? `<img src="${esc(avUrl)}" alt="">` : esc(ini)}</div>
     <div><h1>${esc(nombreCompleto(p))}</h1><div class="sub">@${esc(p.usuario)} · ${esc(rol.nombre || 'Sin rol')}${rol.rango_pm ? ' · ' + esc(rol.rango_pm) : ''} · <span class="tag ${p.activo?'on':'off'}">${p.activo?'Activo':'Inactivo'}</span> <span class="tag ${(p.activo && p.visible!==false)?'on':'off'}">${p.visible===false?'Oculto en formularios':'Visible en formularios'}</span>${protegido ? ' <span class="tag" style="background:var(--avisobg);color:#e0a92a">Administrador</span>' : ''}</div></div>
-    <div class="acc">${puedoEditar ? `<a class="ghost sm" href="./#usuarios/editar/${esc(p.id)}" style="text-decoration:none;display:inline-block">✏️ Editar</a>` : ''}<a class="ghost sm" href="../expediente.html?id=${esc(p.id)}" style="text-decoration:none;display:inline-block">📁 Expediente</a>${(tiene(yo,'ver_como') && !enVerComo(yo) && !propio) ? `<button type="button" class="ghost sm" id="bVerComo">👁 Ver como</button>` : ''}${(tiene(yo,'reset_password') && !propio && puedoEditar) ? `<button type="button" class="ghost sm" id="bPass">🔑 Contraseña</button>` : ''}${(esSuperadmin(yo) && !propio && +F.mfa > 0) ? `<button type="button" class="ghost sm" id="bMfa">🔓 Quitar 2FA</button>` : ''}<a class="ghost sm" href="./#usuarios" style="text-decoration:none;display:inline-block">← Usuarios</a></div>`;
+    <div class="acc">${puedoEditar ? `<button type="button" class="ghost sm" id="bEditar">✏️ Editar</button>` : ''}<a class="ghost sm" href="../expediente.html?id=${esc(p.id)}" style="text-decoration:none;display:inline-block">📁 Expediente</a>${(tiene(yo,'ver_como') && !enVerComo(yo) && !propio) ? `<button type="button" class="ghost sm" id="bVerComo">👁 Ver como</button>` : ''}${(tiene(yo,'reset_password') && !propio && puedoEditar) ? `<button type="button" class="ghost sm" id="bPass">🔑 Contraseña</button>` : ''}${(esSuperadmin(yo) && !propio && +F.mfa > 0) ? `<button type="button" class="ghost sm" id="bMfa">🔓 Quitar 2FA</button>` : ''}<a class="ghost sm" href="./#usuarios" style="text-decoration:none;display:inline-block">← Usuarios</a></div>`;
+  const be = $('#bEditar'); if(be) be.onclick = () => abrirEditar(p, rol);
   const bv = $('#bVerComo'); if(bv) bv.onclick = async () => { if(!confirm(`Vas a ver la página como "${nombreCompleto(p)}" (solo lectura). Queda en la auditoría. ¿Continuar?`)) return; try{ await entrarVerComo(p.id); }catch(x){ alert(x.message); } };
   const bp = $('#bPass'); if(bp) bp.onclick = () => { $('#fReset').reset(); $('#rpErr').textContent=''; $('#dlgPass').showModal(); };
   const bm = $('#bMfa'); if(bm) bm.onclick = async () => { if(!confirm(`${p.usuario} tiene la verificación en dos pasos activa. ¿Quitarla? Podrá entrar solo con su contraseña. Queda en Auditoría.`)) return; const { data: r, error: e } = await sb.functions.invoke('reset-mfa', { body:{ usuario_id: p.id } }); if(e || !r || r.error){ toast('No se pudo quitar: '+(e ? e.message : (r&&r.error)||''), true); return; } toast('Verificación en dos pasos eliminada.'); cargar(); };
@@ -76,4 +78,25 @@ $('#fReset').onsubmit = async e => {
     if(data && data.error) throw new Error(data.error); $('#dlgPass').close(); toast('Contraseña restablecida.'); }
   catch(x){ err.textContent=x.message; }
   $('#rpOk').disabled=false;
+};
+
+// ---- Editar aquí mismo ----
+const dentroDeMisPermisos = (permisos, formularios) => { if(esSuperadmin(yo)) return true; const mp = yo.rol.permisos||{}, mf = yo.rol.formularios||[];
+  if(Object.entries(permisos||{}).some(([k,v]) => v && !mp[k])) return false; if(mf.includes('*')) return true; if((formularios||[]).includes('*')) return false; return (formularios||[]).every(f => mf.includes(f)); };
+const rolAsignable = r => !!r && dentroDeMisPermisos(r.permisos, r.formularios) && (!r.protegido || esSuperadmin(yo));
+function abrirEditar(p, rol){
+  $('#eUsuario').value = p.usuario; $('#eNombre').value = p.nombre || '';
+  $('#eRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option ${r===p.rango?'selected':''}>${esc(r)}</option>`).join('');
+  const asignables = ROLES.filter(rolAsignable); $('#eRol').innerHTML = '<option value="">— Sin rol —</option>' + asignables.map(r => `<option value="${esc(r.id)}" ${r.id===p.rol_id?'selected':''}>${esc(r.nombre)}</option>`).join('');
+  if(p.rol_id && !asignables.some(r => r.id===p.rol_id)) $('#eRol').insertAdjacentHTML('afterbegin', `<option value="${esc(p.rol_id)}" selected>${esc(rol.nombre||p.rol_id)}</option>`);
+  $('#eRol').disabled = !tiene(yo,'asignar_roles'); ['#eNombre','#eRango','#eActivo','#eVisible'].forEach(x => $(x).disabled = !tiene(yo,'usuarios'));
+  $('#eActivo').checked = !!p.activo; $('#eVisible').checked = p.visible !== false; $('#eErr').textContent=''; $('#dlgEditar').showModal();
+}
+$('#fEditar').onsubmit = async e => {
+  e.preventDefault(); $('#eErr').textContent=''; $('#eOk').disabled = true;
+  const cambios = {}; if(tiene(yo,'usuarios')) Object.assign(cambios, { nombre: $('#eNombre').value.trim(), rango: $('#eRango').value || null, activo: $('#eActivo').checked, visible: $('#eVisible').checked }); if(tiene(yo,'asignar_roles')) cambios.rol_id = $('#eRol').value || null;
+  if(ID === yo.id && cambios.activo === false){ $('#eErr').textContent = 'No puedes desactivar tu propia cuenta.'; $('#eOk').disabled = false; return; }
+  const { error } = await sb.from('perfiles').update(cambios).eq('id', ID); $('#eOk').disabled = false;
+  if(error){ $('#eErr').textContent = error.message; return; }
+  $('#dlgEditar').close(); toast('Usuario actualizado.'); cargar();
 };
