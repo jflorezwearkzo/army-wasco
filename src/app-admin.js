@@ -1,6 +1,6 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
 import { respaldoCompleto } from './respaldo.js';
-import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
@@ -23,7 +23,7 @@ const TABS = [
   ['auditoria',   'Auditoría',   ['auditoria']],
 ];
 let roles = [], formularios = [], rangosPM = [];
-let USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, ANUN=[];
+let USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
 
 // ---------- Pestañas según permisos ----------
 const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id);
@@ -434,7 +434,7 @@ function ajustarFechas(){
 }
 $('#hForm').onchange = buscarHist; $('#hEstado').onchange = buscarHist;
 ['#hDesde','#hHasta'].forEach(s => $(s).onchange = () => { ajustarFechas(); buscarHist(); });
-['#hDesde','#hHasta'].forEach(s => $(s).onclick = () => { try{ $(s).showPicker(); }catch(e){} });
+document.addEventListener('click', e => { const i = e.target.closest('input[type=date]'); if(i){ try{ i.showPicker(); }catch(x){} } });
 let tHist;
 function mostrarSugs(){
   const q = $('#hUsuario').value.trim().toLowerCase(), box = $('#hSugs');
@@ -596,6 +596,19 @@ async function cargarAutomatizacion(){
   });
   if(typeof cargarProgramadas === 'function') cargarProgramadas();
   $('#cajaRespaldo').hidden = !esSuperadmin(yo);
+  // Canales por formulario (formularios_discord)
+  const { data: fd } = await sb.from('formularios_discord').select('formulario_id,webhook,activo'); const mapa = {}; (fd||[]).forEach(x => mapa[x.formulario_id] = x);
+  $('#tbCanalesForm').innerHTML = formularios.map(f => { const c = mapa[f.id] || {}; return `<tr><td><b>${esc(f.icono||'')} ${esc(f.titulo)}</b><br><span class="muted" style="font-size:12px">${esc(f.id)}${f.requiere_aprobacion?' · se publica al aprobar':''}</span></td>
+    <td><input type="url" data-fwh="${esc(f.id)}" value="${esc(c.webhook||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px"></td>
+    <td><input type="checkbox" data-fon="${esc(f.id)}" ${c.activo!==false?'checked':''}></td>
+    <td style="white-space:nowrap"><button class="ghost sm" data-fg="${esc(f.id)}">Guardar</button> <button class="ghost sm" data-fp="${esc(f.id)}">Probar</button> <span class="muted" data-fm="${esc(f.id)}" style="font-size:12px"></span></td></tr>`; }).join('');
+  const guardarF = async id => { const w = $(`[data-fwh="${id}"]`).value.trim(), m = $(`[data-fm="${id}"]`);
+    if(!w){ await sb.from('formularios_discord').delete().eq('formulario_id', id); m.textContent='Sin webhook.'; return true; }
+    if(!/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }
+    const { error } = await sb.from('formularios_discord').upsert({ formulario_id: id, webhook: w, activo: $(`[data-fon="${id}"]`).checked, actualizado_en: new Date().toISOString() }); m.textContent = error ? 'Error: '+error.message : 'Guardado.'; return !error; };
+  document.querySelectorAll('[data-fg]').forEach(b => b.onclick = () => guardarF(b.dataset.fg));
+  document.querySelectorAll('[data-fp]').forEach(b => b.onclick = async () => { const id = b.dataset.fp, m = $(`[data-fm="${id}"]`); if(!(await guardarF(id))) return; m.textContent='Enviando…';
+    const { data, error } = await sb.functions.invoke('notificar-discord', { body:{ formulario_id: id, prueba: true } }); m.textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Prueba enviada.' : 'Error: '+((data&&data.error)||'sin respuesta'); });
 }
 $('#bRespaldo').onclick = async () => {
   if(!confirm('Se descargará un ZIP con todos los datos' + ($('#bImg').checked ? ' e imágenes' : '') + '. Puede tardar varios minutos. ¿Continuar?')) return;
@@ -670,11 +683,10 @@ async function cargarDisciplina(){
     document.querySelectorAll('[data-anular]').forEach(b => b.onclick = async () => { const m = prompt('Motivo de la anulación:'); if(!m || !m.trim()) return; const { error } = await sb.rpc('anular_sancion', { p_id: +b.dataset.anular, p_motivo: m }); if(error) alert(error.message); else toast('Sanción anulada.'); cargarDisciplina(); });
   };
   ['#dBuscar','#dFiltro','#dTipo'].forEach(x => $(x).oninput = pintar); pintar();
-  $('#sUsuario').innerHTML = '<option value="">— Elige —</option>' + USUARIOS.filter(u => u.activo && u.id!==yo.id).map(u => `<option value="${u.id}">${esc(nombreCompleto(u))} (${esc(u.usuario)})</option>`).join('');
 }
-$('#dNueva').onclick = () => { $('#fSancion').reset(); $('#sFecha').value = hoyISO(); $('#sErr').textContent=''; $('#dlgSancion').showModal(); };
+$('#dNueva').onclick = () => { $('#fSancion').reset(); BUSC_SANCION.fijar(null); $('#sFecha').value = hoyISO(); $('#sErr').textContent=''; $('#dlgSancion').showModal(); };
 $('#fSancion').onsubmit = async e => {
-  e.preventDefault(); $('#sErr').textContent=''; const uid = $('#sUsuario').value; if(!uid){ $('#sErr').textContent='Elige el usuario.'; return; }
+  e.preventDefault(); $('#sErr').textContent=''; const uid = $('#sUsuario').value; if(!uid){ $('#sErr').textContent='Elige el usuario de la lista.'; $('#sUsuarioTxt').focus(); return; }
   const tipo = $('#sTipo').value, motivo = $('#sMotivo').value.trim(); $('#sGuardar').disabled = true;
   const { data, error } = await sb.rpc('registrar_sancion', { p_usuario: uid, p_tipo: tipo, p_motivo: motivo, p_detalle: $('#sDetalle').value.trim() || null, p_fecha: $('#sFecha').value || null });
   $('#sGuardar').disabled = false; if(error){ $('#sErr').textContent = error.message; return; }
@@ -709,37 +721,66 @@ async function cargarAscensos(){
     const { error } = await sb.from('requisitos_ascenso').upsert(fila); if(error){ $('#qErr').textContent = error.message; return; } $('#qErr').textContent=''; toast(`Requisitos de ${fila.rango} guardados.`); cargarAscensos(); });
 }
 
+
+// Buscador de integrantes (input de texto + sugerencias) para los diálogos; guarda el id en el hidden
+function buscadorPersona(txtId, hidId, sugsId, lista){
+  const txt = $('#'+txtId), hid = $('#'+hidId), box = $('#'+sugsId); let act = -1, items = [];
+  const etiqueta = u => `${nombreCompleto(u)} (${u.usuario})`;
+  const pintar = () => { const q = txt.value.trim().toLowerCase();
+    items = lista().filter(u => !q || [u.usuario, u.nombre, u.rango].filter(Boolean).join(' ').toLowerCase().includes(q)).slice(0, 12);
+    box.innerHTML = items.map((u,i) => `<div data-i="${i}" class="${i===act?'act':''}">${esc(nombreCompleto(u))}<small>@${esc(u.usuario)}</small></div>`).join('') || '<div class="muted" style="cursor:default">Sin coincidencias</div>';
+    box.style.display = 'block'; box.querySelectorAll('[data-i]').forEach(d => d.onmousedown = e => { e.preventDefault(); elegir(+d.dataset.i); }); };
+  const elegir = i => { const u = items[i]; if(!u) return; hid.value = u.id; txt.value = etiqueta(u); txt.dataset.elegido = '1'; box.style.display = 'none'; };
+  txt.addEventListener('focus', () => { if(txt.dataset.elegido){ txt.select(); } act = -1; pintar(); });
+  txt.addEventListener('input', () => { hid.value = ''; delete txt.dataset.elegido; act = -1; pintar(); });
+  txt.addEventListener('keydown', e => { if(box.style.display==='none') return; if(e.key==='ArrowDown'){ e.preventDefault(); act = Math.min(items.length-1, act+1); pintar(); } else if(e.key==='ArrowUp'){ e.preventDefault(); act = Math.max(0, act-1); pintar(); } else if(e.key==='Enter'){ if(act>=0){ e.preventDefault(); elegir(act); } else if(items.length===1){ e.preventDefault(); elegir(0); } } else if(e.key==='Escape'){ box.style.display='none'; } });
+  txt.addEventListener('blur', () => setTimeout(() => { box.style.display='none'; if(!hid.value) txt.value=''; }, 150));
+  return { fijar: u => { if(u){ hid.value = u.id; txt.value = etiqueta(u); txt.dataset.elegido='1'; } else { hid.value=''; txt.value=''; delete txt.dataset.elegido; } } };
+}
+const BUSC_TURNO = buscadorPersona('tUsuarioTxt','tUsuario','tSugs', () => USUARIOS.filter(u => u.activo));
+const BUSC_SANCION = buscadorPersona('sUsuarioTxt','sUsuario','sSugs', () => USUARIOS.filter(u => u.activo && u.id!==yo.id));
+
 // ====================== TURNOS ======================
 function isoDe(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function lunesDe(d){ const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
 async function cargarTurnos(){
   if(!T_INICIO) T_INICIO = lunesDe(new Date());
   if(!USUARIOS.length){ const { data } = await sb.from('perfiles').select('*').order('usuario'); USUARIOS = data || []; }
-  $('#tUsuario').innerHTML = '<option value="">— Elige —</option>' + USUARIOS.filter(u => u.activo).map(u => `<option value="${u.id}">${esc(nombreCompleto(u))} (${esc(u.usuario)})</option>`).join('');
-  const fin = new Date(T_INICIO); fin.setDate(fin.getDate()+6); const hoy = isoDe(new Date());
-  $('#tSemana').textContent = `${fFecha(isoDe(T_INICIO))} → ${fFecha(isoDe(fin))}`;
-  const { data, error } = await sb.rpc('turnos_lista', { p_desde: isoDe(T_INICIO), p_hasta: isoDe(fin) });
+  const hoy = isoDe(new Date()); const editaT = tiene(yo,'turnos'); $('#tNuevo').style.display = editaT ? '' : 'none';
+  document.querySelectorAll('[data-tv]').forEach(b => b.classList.toggle('on', b.dataset.tv===T_VISTA));
+  const DIAS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'], MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  // Rango visible según la vista
+  let ini, fin, celdas = [];
+  if(T_VISTA==='dia'){ ini = new Date(T_INICIO); fin = new Date(T_INICIO); $('#tSemana').textContent = `${DIAS[(ini.getDay()+6)%7]} ${fFecha(isoDe(ini))}`; celdas = [{ d: new Date(ini), etiqueta: `${DIAS[(ini.getDay()+6)%7]} ${isoDe(ini).slice(8,10)}/${isoDe(ini).slice(5,7)}` }]; }
+  else if(T_VISTA==='mes'){ const m0 = new Date(T_INICIO.getFullYear(), T_INICIO.getMonth(), 1); ini = lunesDe(m0); const m1 = new Date(m0.getFullYear(), m0.getMonth()+1, 0); fin = new Date(lunesDe(m1)); fin.setDate(fin.getDate()+6);
+    $('#tSemana').textContent = `${MESES[m0.getMonth()]} ${m0.getFullYear()}`; for(let d = new Date(ini); d <= fin; d.setDate(d.getDate()+1)) celdas.push({ d: new Date(d), etiqueta: String(d.getDate()), otro: d.getMonth()!==m0.getMonth() }); }
+  else { ini = lunesDe(T_INICIO); fin = new Date(ini); fin.setDate(fin.getDate()+6); $('#tSemana').textContent = `${fFecha(isoDe(ini))} → ${fFecha(isoDe(fin))}`; for(let i=0;i<7;i++){ const d = new Date(ini); d.setDate(d.getDate()+i); celdas.push({ d, etiqueta: `${DIAS[i]} ${isoDe(d).slice(8,10)}/${isoDe(d).slice(5,7)}` }); } }
+  const { data, error } = await sb.rpc('turnos_lista', { p_desde: isoDe(ini), p_hasta: isoDe(fin) });
   if(error){ $('#tErr').textContent = error.message; return; } $('#tErr').textContent='';
-  const dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']; const editaT = tiene(yo,'turnos');
-  $('#tNuevo').style.display = editaT ? '' : 'none';
-  $('#tGrid').innerHTML = dias.map((n,i) => { const d = new Date(T_INICIO); d.setDate(d.getDate()+i); const iso = isoDe(d); const ts = (data||[]).filter(t => t.fecha===iso);
-    return `<div class="dia ${iso===hoy?'hoy':''}"><h5>${n} <span>${iso.slice(8,10)}/${iso.slice(5,7)}</span></h5>${ts.map(t => `<div class="tn" data-tid="${t.id}" title="${editaT?'Editar o eliminar':''}" style="${editaT?'':'cursor:default'}"><b>${iso < hoy ? (t.reporte ? '✅ ' : '⏳ ') : (t.reporte ? '✅ ' : '')}${esc([t.rango, t.nombre||t.usuario].filter(Boolean).join(' '))}</b><span class="h">${String(t.hora_inicio).slice(0,5)}${t.hora_fin?'–'+String(t.hora_fin).slice(0,5):''}</span>${t.notas?`<div class="muted">${esc(t.notas)}</div>`:''}</div>`).join('')}${editaT?`<div class="mas" data-nuevo="${iso}">＋</div>`:''}</div>`; }).join('');
+  const g = $('#tGrid'); g.className = 'semana v-' + T_VISTA;
+  const tn = (t, iso) => `<div class="tn" data-tid="${t.id}" title="${editaT?'Editar o eliminar':''}${T_VISTA==='mes'?` · ${String(t.hora_inicio).slice(0,5)}`:''}" style="${editaT?'':'cursor:default'}"><b>${iso < hoy ? (t.reporte ? '✅ ' : '⏳ ') : (t.reporte ? '✅ ' : '')}${esc(T_VISTA==='mes' ? (t.nombre||t.usuario) : [t.rango, t.nombre||t.usuario].filter(Boolean).join(' '))}</b>${T_VISTA==='mes' ? '' : `<span class="h">${String(t.hora_inicio).slice(0,5)}${t.hora_fin?'–'+String(t.hora_fin).slice(0,5):''}</span>${t.notas?`<div class="muted">${esc(t.notas)}</div>`:''}`}</div>`;
+  g.innerHTML = (T_VISTA==='mes' ? DIAS.map(d => `<div class="cab-dia">${d}</div>`).join('') : '') + celdas.map(c => { const iso = isoDe(c.d); const ts = (data||[]).filter(t => t.fecha===iso); const max = T_VISTA==='mes' ? 3 : 99;
+    return `<div class="dia ${iso===hoy?'hoy':''} ${c.otro?'otro':''}" data-dia="${iso}"><h5>${c.etiqueta} ${T_VISTA==='mes' && ts.length ? `<span>${ts.length}</span>` : (T_VISTA!=='mes' ? `<span>${ts.length ? ts.length+' turno(s)' : ''}</span>` : '')}</h5>${ts.slice(0,max).map(t => tn(t, iso)).join('')}${ts.length>max ? `<div class="muted" style="font-size:10px;cursor:pointer" data-verdia="${iso}">+${ts.length-max} más…</div>` : ''}${editaT ? `<div class="mas" data-nuevo="${iso}">＋</div>` : ''}</div>`; }).join('');
+  document.querySelectorAll('[data-verdia]').forEach(x => x.onclick = () => { T_INICIO = new Date(x.dataset.verdia+'T00:00:00'); T_VISTA='dia'; cargarTurnos(); });
   if(editaT){ document.querySelectorAll('[data-nuevo]').forEach(x => x.onclick = () => nuevoTurno(x.dataset.nuevo));
-    document.querySelectorAll('#tGrid [data-tid]').forEach(x => x.onclick = () => editarTurno((data||[]).find(t => t.id==x.dataset.tid))); }
+    document.querySelectorAll('#tGrid [data-tid]').forEach(x => x.onclick = e => { e.stopPropagation(); editarTurno((data||[]).find(t => t.id==x.dataset.tid)); }); }
+  if(T_VISTA==='mes') document.querySelectorAll('#tGrid .dia h5').forEach(x => { x.style.cursor='pointer'; x.title='Ver el día'; x.onclick = () => { T_INICIO = new Date(x.parentElement.dataset.dia+'T00:00:00'); T_VISTA='dia'; cargarTurnos(); }; });
 }
-$('#tPrev').onclick = () => { T_INICIO.setDate(T_INICIO.getDate()-7); cargarTurnos(); };
-$('#tNext').onclick = () => { T_INICIO.setDate(T_INICIO.getDate()+7); cargarTurnos(); };
-$('#tHoy').onclick = () => { T_INICIO = lunesDe(new Date()); cargarTurnos(); };
+document.querySelectorAll('[data-tv]').forEach(b => b.onclick = () => { T_VISTA = b.dataset.tv; cargarTurnos(); });
+function moverTurnos(dir){ if(T_VISTA==='dia') T_INICIO.setDate(T_INICIO.getDate()+dir); else if(T_VISTA==='mes'){ T_INICIO = new Date(T_INICIO.getFullYear(), T_INICIO.getMonth()+dir, 1); } else T_INICIO.setDate(T_INICIO.getDate()+7*dir); cargarTurnos(); }
+$('#tPrev').onclick = () => moverTurnos(-1);
+$('#tNext').onclick = () => moverTurnos(1);
+$('#tHoy').onclick = () => { T_INICIO = T_VISTA==='semana' ? lunesDe(new Date()) : new Date(new Date().setHours(0,0,0,0)); cargarTurnos(); };
 $('#tNuevo').onclick = () => nuevoTurno(isoDe(new Date()));
-function nuevoTurno(fecha){ $('#fTurno').reset(); $('#tId').value=''; $('#tFecha').value = fecha; $('#tIni').value='20:00'; $('#tFin').value='22:00'; $('#tituloTurno').textContent='Asignar turno'; $('#tfErr').textContent=''; $('#tRepetir').parentElement.style.display=''; $('#dlgTurno').showModal(); }
-function editarTurno(t){ $('#fTurno').reset(); $('#tId').value=t.id; $('#tUsuario').value=t.usuario_id; $('#tFecha').value=t.fecha; $('#tIni').value=String(t.hora_inicio).slice(0,5); $('#tFin').value=t.hora_fin?String(t.hora_fin).slice(0,5):''; $('#tNotas').value=t.notas||''; $('#tituloTurno').textContent='Editar turno'; $('#tfErr').textContent=''; $('#tRepetir').parentElement.style.display='none';
+function nuevoTurno(fecha){ $('#fTurno').reset(); BUSC_TURNO.fijar(null); $('#tId').value=''; $('#tFecha').value = fecha; $('#tIni').value='20:00'; $('#tFin').value='22:00'; $('#tituloTurno').textContent='Asignar turno'; $('#tfErr').textContent=''; $('#tRepetir').parentElement.style.display=''; $('#dlgTurno').showModal(); }
+function editarTurno(t){ $('#fTurno').reset(); $('#tId').value=t.id; BUSC_TURNO.fijar(USUARIOS.find(u => u.id===t.usuario_id)); $('#tFecha').value=t.fecha; $('#tIni').value=String(t.hora_inicio).slice(0,5); $('#tFin').value=t.hora_fin?String(t.hora_fin).slice(0,5):''; $('#tNotas').value=t.notas||''; $('#tituloTurno').textContent='Editar turno'; $('#tfErr').textContent=''; $('#tRepetir').parentElement.style.display='none';
   let del = $('#tEliminar'); if(!del){ del = document.createElement('button'); del.type='button'; del.id='tEliminar'; del.className='ghost'; del.textContent='🗑 Eliminar'; $('#tBotones').appendChild(del); }
   del.style.display=''; del.onclick = async () => { if(!confirm('¿Eliminar este turno?')) return; const { error } = await sb.from('turnos').delete().eq('id', t.id); if(error){ $('#tfErr').textContent=error.message; return; } $('#dlgTurno').close(); toast('Turno eliminado.'); cargarTurnos(); };
   $('#dlgTurno').showModal(); }
 $('#fTurno').onsubmit = async e => {
   e.preventDefault(); $('#tfErr').textContent=''; const del = $('#tEliminar'); if(del && !$('#tId').value) del.style.display='none';
   const base = { usuario_id: $('#tUsuario').value, fecha: $('#tFecha').value, hora_inicio: $('#tIni').value, hora_fin: $('#tFin').value || null, notas: $('#tNotas').value.trim() || null, asignado_por: yo.id };
-  if(!base.usuario_id){ $('#tfErr').textContent='Elige el integrante.'; return; }
+  if(!base.usuario_id){ $('#tfErr').textContent='Elige el integrante de la lista.'; $('#tUsuarioTxt').focus(); return; }
   let r;
   if($('#tId').value) r = await sb.from('turnos').update(base).eq('id', +$('#tId').value);
   else { const filas = [base]; if($('#tRepetir').checked){ const n = Math.max(1, Math.min(12, +$('#tSemanas').value||4)); for(let i=1;i<n;i++){ const d = new Date(base.fecha+'T00:00:00'); d.setDate(d.getDate()+7*i); filas.push({ ...base, fecha: isoDe(d) }); } } r = await sb.from('turnos').insert(filas); }
@@ -755,28 +796,35 @@ async function cargarAnuncios(){
   const activos = USUARIOS.length ? USUARIOS.filter(u => u.activo).length : null; const editaA = tiene(yo,'anuncios');
   $('#nNuevo').style.display = editaA ? '' : 'none';
   $('#tbAnun').innerHTML = ANUN.map(a => { const cad = a.expira_en && new Date(a.expira_en) < new Date(); return `<tr data-id="${a.id}" style="${a.activo && !cad ? '' : 'opacity:.6'}"><td><b>${a.fijado?'📌 ':''}${esc(a.titulo)}</b><br><span class="muted" style="font-size:12px">${esc((a.cuerpo||'').slice(0,120))}${(a.cuerpo||'').length>120?'…':''}</span></td>
-    <td class="muted" style="white-space:nowrap">${fFecha(a.publicado_en)}</td><td class="muted">${a.expira_en ? fFecha(a.expira_en) : '—'}</td><td>${vistos[a.id]||0}${activos?` <span class="muted">/ ${activos}</span>`:''}</td>
+    <td class="muted" style="white-space:nowrap">${a.imagen_path ? `<img src="${esc(urlAnuncio(a.imagen_path))}" alt="" style="height:40px;border-radius:4px;border:1px solid var(--line2);display:block;margin-bottom:3px">` : ''}${fFecha(a.publicado_en)}</td><td class="muted">${a.expira_en ? fFecha(a.expira_en) : '—'}</td><td>${vistos[a.id]||0}${activos?` <span class="muted">/ ${activos}</span>`:''}</td>
     <td>${cad ? '<span class="tag off">Caducado</span>' : a.activo ? '<span class="tag on">Visible</span>' : '<span class="tag off">Oculto</span>'}</td><td class="acc" style="text-align:right">${editaA ? botonMenu(a.id) : ''}</td></tr>`; }).join('') || '<tr><td colspan=6 class="muted">Sin anuncios</td></tr>';
   document.querySelectorAll('#tbAnun [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const a = ANUN.find(x => x.id==b.dataset.menu);
     abrirMenu(b, 'anun:'+a.id, `<b style="color:var(--text)">${esc(a.titulo)}</b>`, [['editar','✏️ Editar'], ['discord','📣 Publicar en Discord'], [a.activo?'ocultar':'mostrar', a.activo?'🙈 Ocultar':'👁 Mostrar'], [a.fijado?'desfijar':'fijar', a.fijado?'Quitar fijado':'📌 Fijar arriba'], ['eliminar','🗑 Eliminar', true]], async op => {
       if(op==='editar') editarAnuncio(a);
-      if(op==='discord'){ const r = await avisoDiscord('anuncios', { embed: { title: `📣 ${a.titulo}`, description: a.cuerpo||'' } }); toast(r==='ok' ? 'Publicado en Discord.' : r==='sin_webhook' ? 'El canal de anuncios no tiene webhook (Automatización).' : 'No se pudo publicar: '+r, r!=='ok'); }
+      if(op==='discord'){ const r = await avisoDiscord('anuncios', { embed: { title: `📣 ${a.titulo}`, description: a.cuerpo||'', ...(a.imagen_path ? { image: { url: urlAnuncio(a.imagen_path) } } : {}) } }); toast(r==='ok' ? 'Publicado en Discord.' : r==='sin_webhook' ? 'El canal de anuncios no tiene webhook (Automatización).' : 'No se pudo publicar: '+r, r!=='ok'); }
       if(op==='ocultar' || op==='mostrar'){ await sb.from('anuncios').update({ activo: op==='mostrar', actualizado_en: new Date().toISOString() }).eq('id', a.id); cargarAnuncios(); }
       if(op==='fijar' || op==='desfijar'){ await sb.from('anuncios').update({ fijado: op==='fijar', actualizado_en: new Date().toISOString() }).eq('id', a.id); cargarAnuncios(); }
       if(op==='eliminar'){ if(!confirm(`¿Eliminar el anuncio "${a.titulo}"?`)) return; const { error } = await sb.from('anuncios').delete().eq('id', a.id); if(error) alert(error.message); cargarAnuncios(); }
     }); });
   if(editaA) document.querySelectorAll('#tbAnun tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('button,a,input')) return; const a = ANUN.find(x => x.id==tr.dataset.id); if(a) editarAnuncio(a); });
 }
-$('#nNuevo').onclick = () => { $('#fAnuncio').reset(); $('#nId').value=''; $('#nActivo').checked=true; $('#nDiscord').checked=true; $('#tituloAnuncio').textContent='Nuevo anuncio'; $('#nGuardar').textContent='Publicar'; $('#nfErr').textContent=''; $('#dlgAnuncio').showModal(); };
-function editarAnuncio(a){ $('#fAnuncio').reset(); $('#nId').value=a.id; $('#nTitulo').value=a.titulo; $('#nCuerpo').value=a.cuerpo||''; $('#nExpira').value=a.expira_en?String(a.expira_en).slice(0,10):''; $('#nFijado').checked=!!a.fijado; $('#nActivo').checked=!!a.activo; $('#nDiscord').checked=false; $('#tituloAnuncio').textContent='Editar anuncio'; $('#nGuardar').textContent='Guardar'; $('#nfErr').textContent=''; $('#dlgAnuncio').showModal(); }
+const urlAnuncio = p => sb.storage.from('anuncios').getPublicUrl(p).data.publicUrl;
+function anuncioImgPrev(src){ $('#nImgPrev').style.display = src ? '' : 'none'; if(src) $('#nImgPrevImg').src = src; }
+$('#nImagen').onchange = async e => { const f = e.target.files[0]; if(!f) return; try{ const img = await cargarFoto(f, 1600); const c = document.createElement('canvas'); c.width = img.naturalWidth||img.width; c.height = img.naturalHeight||img.height; c.getContext('2d').drawImage(img, 0, 0); let b = await new Promise(r => c.toBlob(r, 'image/webp', 0.9)); if(!b || b.type!=='image/webp') b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)); ANUN_IMG = b; ANUN_IMG_QUITAR = false; anuncioImgPrev(URL.createObjectURL(b)); }catch(x){ $('#nfErr').textContent='No se pudo leer la imagen.'; } };
+$('#nImgQuitar').onclick = () => { ANUN_IMG = null; ANUN_IMG_QUITAR = true; $('#nImagen').value=''; anuncioImgPrev(null); };
+$('#nNuevo').onclick = () => { $('#fAnuncio').reset(); ANUN_IMG=null; ANUN_IMG_QUITAR=false; anuncioImgPrev(null); $('#nId').value=''; $('#nActivo').checked=true; $('#nDiscord').checked=true; $('#tituloAnuncio').textContent='Nuevo anuncio'; $('#nGuardar').textContent='Publicar'; $('#nfErr').textContent=''; $('#dlgAnuncio').showModal(); };
+function editarAnuncio(a){ $('#fAnuncio').reset(); ANUN_IMG=null; ANUN_IMG_QUITAR=false; anuncioImgPrev(a.imagen_path ? urlAnuncio(a.imagen_path) : null); $('#nId').value=a.id; $('#nTitulo').value=a.titulo; $('#nCuerpo').value=a.cuerpo||''; $('#nExpira').value=a.expira_en?String(a.expira_en).slice(0,10):''; $('#nFijado').checked=!!a.fijado; $('#nActivo').checked=!!a.activo; $('#nDiscord').checked=false; $('#tituloAnuncio').textContent='Editar anuncio'; $('#nGuardar').textContent='Guardar'; $('#nfErr').textContent=''; $('#dlgAnuncio').showModal(); }
 $('#fAnuncio').onsubmit = async e => {
   e.preventDefault(); $('#nfErr').textContent='';
   const fila = { titulo: $('#nTitulo').value.trim(), cuerpo: $('#nCuerpo').value.trim(), fijado: $('#nFijado').checked, activo: $('#nActivo').checked, expira_en: $('#nExpira').value ? $('#nExpira').value + 'T23:59:59' : null, actualizado_en: new Date().toISOString() };
-  const id = $('#nId').value; let r;
+  const id = $('#nId').value; let r; const previo = id ? (ANUN.find(x => x.id==id)||{}).imagen_path : null;
+  if(ANUN_IMG){ const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ANUN_IMG.type==='image/webp'?'webp':'jpg'}`; const up = await sb.storage.from('anuncios').upload(path, ANUN_IMG, { contentType: ANUN_IMG.type }); if(up.error){ $('#nfErr').textContent = 'No se pudo subir la imagen: '+up.error.message; return; } fila.imagen_path = path; }
+  else if(ANUN_IMG_QUITAR) fila.imagen_path = null;
   if(id) r = await sb.from('anuncios').update(fila).eq('id', +id); else r = await sb.from('anuncios').insert({ ...fila, autor_id: yo.id });
   if(r.error){ $('#nfErr').textContent = r.error.message; return; }
-  $('#dlgAnuncio').close(); let extra = '';
-  if($('#nDiscord').checked && fila.activo){ const d = await avisoDiscord('anuncios', { embed: { title: `📣 ${fila.titulo}`, description: fila.cuerpo } }); extra = d==='ok' ? ' Publicado en Discord.' : d==='sin_webhook' ? ' (Discord: canal de anuncios sin webhook)' : ' (Discord: '+d+')'; }
+  if(previo && (ANUN_IMG || ANUN_IMG_QUITAR)) sb.storage.from('anuncios').remove([previo]).then(()=>{}, ()=>{});
+  $('#dlgAnuncio').close(); let extra = ''; const imgUrl = fila.imagen_path ? urlAnuncio(fila.imagen_path) : (previo && !ANUN_IMG_QUITAR ? urlAnuncio(previo) : null);
+  if($('#nDiscord').checked && fila.activo){ const d = await avisoDiscord('anuncios', { embed: { title: `📣 ${fila.titulo}`, description: fila.cuerpo, ...(imgUrl ? { image: { url: imgUrl } } : {}) } }); extra = d==='ok' ? ' Publicado en Discord.' : d==='sin_webhook' ? ' (Discord: canal de anuncios sin webhook)' : ' (Discord: '+d+')'; }
   toast('Anuncio guardado.'+extra); cargarAnuncios();
 };
 

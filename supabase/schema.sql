@@ -743,3 +743,8 @@ create or replace function public.bajas_de(d jsonb) returns int language sql imm
   select case when jsonb_typeof(d->'rows')='array' then (select count(*)::int from jsonb_array_elements(d->'rows') e where coalesce(trim(e->>'nombre'),'') <> '') else 0 end
 $$;
 -- expediente(), ranking_calc() y ejecutar_programada() usan public.bajas_de(datos).
+-- Anuncios con imagen (1): bucket público "anuncios", columna anuncios.imagen_path; escriben quienes tienen permiso "anuncios"
+alter table public.anuncios add column if not exists imagen_path text;
+insert into storage.buckets (id, name, public) values ('anuncios','anuncios', true) on conflict (id) do nothing;
+create policy anuncios_img_select on storage.objects for select using (bucket_id = 'anuncios');
+create policy anuncios_img_write on storage.objects for all using (bucket_id = 'anuncios' and public.tengo_permiso('anuncios')) with check (bucket_id = 'anuncios' and public.tengo_permiso('anuncios'));

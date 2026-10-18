@@ -135,11 +135,11 @@ Admin → Automatización → "Copia de seguridad": genera en el navegador un ZI
 
 ## Turnos y agenda de patrullaje
 
-Permisos **Turnos: asignar y editar** (`turnos`) y **Turnos: solo ver la agenda** (`ver_turnos`, abre la pestaña sin botones de edición). Admin → **Turnos**: calendario semanal (‹ › Hoy), "＋ Asignar turno" (integrante, fecha, hora inicio/fin, notas, repetir N semanas), clic en un turno para editar o eliminar. Los turnos pasados muestran ✅ si ese día existe Reporte de Fin de Día del integrante o ⏳ si no. Cada integrante ve "Mis próximos turnos" (14 días) en el inicio. Tabla `turnos`, RPC `turnos_lista`.
+Permisos **Turnos: asignar y editar** (`turnos`) y **Turnos: solo ver la agenda** (`ver_turnos`, abre la pestaña sin botones de edición). Admin → **Turnos**: agenda con vistas **Día / Semana / Mes** (‹ › Hoy; en Mes, clic en el número del día abre ese día), "＋ Asignar turno" (integrante con **buscador** por nombre/usuario/rango, fecha con calendario, hora inicio/fin, notas, repetir N semanas), clic en un turno para editar o eliminar. Los turnos pasados muestran ✅ si ese día existe Reporte de Fin de Día del integrante o ⏳ si no. Cada integrante ve "Mis próximos turnos" (14 días) en el inicio. Tabla `turnos`, RPC `turnos_lista`.
 
 ## Tablón de anuncios
 
-Permisos **Anuncios: publicar y editar** (`anuncios`) y **Anuncios: solo ver** (`ver_anuncios`, ve la lista y el contador de leídos sin editar). Admin → **Anuncios**: crear/editar (título, contenido, caducidad, fijar arriba, visible, publicar en Discord), contador de "leído por". En el inicio aparecen para todos; los no leídos salen como NUEVO con "Marcar como leído" (`anuncios_vistos`).
+Permisos **Anuncios: publicar y editar** (`anuncios`) y **Anuncios: solo ver** (`ver_anuncios`, ve la lista y el contador de leídos sin editar). Admin → **Anuncios**: crear/editar (título, contenido, **una imagen** opcional —bucket público `anuncios`, se muestra en el tablón y en el embed de Discord—, caducidad, fijar arriba, visible, publicar en Discord), contador de "leído por". En el inicio aparecen para todos; los no leídos salen como NUEVO con "Marcar como leído" (`anuncios_vistos`).
 
 ## Ranking mensual e insignias
 
@@ -155,7 +155,7 @@ Admin → Automatización → Tareas programadas: **Recordatorio de turnos de ho
 
 ## Sanciones y advertencias
 
-Permiso **Sanciones y advertencias** (`sanciones`). Se registran desde el expediente o desde Admin → **Disciplina** (tipos: advertencia, sanción, suspensión, expulsión; motivo obligatorio; fecha). Nunca se borran: se **anulan** con motivo. Con **3 advertencias activas** el expediente y la pestaña muestran la alerta de expulsión. Cada registro publica un embed en el canal de Discord *avisos* (si está configurado) y queda en Auditoría (`sancion_<tipo>`, `sancion_anulada`). Tablas `sanciones`; RPCs `registrar_sancion`, `anular_sancion`.
+Permiso **Sanciones y advertencias** (`sanciones`). Se registran desde el expediente o desde Admin → **Disciplina** (buscador de integrante) (tipos: advertencia, sanción, suspensión, expulsión; motivo obligatorio; fecha). Nunca se borran: se **anulan** con motivo. Con **3 advertencias activas** el expediente y la pestaña muestran la alerta de expulsión. Cada registro publica un embed en el canal de Discord *avisos* (si está configurado) y queda en Auditoría (`sancion_<tipo>`, `sancion_anulada`). Tablas `sanciones`; RPCs `registrar_sancion`, `anular_sancion`.
 
 ## Ascensos
 
@@ -178,7 +178,7 @@ Las fotos se reducen en el navegador a 1600 px por lado antes de dibujarlas (`ca
 
 ## Canales de Discord y automatización
 
-Admin → **Automatización** → Canales de Discord: webhooks por propósito (`discord_canales`: avisos, anuncios, ranking, resumen, recordatorios) con botón Probar. La Edge Function `notificar-general` (`{canal, texto, embed, prueba}`) publica en ellos; exige sesión con alguno de los permisos que generan avisos y audita como `discord_aviso`. En el cliente: `avisoDiscord(canal, {texto, embed})`.
+Admin → **Automatización** → Canales de Discord: webhooks por propósito y, debajo, los **canales por formulario** (`formularios_discord`, lo mismo que el campo del editor de Formularios, centralizado aquí con botón Probar); también (`discord_canales`: avisos, anuncios, ranking, resumen, recordatorios) con botón Probar. La Edge Function `notificar-general` (`{canal, texto, embed, prueba}`) publica en ellos; exige sesión con alguno de los permisos que generan avisos y audita como `discord_aviso`. En el cliente: `avisoDiscord(canal, {texto, embed})`.
 
 ## "Ver como" (solo Administrador)
 
