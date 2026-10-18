@@ -1,6 +1,6 @@
 // Formulario genérico: carga la definición JSON del formulario (?id=...) y la ejecuta con el motor de plantillas.
 // Soporta reportes de varias páginas (def.paginas.activo): los campos "por página" se repiten y se exporta una imagen por página.
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, faviconEmoji, sb, esc } from './auth.js';
 import { construirFormulario, validar, dibujar, cargarFondo, cargarImagen, resumenDe, fmtFecha, calcular, estaActivo } from './plantilla.js';
 
 const ID = new URLSearchParams(location.search).get('id') || '';
@@ -61,25 +61,26 @@ $('#btnExport').onclick=async()=>{
   const n=Math.max(1,paginas.length); const errores=[];
   for(let i=0;i<n;i++){ const v=valoresDe(i); const e=validar(DEF, v, fotosDe(i), fotos); if(e.length) errores.push(...(n>1?e.map(x=>`• ${ETQ} ${i+1}: ${x.replace(/^• /,'')}`):e)); if(!MULTI) break; }
   if(errores.length){ showErr([...new Set(errores)].join('\n')); return; }
-  showErr(''); const btn=$('#btnExport'); btn.disabled=true; const hechos=[]; let publicados=0;
+  showErr(''); const btn=$('#btnExport'); btn.disabled=true; const hechos=[]; let publicados=0; const ov=bloquearPantalla('Registrando el reporte en el servidor…');
   try{
     for(let i=0;i<n;i++){
-      btn.textContent=n>1?`Registrando ${i+1}/${n}…`:'Registrando…';
+      btn.textContent=n>1?`Registrando ${i+1}/${n}…`:'Registrando…'; ov.texto((n>1?`${ETQ} ${i+1} de ${n}: `:'')+'registrando en el servidor…');
       const v=valoresDe(i); const fc=DEF.campos.find(c=>c.tipo==='fecha'); const fecha=fc&&v[fc.id]?v[fc.id]:new Date().toISOString().slice(0,10);
       const resumen=(resumenDe(DEF, v) || `${YO.nombre||YO.usuario} · ${F.titulo}`) + (n>1?` · ${ETQ} ${i+1}/${n}`:'');
       const datos={ ...v, plantilla_version:F.version, fotos:fotos.map(p=>p.name) }; delete datos.__pagina; delete datos.__paginas; if(n>1){ datos.pagina=i+1; datos.paginas=n; }
       const reg=await crearReporte({ formularioId:ID, fecha, resumen:`${resumen}${fotos.length?` · ${fotos.length} foto(s)`:''}`, datos });
       SELLO={ folio:reg.folio, texto:`${(reg.datos.usuario||'')} · ${new Date(reg.datos.sellado_en||Date.now()).toLocaleString('es-CO')}` };
-      ACTUAL=i; pintarTabs(); draw(i); btn.textContent=n>1?`Exportando ${i+1}/${n}…`:'Exportando…';
+      ACTUAL=i; pintarTabs(); draw(i); btn.textContent=n>1?`Exportando ${i+1}/${n}…`:'Exportando…'; ov.texto((n>1?`${ETQ} ${i+1} de ${n}: `:'')+`folio ${reg.folio}. Generando la imagen…`);
       const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
       const a=document.createElement('a'); a.download=`reporte-${ID}-${reg.folio}-${fecha}${n>1?`-p${i+1}`:''}.png`; a.href=URL.createObjectURL(blob); a.click();
-      await adjuntarImagen({ yo:YO, id:reg.id, formularioId:ID, pngBlob:blob });
+      ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:ID, pngBlob:blob });
       const dc=await notificarDiscord(reg.id); if(dc==='ok') publicados++;
       hechos.push(reg.folio); SELLO=null; if(i<n-1) await espera(700);
     }
     BORR.limpiar();
-    showErr(n>1 ? `${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'') : `Reporte ${hechos[0]} exportado y guardado en el historial.`+(publicados?' Publicado en Discord.':''), true);
-  }catch(x){ SELLO=null; showErr((hechos.length?`Se exportaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
+    const msg = n>1 ? `${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'') : `Reporte ${hechos[0]} exportado y guardado en el historial.`+(publicados?' Publicado en Discord.':'');
+    showErr(msg, true); ov.exito(msg, ()=>location.reload(), 6);
+  }catch(x){ ov.quitar(); SELLO=null; showErr((hechos.length?`Se exportaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
   draw(); btn.disabled=false; btn.textContent='Exportar imagen';
 };
 $('#btnReset').onclick=()=>{ BORR.limpiar(); location.reload(); };

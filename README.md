@@ -108,6 +108,10 @@ El formulario queda en `reportes/plantilla/?id=<id>` y se comporta como los dem�
 
 Panel › Formularios › Editar › **Webhook de Discord** (requiere gestión de reportes). Al sellar un reporte de ese formulario, el navegador llama a la Edge Function `notificar-discord`, que verifica que quien llama puede ver el reporte, lee el webhook con la clave de servicio (nunca viaja al navegador), descarga la imagen del bucket y la publica en el canal con folio, fecha, quién reporta y resumen. Marca `reportes.discord_enviado_en` para no repetir y deja rastro en auditoría (`discord_publicado`). "Enviar prueba" manda un mensaje de verificación al canal. Si Discord falla, el reporte igual queda sellado y en el historial; el mensaje de éxito indica el motivo.
 
+## Exportación bloqueada y limpieza automática
+
+Al pulsar **Exportar imagen** se muestra una pantalla de bloqueo (`bloquearPantalla` en `src/auth.js`) con un indicador de carga y el paso en curso (registrando, generando imagen, guardando en el historial, Discord). Mientras dura, no se puede pulsar nada, ni usar Esc/Enter/Tab/F5/Ctrl+R, y el navegador avisa si se intenta cerrar la pestaña. Al terminar aparece "✅ Reporte exportado" con el folio y un botón **Aceptar** (se cierra solo a los pocos segundos); el formulario queda **limpio** para que no se exporte dos veces el mismo reporte (en el formulario genérico se recarga la página). Si algo falla, el bloqueo se quita y el formulario conserva lo escrito.
+
 ## Borradores
 
 Todos los formularios guardan automáticamente lo escrito en el navegador (`localStorage`, por usuario y formulario; las fotos no). Al volver a abrir el formulario aparece un aviso "Tienes un borrador sin exportar del…" con **Continuar** (restaura campos, cantidades de páginas/integrantes/vehículos) o **Descartar**. El borrador se borra al exportar con éxito o al pulsar Limpiar, y caduca a los 7 días.

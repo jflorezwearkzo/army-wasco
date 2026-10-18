@@ -1,6 +1,6 @@
 // Service worker: la app funciona como PWA. Caché del "cascarón" (páginas, estilos, scripts, plantillas);
 // nunca se cachean las llamadas a Supabase ni las imágenes firmadas de reportes.
-const VERSION = 'pm-31cbf9b046';
+const VERSION = 'pm-1c5e83d4a5';
 const SHELL = ['./', './index.html', './login.html', './cuenta.html', './reglamento.html', './privacidad.html', './sin-conexion.html', './estilos.css', './favicon.svg', './manifest.webmanifest',
   './reportes/bajas/', './reportes/bajas/plantilla.png', './reportes/reclutamiento/', './reportes/reclutamiento/plantilla.png',
   './reportes/patrullaje/', './reportes/patrullaje/plantilla.png', './reportes/toma-territorio/', './reportes/toma-territorio/plantilla.png', './reportes/plantilla/'];

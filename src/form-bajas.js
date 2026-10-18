@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, hoyISO, faviconEmoji, sb } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb } from './auth.js';
 const YO = await requerir({ formulario:'bajas' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','bajas').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 // Fecha de hoy (editable); nombre, rango y Rango PM vienen del perfil/rol y quedan bloqueados
@@ -208,24 +208,26 @@ $('#btnExport').onclick=async()=>{
   const d=getData(), e=validate(d);
   if(e.length){ showErr(e.join('\n')); return; }
   showErr('');
-  const btn=$('#btnExport'); btn.disabled=true; btn.textContent='Registrando…';
+  const btn=$('#btnExport'); btn.disabled=true; btn.textContent='Registrando…'; const ov=bloquearPantalla('Registrando el reporte en el servidor…');
   try{
     // 1) Registro en el servidor (sella identidad y asigna folio)
     const reg=await crearReporte({ formularioId:'bajas', fecha:d.fecha, resumen:`${d.nombre} (${d.rango}) · ${d.rows.filter(r=>r.nombre).length} abatido(s) · ${photos.length} foto(s)`, datos:{...d, fotos:photos.map(p=>p.name)} });
     FOLIO=reg.folio; SELLO=`${(reg.datos.usuario||'')} · ${new Date(reg.datos.sellado_en||Date.now()).toLocaleString('es-CO')}`;
     draw();
     // 2) Imagen con el folio estampado
-    btn.textContent='Exportando…';
+    btn.textContent='Exportando…'; ov.texto(`Folio ${FOLIO} asignado. Generando la imagen…`);
     const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
     const a=document.createElement('a'); a.download=`reporte-bajas-${FOLIO}-${fmtFecha(d.fecha)}.png`; a.href=URL.createObjectURL(blob); a.click();
     // 3) Adjuntar al historial
-    await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'bajas', pngBlob:blob });
-    BORR.limpiar(); const dc=await notificarDiscord(reg.id);
-    $('#err').style.color='#7fd38a'; showErr(`Reporte ${FOLIO} exportado y guardado en el historial.`+textoDiscord(dc));
-  }catch(x){ $('#err').style.color=''; showErr('No se pudo completar: '+x.message); }
+    ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'bajas', pngBlob:blob });
+    BORR.limpiar(); ov.texto('Publicando en Discord…'); const dc=await notificarDiscord(reg.id);
+    const msg=`Reporte ${FOLIO} exportado y guardado en el historial.`+textoDiscord(dc);
+    FOLIO=null; SELLO=null; limpiarFormulario(); $('#err').style.color='#7fd38a'; showErr(msg); ov.exito(msg);
+  }catch(x){ ov.quitar(); $('#err').style.color=''; showErr('No se pudo completar: '+x.message); }
   FOLIO=null; SELLO=null;
   btn.disabled=false; btn.textContent='Exportar imagen';
 };
-$('#btnReset').onclick=()=>{ BORR.limpiar(); $('#form').reset(); photos=[]; renderThumbs(); showErr(''); precargar(); draw(); };
+function limpiarFormulario(){ BORR.limpiar(); $('#form').reset(); photos=[]; renderThumbs(); showErr(''); precargar(); draw(); }
+$('#btnReset').onclick=limpiarFormulario;
 
 mejorasMovil();

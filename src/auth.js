@@ -244,3 +244,31 @@ export const puedeInstalar = () => !!promptInstalar;
 export const esStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 export async function instalarPWA(){ if(!promptInstalar) return false; promptInstalar.prompt(); const { outcome } = await promptInstalar.userChoice; promptInstalar=null; return outcome==='accepted'; }
 registrarPWA();
+
+// ---------- Pantalla bloqueada durante la exportación ----------
+// const ov = bloquearPantalla('Registrando…'); ov.texto('Exportando…'); ov.exito('Reporte PM-000012 exportado', alCerrar) | ov.quitar()
+export function bloquearPantalla(texto='Procesando…'){
+  if(!document.getElementById('pmOvCss')){ const s=document.createElement('style'); s.id='pmOvCss'; s.textContent=`
+  .pm-ov{position:fixed;inset:0;z-index:1000;background:#07100fe6;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);font-family:"Roboto Condensed",Arial,sans-serif}
+  .pm-ov .c{background:#101c21;border:1px solid #c9a43a;border-radius:12px;padding:26px 30px;max-width:420px;width:100%;text-align:center;color:#f3f3f3}
+  .pm-ov .sp{width:54px;height:54px;border-radius:50%;border:5px solid #243239;border-top-color:#f0c24d;margin:0 auto 16px;animation:pmgira .9s linear infinite}
+  .pm-ov .ok{font-size:54px;margin-bottom:8px}
+  .pm-ov h3{margin:0 0 6px;color:#f0c24d;font-size:20px;text-transform:uppercase;letter-spacing:1px}
+  .pm-ov p{margin:0;color:#9aa7ad;font-size:14px;white-space:pre-line}
+  .pm-ov button{margin-top:16px;background:#f0c24d;color:#1a1200;border:0;border-radius:6px;padding:10px 18px;font-family:inherit;font-weight:700;font-size:14px;text-transform:uppercase;cursor:pointer}
+  @keyframes pmgira{to{transform:rotate(360deg)}}`; document.head.appendChild(s); }
+  const ov=document.createElement('div'); ov.className='pm-ov'; ov.setAttribute('role','alert'); ov.setAttribute('aria-live','assertive');
+  ov.innerHTML=`<div class="c"><div class="sp"></div><h3>Exportando reporte</h3><p></p><p style="margin-top:10px;font-size:12px">No cierres ni recargues la página.</p></div>`;
+  const p=ov.querySelector('p'); p.textContent=texto; document.body.appendChild(ov);
+  const bloquearTeclas=e=>{ if(e.key==='Escape'||e.key==='Enter'||e.key==='Tab'||e.key==='F5'||(e.ctrlKey&&e.key==='r')) e.preventDefault(); };
+  const avisoSalir=e=>{ e.preventDefault(); e.returnValue=''; };
+  document.addEventListener('keydown',bloquearTeclas,true); window.addEventListener('beforeunload',avisoSalir);
+  const quitar=()=>{ document.removeEventListener('keydown',bloquearTeclas,true); window.removeEventListener('beforeunload',avisoSalir); ov.remove(); };
+  return {
+    texto:t=>{ p.textContent=t; },
+    quitar,
+    exito:(mensaje, alCerrar=null, segundos=8)=>{ document.removeEventListener('keydown',bloquearTeclas,true); window.removeEventListener('beforeunload',avisoSalir);
+      ov.querySelector('.c').innerHTML=`<div class="ok">✅</div><h3>Reporte exportado</h3><p>${mensaje.replace(/[<>]/g,'')}</p><p style="margin-top:10px;font-size:12px">El formulario se limpió para el siguiente reporte.</p><button type="button">Aceptar</button>`;
+      let t=null; const cerrar=()=>{ clearTimeout(t); ov.remove(); if(alCerrar) alCerrar(); }; ov.querySelector('button').onclick=cerrar; t=setTimeout(cerrar, segundos*1000); }
+  };
+}
