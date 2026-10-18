@@ -135,11 +135,11 @@ Admin → Automatización → "Copia de seguridad": genera en el navegador un ZI
 
 ## Turnos y agenda de patrullaje
 
-Permiso **Turnos y agenda de patrullaje** (`turnos`). Admin → **Turnos**: calendario semanal (‹ › Hoy), "＋ Asignar turno" (integrante, fecha, hora inicio/fin, notas, repetir N semanas), clic en un turno para editar o eliminar. Los turnos pasados muestran ✅ si ese día existe Reporte de Fin de Día del integrante o ⏳ si no. Cada integrante ve "Mis próximos turnos" (14 días) en el inicio. Tabla `turnos`, RPC `turnos_lista`.
+Permisos **Turnos: asignar y editar** (`turnos`) y **Turnos: solo ver la agenda** (`ver_turnos`, abre la pestaña sin botones de edición). Admin → **Turnos**: calendario semanal (‹ › Hoy), "＋ Asignar turno" (integrante, fecha, hora inicio/fin, notas, repetir N semanas), clic en un turno para editar o eliminar. Los turnos pasados muestran ✅ si ese día existe Reporte de Fin de Día del integrante o ⏳ si no. Cada integrante ve "Mis próximos turnos" (14 días) en el inicio. Tabla `turnos`, RPC `turnos_lista`.
 
 ## Tablón de anuncios
 
-Permiso **Tablón de anuncios** (`anuncios`). Admin → **Anuncios**: crear/editar (título, contenido, caducidad, fijar arriba, visible, publicar en Discord), contador de "leído por". En el inicio aparecen para todos; los no leídos salen como NUEVO con "Marcar como leído" (`anuncios_vistos`).
+Permisos **Anuncios: publicar y editar** (`anuncios`) y **Anuncios: solo ver** (`ver_anuncios`, ve la lista y el contador de leídos sin editar). Admin → **Anuncios**: crear/editar (título, contenido, caducidad, fijar arriba, visible, publicar en Discord), contador de "leído por". En el inicio aparecen para todos; los no leídos salen como NUEVO con "Marcar como leído" (`anuncios_vistos`).
 
 ## Ranking mensual e insignias
 
@@ -151,7 +151,7 @@ Admin → Automatización → Tareas programadas: **Recordatorio de turnos de ho
 
 ## Expediente por integrante
 
-`expediente.html?id=<uuid>` (sin id: el propio; enlace "Mi expediente" en la barra y en Mi cuenta; en Admin desde el menú ⋯ de cada usuario). Muestra perfil y rol, rango y desde cuándo, KPIs (reportes aprobados, últimos 30 días, bajas, reclutamientos, patrullajes, AKs, participaciones como integrante, advertencias activas, pendientes/rechazados), sanciones, ascensos y reportes recientes. Los demás expedientes requieren `historial`, `usuarios` o `sanciones` (RPC `expediente`).
+`expediente.html?id=<uuid>` (sin id: el propio; enlace "Mi expediente" en la barra y en Mi cuenta; en Admin desde el menú ⋯ de cada usuario). Muestra perfil y rol, rango y desde cuándo, KPIs (reportes aprobados, últimos 30 días, bajas, reclutamientos, patrullajes, AKs, participaciones como integrante, advertencias activas, pendientes/rechazados), sanciones, ascensos y reportes recientes. Los demás expedientes requieren `historial`, `usuarios` o `sanciones` (RPC `expediente`). Incluye la **foto del personaje** (clic en el círculo): imagen del personaje dentro del RP, **nunca una foto real**; el aviso aparece al subirla. Se recorta a 512×512 WebP y va al bucket público `avatares` (`perfiles.avatar_path`, RPC `fijar_avatar`); el propio usuario o quien tenga `usuarios` puede cambiarla o quitarla.
 
 ## Sanciones y advertencias
 

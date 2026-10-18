@@ -726,3 +726,14 @@ end $$;
 revoke execute on function public.auditar_respaldo(jsonb) from anon, public;
 grant execute on function public.auditar_respaldo(jsonb) to authenticated;
 -- 2FA (TOTP): lo gestiona Supabase Auth (Authentication → Multi-Factor → TOTP habilitado). El cliente exige aal2 en requerir() cuando el usuario tiene factor.
+
+-- ---------- Avatar (foto del personaje de RP, no real) y permisos de solo lectura ----------
+alter table public.perfiles add column if not exists avatar_path text;
+insert into storage.buckets (id, name, public) values ('avatares','avatares', true) on conflict (id) do nothing;
+create policy avatares_select on storage.objects for select using (bucket_id = 'avatares');
+create policy avatares_write on storage.objects for all
+  using (bucket_id = 'avatares' and coalesce(public.mi_perfil_activo(),false) and ((storage.foldername(name))[1] = auth.uid()::text or public.tengo_permiso('usuarios')))
+  with check (bucket_id = 'avatares' and coalesce(public.mi_perfil_activo(),false) and ((storage.foldername(name))[1] = auth.uid()::text or public.tengo_permiso('usuarios')));
+-- RPC fijar_avatar(p_usuario, p_path): el propio usuario o permiso "usuarios"; audita "avatar". expediente() devuelve perfil.avatar_path.
+-- Permisos de solo lectura: ver_turnos (ve la agenda en el panel sin editar) y ver_anuncios (ve el tablón y quién lo leyó).
+-- anuncios_select / vistos_select incluyen ver_anuncios. El rol Administrador tiene ambos.

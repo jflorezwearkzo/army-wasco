@@ -5,9 +5,9 @@ import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord,
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','anuncios','ver_como'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','ver_como'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos y agenda de patrullaje', anuncios:'Tablón de anuncios', ver_como:'Ver la página como otro usuario (solo lectura)' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', ver_como:'Ver la página como otro usuario (solo lectura)' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
   ['roles',       'Roles',       ['crear_roles']],
@@ -15,8 +15,8 @@ const TABS = [
   ['revision',    'Revisión',    ['aprobar_reportes']],
   ['disciplina',  'Disciplina',  ['sanciones']],
   ['ascensos',    'Ascensos',    ['usuarios']],
-  ['turnos',      'Turnos',      ['turnos']],
-  ['anuncios',    'Anuncios',    ['anuncios']],
+  ['turnos',      'Turnos',      ['turnos','ver_turnos']],
+  ['anuncios',    'Anuncios',    ['anuncios','ver_anuncios']],
   ['historial',   'Historial',   ['historial','eliminar_historial']],
   ['resumen',     'Resumen',     ['historial']],
   ['automatizacion','Automatización',['gestion_reportes']],
@@ -494,7 +494,7 @@ async function buscarHist(){
 }
 
 // ====================== AUDITORÍA ======================
-const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como', revision_aprobado:'✅ Aprobó', revision_rechazado:'⛔ Rechazó', revision_pendiente:'↩ Devolvió a pendiente', sancion_advertencia:'⚠️ Advertencia a', sancion_sancion:'⛔ Sanción a', sancion_suspension:'⏸️ Suspensión a', sancion_expulsion:'🚫 Expulsión de', sancion_anulada:'↩ Anuló sanción de', discord_aviso:'📣 Aviso Discord', programada_config:'⏰ Configuró tarea', programada_recordatorio_turnos:'⏰ Recordatorio de turnos', programada_cierre_diario:'⏰ Cierre diario', programada_resumen_semanal:'⏰ Resumen semanal', programada_ranking_mensual:'⏰ Ranking mensual' };
+const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como', revision_aprobado:'✅ Aprobó', revision_rechazado:'⛔ Rechazó', revision_pendiente:'↩ Devolvió a pendiente', sancion_advertencia:'⚠️ Advertencia a', sancion_sancion:'⛔ Sanción a', sancion_suspension:'⏸️ Suspensión a', sancion_expulsion:'🚫 Expulsión de', sancion_anulada:'↩ Anuló sanción de', discord_aviso:'📣 Aviso Discord', avatar:'📷 Cambió la foto de', respaldo:'💾 Copia de seguridad', programada_config:'⏰ Configuró tarea', programada_recordatorio_turnos:'⏰ Recordatorio de turnos', programada_cierre_diario:'⏰ Cierre diario', programada_resumen_semanal:'⏰ Resumen semanal', programada_ranking_mensual:'⏰ Ranking mensual' };
 const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta' };
 async function cargarAud(){ buscarAud(); }
 $('#aBuscar').onclick = buscarAud; $('#aTabla').onchange = buscarAud;
@@ -720,11 +720,12 @@ async function cargarTurnos(){
   $('#tSemana').textContent = `${fFecha(isoDe(T_INICIO))} → ${fFecha(isoDe(fin))}`;
   const { data, error } = await sb.rpc('turnos_lista', { p_desde: isoDe(T_INICIO), p_hasta: isoDe(fin) });
   if(error){ $('#tErr').textContent = error.message; return; } $('#tErr').textContent='';
-  const dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']; const editaT = tiene(yo,'turnos');
+  $('#tNuevo').style.display = editaT ? '' : 'none';
   $('#tGrid').innerHTML = dias.map((n,i) => { const d = new Date(T_INICIO); d.setDate(d.getDate()+i); const iso = isoDe(d); const ts = (data||[]).filter(t => t.fecha===iso);
-    return `<div class="dia ${iso===hoy?'hoy':''}"><h5>${n} <span>${iso.slice(8,10)}/${iso.slice(5,7)}</span></h5>${ts.map(t => `<div class="tn" data-tid="${t.id}" title="Editar o eliminar"><b>${iso < hoy ? (t.reporte ? '✅ ' : '⏳ ') : (t.reporte ? '✅ ' : '')}${esc([t.rango, t.nombre||t.usuario].filter(Boolean).join(' '))}</b><span class="h">${String(t.hora_inicio).slice(0,5)}${t.hora_fin?'–'+String(t.hora_fin).slice(0,5):''}</span>${t.notas?`<div class="muted">${esc(t.notas)}</div>`:''}</div>`).join('')}<div class="mas" data-nuevo="${iso}">＋</div></div>`; }).join('');
-  document.querySelectorAll('[data-nuevo]').forEach(x => x.onclick = () => nuevoTurno(x.dataset.nuevo));
-  document.querySelectorAll('#tGrid [data-tid]').forEach(x => x.onclick = () => editarTurno((data||[]).find(t => t.id==x.dataset.tid)));
+    return `<div class="dia ${iso===hoy?'hoy':''}"><h5>${n} <span>${iso.slice(8,10)}/${iso.slice(5,7)}</span></h5>${ts.map(t => `<div class="tn" data-tid="${t.id}" title="${editaT?'Editar o eliminar':''}" style="${editaT?'':'cursor:default'}"><b>${iso < hoy ? (t.reporte ? '✅ ' : '⏳ ') : (t.reporte ? '✅ ' : '')}${esc([t.rango, t.nombre||t.usuario].filter(Boolean).join(' '))}</b><span class="h">${String(t.hora_inicio).slice(0,5)}${t.hora_fin?'–'+String(t.hora_fin).slice(0,5):''}</span>${t.notas?`<div class="muted">${esc(t.notas)}</div>`:''}</div>`).join('')}${editaT?`<div class="mas" data-nuevo="${iso}">＋</div>`:''}</div>`; }).join('');
+  if(editaT){ document.querySelectorAll('[data-nuevo]').forEach(x => x.onclick = () => nuevoTurno(x.dataset.nuevo));
+    document.querySelectorAll('#tGrid [data-tid]').forEach(x => x.onclick = () => editarTurno((data||[]).find(t => t.id==x.dataset.tid))); }
 }
 $('#tPrev').onclick = () => { T_INICIO.setDate(T_INICIO.getDate()-7); cargarTurnos(); };
 $('#tNext').onclick = () => { T_INICIO.setDate(T_INICIO.getDate()+7); cargarTurnos(); };
@@ -751,10 +752,11 @@ async function cargarAnuncios(){
   const [{ data, error }, { data: vis }] = await Promise.all([sb.from('anuncios').select('*').order('fijado',{ascending:false}).order('publicado_en',{ascending:false}).limit(200), sb.from('anuncios_vistos').select('anuncio_id')]);
   if(error){ $('#nErr').textContent = error.message; return; } $('#nErr').textContent=''; ANUN = data || [];
   const vistos = {}; (vis||[]).forEach(v => vistos[v.anuncio_id] = (vistos[v.anuncio_id]||0)+1);
-  const activos = USUARIOS.length ? USUARIOS.filter(u => u.activo).length : null;
+  const activos = USUARIOS.length ? USUARIOS.filter(u => u.activo).length : null; const editaA = tiene(yo,'anuncios');
+  $('#nNuevo').style.display = editaA ? '' : 'none';
   $('#tbAnun').innerHTML = ANUN.map(a => { const cad = a.expira_en && new Date(a.expira_en) < new Date(); return `<tr data-id="${a.id}" style="${a.activo && !cad ? '' : 'opacity:.6'}"><td><b>${a.fijado?'📌 ':''}${esc(a.titulo)}</b><br><span class="muted" style="font-size:12px">${esc((a.cuerpo||'').slice(0,120))}${(a.cuerpo||'').length>120?'…':''}</span></td>
     <td class="muted" style="white-space:nowrap">${fFecha(a.publicado_en)}</td><td class="muted">${a.expira_en ? fFecha(a.expira_en) : '—'}</td><td>${vistos[a.id]||0}${activos?` <span class="muted">/ ${activos}</span>`:''}</td>
-    <td>${cad ? '<span class="tag off">Caducado</span>' : a.activo ? '<span class="tag on">Visible</span>' : '<span class="tag off">Oculto</span>'}</td><td class="acc" style="text-align:right">${botonMenu(a.id)}</td></tr>`; }).join('') || '<tr><td colspan=6 class="muted">Sin anuncios</td></tr>';
+    <td>${cad ? '<span class="tag off">Caducado</span>' : a.activo ? '<span class="tag on">Visible</span>' : '<span class="tag off">Oculto</span>'}</td><td class="acc" style="text-align:right">${editaA ? botonMenu(a.id) : ''}</td></tr>`; }).join('') || '<tr><td colspan=6 class="muted">Sin anuncios</td></tr>';
   document.querySelectorAll('#tbAnun [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const a = ANUN.find(x => x.id==b.dataset.menu);
     abrirMenu(b, 'anun:'+a.id, `<b style="color:var(--text)">${esc(a.titulo)}</b>`, [['editar','✏️ Editar'], ['discord','📣 Publicar en Discord'], [a.activo?'ocultar':'mostrar', a.activo?'🙈 Ocultar':'👁 Mostrar'], [a.fijado?'desfijar':'fijar', a.fijado?'Quitar fijado':'📌 Fijar arriba'], ['eliminar','🗑 Eliminar', true]], async op => {
       if(op==='editar') editarAnuncio(a);
@@ -763,7 +765,7 @@ async function cargarAnuncios(){
       if(op==='fijar' || op==='desfijar'){ await sb.from('anuncios').update({ fijado: op==='fijar', actualizado_en: new Date().toISOString() }).eq('id', a.id); cargarAnuncios(); }
       if(op==='eliminar'){ if(!confirm(`¿Eliminar el anuncio "${a.titulo}"?`)) return; const { error } = await sb.from('anuncios').delete().eq('id', a.id); if(error) alert(error.message); cargarAnuncios(); }
     }); });
-  document.querySelectorAll('#tbAnun tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('button,a,input')) return; const a = ANUN.find(x => x.id==tr.dataset.id); if(a) editarAnuncio(a); });
+  if(editaA) document.querySelectorAll('#tbAnun tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('button,a,input')) return; const a = ANUN.find(x => x.id==tr.dataset.id); if(a) editarAnuncio(a); });
 }
 $('#nNuevo').onclick = () => { $('#fAnuncio').reset(); $('#nId').value=''; $('#nActivo').checked=true; $('#nDiscord').checked=true; $('#tituloAnuncio').textContent='Nuevo anuncio'; $('#nGuardar').textContent='Publicar'; $('#nfErr').textContent=''; $('#dlgAnuncio').showModal(); };
 function editarAnuncio(a){ $('#fAnuncio').reset(); $('#nId').value=a.id; $('#nTitulo').value=a.titulo; $('#nCuerpo').value=a.cuerpo||''; $('#nExpira').value=a.expira_en?String(a.expira_en).slice(0,10):''; $('#nFijado').checked=!!a.fijado; $('#nActivo').checked=!!a.activo; $('#nDiscord').checked=false; $('#tituloAnuncio').textContent='Editar anuncio'; $('#nGuardar').textContent='Guardar'; $('#nfErr').textContent=''; $('#dlgAnuncio').showModal(); }

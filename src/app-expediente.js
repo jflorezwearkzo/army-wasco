@@ -1,5 +1,5 @@
 // Expediente por integrante: perfil, KPIs, sanciones, ascensos y reportes. ?id=<uuid> (sin id: el propio).
-import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, urlImagen, RANGOS, avisoDiscord, hoyISO } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, urlImagen, RANGOS, avisoDiscord, hoyISO, cargarFoto } from './auth.js';
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 const ID = new URLSearchParams(location.search).get('id') || yo.id;
@@ -15,10 +15,13 @@ async function cargar(){
   E = data; const p = E.perfil, s = E.stats || {}, rol = E.rol || {};
   document.title = `Expediente · ${nombreCompleto(p)} · Policía Militar`;
   const ini = (p.nombre || p.usuario || '?').trim().split(/\s+/).map(x => x[0]).slice(0,2).join('').toUpperCase();
-  $('#cab').innerHTML = `<div class="cab"><div class="av">${esc(ini)}</div>
+  const puedoAvatar = PROPIO || tiene(yo,'usuarios');
+  const avUrl = p.avatar_path ? sb.storage.from('avatares').getPublicUrl(p.avatar_path).data.publicUrl + '?v=' + encodeURIComponent(p.avatar_path.split('/').pop()) : null;
+  $('#cab').innerHTML = `<div class="cab"><div><div class="av ${puedoAvatar?'editable':''}" id="avatar" title="${puedoAvatar?'Cambiar la foto del personaje':''}">${avUrl ? `<img src="${esc(avUrl)}" alt="">` : esc(ini)}</div>${puedoAvatar ? '<div class="av-nota">Foto del personaje en el RP, no de la vida real.</div>' : ''}</div>
     <div><h1>${esc(nombreCompleto(p))}</h1><div class="sub">@${esc(p.usuario)} · ${esc(rol.nombre || 'Sin rol')}${rol.rango_pm ? ' · ' + esc(rol.rango_pm) : ''} · <span class="tag ${p.activo?'on':'off'}">${p.activo?'Activo':'Inactivo'}</span></div>
       <div class="sub">Rango <b style="color:var(--text)">${esc(p.rango || 'sin rango')}</b> desde ${fmt(E.en_rango_desde)} (${dias(E.en_rango_desde)} días) · En el Army desde ${fmt(p.creado_en)}</div></div>
     <div class="acc">${PROPIO ? '' : `<a class="ghost sm" href="admin/#usuarios/editar/${esc(p.id)}" style="text-decoration:none;display:inline-block">Editar usuario</a>`}<a class="ghost sm" href="${PROPIO?'cuenta.html':'admin/#usuarios'}" style="text-decoration:none;display:inline-block">← Volver</a></div></div>`;
+  if(puedoAvatar) $('#avatar').onclick = abrirAvatar;
   const adv = +E.advertencias_activas || 0;
   $('#kpis').innerHTML = [
     ['Reportes aprobados', s.reportes], ['Últimos 30 días', s.ultimos_30], ['Bajas', s.bajas], ['Reclutamientos', s.reclutamientos], ['Patrullajes', s.patrullajes], ['AKs tomados', s.aks],
@@ -73,4 +76,33 @@ $('#fRango').onsubmit = async e => {
   const sube = RANGOS.indexOf(data.rango_nuevo) > RANGOS.indexOf(data.rango_anterior);
   avisoDiscord('avisos', { embed: { title: `${sube ? '🎖️ Ascenso' : '🔻 Cambio de rango'} · ${E.perfil.nombre || E.perfil.usuario}`, description: `${data.rango_anterior || 'Sin rango'} → **${data.rango_nuevo || 'Sin rango'}**${$('#rMotivo').value.trim() ? `\n${$('#rMotivo').value.trim()}` : ''}`, color: sube ? 0x2fa35a : 0x9aa7ad, fields: [{ name:'Otorgado por', value: nombreCompleto(yo), inline:true }] } });
   cargar();
+};
+
+// ---- Foto del personaje (avatar) ----
+let AV_BLOB = null;
+function abrirAvatar(){ AV_BLOB = null; $('#avArchivo').value=''; $('#avPrev').style.display='none'; $('#avGuardar').disabled = true; $('#avErr').textContent=''; $('#avQuitar').style.display = E.perfil.avatar_path ? '' : 'none'; $('#dlgAvatar').showModal(); }
+$('#avArchivo').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return; $('#avErr').textContent='';
+  try{ const img = await cargarFoto(f, 1024); const s = Math.min(img.naturalWidth||img.width, img.naturalHeight||img.height); const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+    const x = c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img, ((img.naturalWidth||img.width)-s)/2, ((img.naturalHeight||img.height)-s)/2, s, s, 0, 0, 512, 512);
+    let blob = await new Promise(r => c.toBlob(r, 'image/webp', 0.9)); if(!blob || blob.type!=='image/webp') blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+    AV_BLOB = blob; $('#avPrevImg').src = URL.createObjectURL(blob); $('#avPrev').style.display=''; $('#avGuardar').disabled = false; }
+  catch(x){ $('#avErr').textContent = 'No se pudo leer la imagen.'; }
+};
+$('#avGuardar').onclick = async () => {
+  if(!AV_BLOB) return; $('#avGuardar').disabled = true; $('#avErr').textContent='';
+  const ext = AV_BLOB.type==='image/webp' ? 'webp' : 'jpg'; const path = `${ID}/${Date.now()}.${ext}`;
+  const { error: e1 } = await sb.storage.from('avatares').upload(path, AV_BLOB, { contentType: AV_BLOB.type, upsert: true });
+  if(e1){ $('#avErr').textContent = 'No se pudo subir: ' + e1.message; $('#avGuardar').disabled = false; return; }
+  const anterior = E.perfil.avatar_path;
+  const { error: e2 } = await sb.rpc('fijar_avatar', { p_usuario: ID, p_path: path });
+  if(e2){ $('#avErr').textContent = e2.message; $('#avGuardar').disabled = false; return; }
+  if(anterior) sb.storage.from('avatares').remove([anterior]).then(()=>{}, ()=>{});
+  $('#dlgAvatar').close(); cargar();
+};
+$('#avQuitar').onclick = async () => {
+  if(!confirm('¿Quitar la foto del personaje?')) return; const anterior = E.perfil.avatar_path;
+  const { error } = await sb.rpc('fijar_avatar', { p_usuario: ID, p_path: null }); if(error){ $('#avErr').textContent = error.message; return; }
+  if(anterior) sb.storage.from('avatares').remove([anterior]).then(()=>{}, ()=>{});
+  $('#dlgAvatar').close(); cargar();
 };

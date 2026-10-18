@@ -49,7 +49,7 @@ export async function cargarYo(){
 export const tiene = (yo, permiso) => !!(yo && yo.rol && yo.rol.permisos && yo.rol.permisos[permiso]);
 export const puedeFormulario = (yo, id) => !!(yo && yo.rol && (yo.rol.formularios.includes('*') || yo.rol.formularios.includes(id)));
 export const esSuperadmin = yo => !!(yo && yo.rol && yo.rol.protegido);
-export const esAdminDeAlgo = yo => ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','historial','eliminar_historial','auditoria'].some(p => tiene(yo,p));
+export const esAdminDeAlgo = yo => ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios'].some(p => tiene(yo,p));
 
 // Exige sesión activa; opcionalmente un permiso o un formulario. Redirige a login si no cumple.
 export async function requerir({ permiso=null, formulario=null } = {}){
