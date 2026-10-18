@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Ingresar · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=9ab9535e"></script>
+<script src="js/tema.js?v=08afb612"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   body{display:flex;align-items:center;justify-content:center;padding:20px}
@@ -38,9 +38,18 @@
     <button class="primary" id="b">Ingresar</button>
     <div class="err" id="err"></div>
   </form>
+  <form id="fMfa" hidden>
+    <p style="margin:0 0 6px;font-size:15px"><b>🔐 Verificación en dos pasos</b></p>
+    <p class="muted" style="margin:0;font-size:13px">Escribe el código de 6 dígitos de tu app de autenticación (Google Authenticator, Authy, Microsoft Authenticator…).</p>
+    <label for="codigo">Código</label>
+    <input id="codigo" inputmode="numeric" pattern="[0-9 ]{6,7}" autocomplete="one-time-code" maxlength="7" required placeholder="123 456">
+    <button class="primary" id="bMfa">Verificar</button>
+    <div class="err" id="errMfa"></div>
+    <p class="muted" style="font-size:12px;margin-top:10px"><a href="#" id="mfaSalir" style="color:var(--muted)">Cancelar y volver a ingresar</a></p>
+  </form>
   <p class="muted" style="font-size:12px">¿Sin cuenta? Pídesela al administrador.</p>
   <p class="muted" style="font-size:12px;margin-top:4px">Al iniciar sesión aceptas el <a href="privacidad.html" style="color:var(--gold)">aviso de privacidad y uso</a>.</p>
 </div>
-<script type="module" src="js/app-login.js?v=c22b3942"></script>
+<script type="module" src="js/app-login.js?v=93ff3a35"></script>
 </body>
 </html>

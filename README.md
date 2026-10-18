@@ -121,6 +121,18 @@ En Admin → Resumen, el selector **PDF / Imagen PNG** y el botón **⬇ Exporta
 - En móvil la tabla se convierte en tarjetas. Roles y Formularios usan el mismo menú ⋯ en lugar de la fila de botones.
 - **Crear y editar en sub-ventana**: las tres pestañas (Usuarios, Roles, Formularios) van a ancho completo con un botón **＋ Nuevo …** en la cabecera; el formulario de crear/editar se abre en un diálogo modal dentro del panel (Esc o ✕ cierra; en móvil ocupa la pantalla con "← Volver"). La URL refleja el estado (`#usuarios/nuevo`, `#usuarios/editar/<id>`, `#roles/…`, `#formularios/…`) y se puede recargar o compartir. Al guardar, el diálogo se cierra, aparece un aviso flotante y la fila guardada queda resaltada unos segundos. El diálogo de usuario muestra su rol, último reporte y accesos rápidos a Ver como, Restablecer contraseña y Sus reportes.
 
+## Búsqueda de texto completo y galería
+
+Historial → "Buscar en el contenido": busca en resumen y en todos los datos del reporte (integrantes, nombres, observaciones) con `tsvector` en español (columna generada `reportes.busqueda` + índice GIN; sintaxis websearch: `"zona norte" -bajas`). Un folio (`PM-000012`) se busca por folio. Botón **🖼 Galería**: mosaico con las imágenes de los reportes filtrados (hasta 120), clic para ampliar o descargar.
+
+## Verificación en dos pasos (2FA, opcional)
+
+Mi cuenta → "Verificación en dos pasos": activa un factor TOTP (Google Authenticator, Authy, Microsoft Authenticator…): QR + clave manual, confirmación con código. Con el factor activo, el login pide el código tras la contraseña y `requerir()` exige la sesión verificada (aal2) en todas las páginas. Se puede desactivar desde Mi cuenta (pide el código). No es obligatoria. Requiere que en Supabase esté habilitado **Authentication → Multi-Factor → TOTP**. Si alguien pierde la app, el administrador restablece su contraseña y el usuario vuelve a configurar el factor (o se elimina el factor desde el panel de Supabase).
+
+## Copia de seguridad (solo Administrador)
+
+Admin → Automatización → "Copia de seguridad": genera en el navegador un ZIP con cada tabla en JSON y CSV (`datos/`) y las imágenes del historial (`imagenes/<folio>-<formulario>.<ext>`), sin contraseñas, webhooks ni claves (`src/respaldo.js`, ZIP sin compresión escrito a mano). Queda en Auditoría como `respaldo`.
+
 ## Turnos y agenda de patrullaje
 
 Permiso **Turnos y agenda de patrullaje** (`turnos`). Admin → **Turnos**: calendario semanal (‹ › Hoy), "＋ Asignar turno" (integrante, fecha, hora inicio/fin, notas, repetir N semanas), clic en un turno para editar o eliminar. Los turnos pasados muestran ✅ si ese día existe Reporte de Fin de Día del integrante o ⏳ si no. Cada integrante ve "Mis próximos turnos" (14 días) en el inicio. Tabla `turnos`, RPC `turnos_lista`.

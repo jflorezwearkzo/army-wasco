@@ -57,10 +57,23 @@ export async function requerir({ permiso=null, formulario=null } = {}){
   let yo = await cargarYo();
   if(!yo || !yo.activo){ location.replace(RAIZ + 'login.html?next=' + encodeURIComponent(location.href)); throw new Error('sin sesión'); }
   vigilarInactividad();
+  if(await faltaSegundoPaso()){ location.replace(RAIZ + 'login.html?mfa=1&next=' + encodeURIComponent(location.href)); throw new Error('falta 2FA'); }
   yo = await aplicarVerComo(yo);
   if(permiso && !tiene(yo, permiso)){ document.body.innerHTML = aviso('No tienes permiso para ver esta sección.'); throw new Error('sin permiso'); }
   if(formulario && !puedeFormulario(yo, formulario)){ document.body.innerHTML = aviso('Tu rol no tiene acceso a este formulario.'); throw new Error('sin acceso'); }
   return yo;
+}
+// ¿La sesión tiene 2FA configurado pero aún no verificó el código en este inicio de sesión?
+export async function faltaSegundoPaso(){
+  try{ if(!sb.auth.mfa) return false; const { data } = await sb.auth.mfa.getAuthenticatorAssuranceLevel(); return !!(data && data.nextLevel==='aal2' && data.currentLevel==='aal1'); }catch(e){ return false; }
+}
+// Verifica un código TOTP contra el primer factor verificado del usuario
+export async function verificarCodigo2FA(codigo){
+  const { data: f, error: e1 } = await sb.auth.mfa.listFactors(); if(e1) throw new Error(traducirAuth(e1.message));
+  const factor = (f.totp||[]).find(x => x.status==='verified') || (f.all||[]).find(x => x.status==='verified'); if(!factor) throw new Error('No tienes un factor de verificación activo.');
+  const { data: ch, error: e2 } = await sb.auth.mfa.challenge({ factorId: factor.id }); if(e2) throw new Error(traducirAuth(e2.message));
+  const { error: e3 } = await sb.auth.mfa.verify({ factorId: factor.id, challengeId: ch.id, code: String(codigo).replace(/\s+/g,'') }); if(e3) throw new Error(/invalid|incorrect|expired/i.test(e3.message) ? 'Código incorrecto o vencido. Revisa la hora del celular y vuelve a intentarlo.' : traducirAuth(e3.message));
+  return true;
 }
 function aviso(html){
   return `<div style="font-family:Arial,sans-serif;color:var(--text);background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center">
@@ -82,6 +95,7 @@ function activarSoloLectura(){
   sb.storage.from = b => { const o = osf(b); for(const m of ['upload','update','remove','move','copy']) o[m] = () => BLOQ; return o; };
   if(sb.functions) sb.functions.invoke = () => BLOQ;
   sb.auth.updateUser = () => BLOQ;
+  if(sb.auth.mfa){ sb.auth.mfa.enroll = () => BLOQ; sb.auth.mfa.unenroll = () => BLOQ; }
 }
 async function aplicarVerComo(yoReal){
   let id = null; try{ id = sessionStorage.getItem(K_VC); }catch(e){}
@@ -303,7 +317,7 @@ export function mejorasMovil(){
   if(document.getElementById('pmMovilCss')) return;
   const s=document.createElement('style'); s.id='pmMovilCss';
   s.textContent=`
-  .pm-flot{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--barra)ee;border-top:1px solid var(--line);padding:8px 12px;gap:8px;backdrop-filter:blur(4px)}
+  .pm-flot{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(7,16,15,.93);border-top:1px solid var(--line);padding:8px 12px;gap:8px;backdrop-filter:blur(4px)}
   .pm-flot button{flex:1;padding:10px 8px;font-size:14px}
   .pm-cam{margin-left:6px;padding:6px 10px;font-size:12px;background:var(--panel2);color:var(--text);border:0;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700;text-transform:uppercase}
   @media (max-width:1000px){ .pm-flot{display:flex} body{padding-bottom:64px} }`;
@@ -342,7 +356,7 @@ registrarPWA();
 // const ov = bloquearPantalla('Registrando…'); ov.texto('Exportando…'); ov.exito('Reporte PM-000012 exportado', alCerrar) | ov.quitar()
 export function bloquearPantalla(texto='Procesando…'){
   if(!document.getElementById('pmOvCss')){ const s=document.createElement('style'); s.id='pmOvCss'; s.textContent=`
-  .pm-ov{position:fixed;inset:0;z-index:1000;background:var(--barra)e6;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);font-family:"Roboto Condensed",Arial,sans-serif}
+  .pm-ov{position:fixed;inset:0;z-index:1000;background:rgba(7,16,15,.9);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);font-family:"Roboto Condensed",Arial,sans-serif}
   .pm-ov .c{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px 30px;max-width:420px;width:100%;text-align:center;color:var(--text)}
   .pm-ov .sp{width:54px;height:54px;border-radius:50%;border:5px solid var(--panel2);border-top-color:var(--gold);margin:0 auto 16px;animation:pmgira .9s linear infinite}
   .pm-ov .ok{font-size:54px;margin-bottom:8px}
@@ -360,8 +374,8 @@ export function bloquearPantalla(texto='Procesando…'){
   return {
     texto:t=>{ p.textContent=t; },
     quitar,
-    exito:(mensaje, alCerrar=null, segundos=8)=>{ document.removeEventListener('keydown',bloquearTeclas,true); window.removeEventListener('beforeunload',avisoSalir);
-      ov.querySelector('.c').innerHTML=`<div class="ok">✅</div><h3>Reporte exportado</h3><p>${mensaje.replace(/[<>]/g,'')}</p><p style="margin-top:10px;font-size:12px">El formulario se limpió para el siguiente reporte.</p><button type="button">Aceptar</button>`;
+    exito:(mensaje, alCerrar=null, segundos=8, titulo='Reporte exportado', nota='El formulario se limpió para el siguiente reporte.')=>{ document.removeEventListener('keydown',bloquearTeclas,true); window.removeEventListener('beforeunload',avisoSalir);
+      ov.querySelector('.c').innerHTML=`<div class="ok">✅</div><h3>${titulo}</h3><p>${mensaje.replace(/[<>]/g,'')}</p>${nota?`<p style="margin-top:10px;font-size:12px">${nota}</p>`:''}<button type="button">Aceptar</button>`;
       let t=null; const cerrar=()=>{ clearTimeout(t); ov.remove(); if(alCerrar) alCerrar(); }; ov.querySelector('button').onclick=cerrar; t=setTimeout(cerrar, segundos*1000); }
   };
 }

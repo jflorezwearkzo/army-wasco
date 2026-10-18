@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Mi cuenta · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=9ab9535e"></script>
+<script src="js/tema.js?v=08afb612"></script>
 <link rel="stylesheet" href="estilos.css">
 <style> main{max-width:520px;margin:30px auto;padding:0 20px} </style>
 </head>
@@ -31,6 +31,23 @@
       <span class="muted" id="mTotal"></span>
     </div>
     <div style="overflow:auto"><table><thead><tr><th>Folio</th><th>Fecha</th><th>Formulario</th><th>Resumen</th><th>Registrado</th><th>Imagen</th></tr></thead><tbody id="tbMis"></tbody></table></div>
+  </div>
+  <div class="caja" style="margin-top:16px" id="caja2fa">
+    <h3 style="margin-top:0">🔐 Verificación en dos pasos (opcional)</h3>
+    <p class="muted" style="margin-top:0;font-size:13px">Añade un segundo paso al iniciar sesión con una app de autenticación (Google Authenticator, Authy, Microsoft Authenticator…). Recomendado para quienes administran la página.</p>
+    <div id="mfaEstado" class="muted">Cargando…</div>
+    <div id="mfaActivar" hidden>
+      <button type="button" class="ghost" id="mfaEmpezar">Activar verificación en dos pasos</button>
+      <div id="mfaPaso" hidden style="margin-top:12px">
+        <p style="margin:0 0 8px;font-size:14px">1. Escanea este código con tu app de autenticación:</p>
+        <div id="mfaQr" style="background:#fff;border-radius:8px;padding:8px;width:fit-content"></div>
+        <p class="muted" style="font-size:12px">¿No puedes escanear? Escribe esta clave en la app: <code id="mfaSecreto" style="user-select:all"></code></p>
+        <p style="margin:10px 0 4px;font-size:14px">2. Escribe el código de 6 dígitos que muestra la app:</p>
+        <form id="fMfaVerif" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input id="mfaCodigo" inputmode="numeric" maxlength="7" required placeholder="123 456" style="width:140px"><button class="primary" style="width:auto">Confirmar</button><button type="button" class="ghost" id="mfaCancelar">Cancelar</button></form>
+      </div>
+    </div>
+    <div id="mfaQuitar" hidden><button type="button" class="ghost" id="mfaDesactivar">Desactivar verificación en dos pasos</button></div>
+    <div class="err" id="mfaErr"></div><div class="ok" id="mfaOk"></div>
   </div>
   <div class="caja" style="margin-top:16px">
     <h3 style="margin-top:0">Cambiar contraseña</h3>
@@ -55,6 +72,6 @@
     <button type="button" class="secondary" id="btnTodas">Cerrar sesión en todos mis dispositivos</button>
   </div>
 </main>
-<script type="module" src="js/app-cuenta.js?v=fe7e20ad"></script>
+<script type="module" src="js/app-cuenta.js?v=51f4899d"></script>
 </body>
 </html>

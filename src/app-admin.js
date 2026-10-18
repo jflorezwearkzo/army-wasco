@@ -1,4 +1,5 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
+import { respaldoCompleto } from './respaldo.js';
 import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
@@ -447,7 +448,21 @@ $('#hUsuario').oninput = () => { mostrarSugs(); clearTimeout(tHist); tHist = set
 $('#hUsuario').onfocus = mostrarSugs;
 $('#hUsuario').onblur = () => setTimeout(() => $('#hSugs').style.display='none', 150);
 $('#hUsuario').onkeydown = e => { if(e.key==='Escape') $('#hSugs').style.display='none'; };
-$('#hLimpiar').onclick = () => { $('#hForm').value=''; $('#hUsuario').value=''; $('#hDesde').value=''; $('#hHasta').value=''; $('#hEstado').value=''; ajustarFechas(); buscarHist(); };
+$('#hTexto').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); buscarHist(); } });
+$('#hTexto').addEventListener('input', () => { if(!$('#hTexto').value.trim()) buscarHist(); });
+let HIST_VISTA = 'tabla';
+document.querySelectorAll('[data-vista]').forEach(b => b.onclick = () => { HIST_VISTA = b.dataset.vista; document.querySelectorAll('[data-vista]').forEach(x => x.classList.toggle('on', x===b)); $('#hTabla').style.display = HIST_VISTA==='tabla' ? '' : 'none'; $('#hGaleria').style.display = HIST_VISTA==='galeria' ? '' : 'none'; if(HIST_VISTA==='galeria') pintarGaleria(); });
+async function pintarGaleria(){
+  const lista = (HIST_DATA||[]).filter(r => r.imagen_path).slice(0, 120); const g = $('#hGaleria');
+  const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
+  g.innerHTML = lista.map(r => `<div class="g" data-gi="${r.id}" data-n="reporte-${esc(r.folio||r.id)}.${(r.imagen_path||'png').split('.').pop()}"><div class="im">Cargando…</div><div class="p"><b>${esc(r.folio||r.id)}</b> · ${fmt(r.fecha)}<br><span class="muted">${esc(r.formulario||r.formulario_id)} · ${esc(r.usuario||'')}</span></div></div>`).join('') || '<p class="muted">Ningún reporte con imagen en el filtro actual.</p>';
+  if(!lista.length) return;
+  let urls = [];
+  try{ const st = sb.storage.from('reportes'); if(st.createSignedUrls){ const { data } = await st.createSignedUrls(lista.map(r => r.imagen_path), 3600); urls = (data||[]).map(x => x.signedUrl); } else { urls = await Promise.all(lista.map(r => urlImagen(r.imagen_path).catch(() => null))); } }catch(e){}
+  lista.forEach((r, i) => { const d = g.querySelector(`[data-gi="${r.id}"]`); if(!d) return; const u = urls[i]; if(!u){ d.querySelector('.im').textContent = 'Sin acceso'; return; }
+    d.querySelector('.im').innerHTML = `<img src="${u}" alt="" loading="lazy">`; d.onclick = () => { $('#dlgImg').src = u; $('#dlgDl').href = u; $('#dlgDl').download = d.dataset.n; $('#dlg').showModal(); }; });
+}
+$('#hLimpiar').onclick = () => { $('#hForm').value=''; $('#hUsuario').value=''; $('#hDesde').value=''; $('#hHasta').value=''; $('#hEstado').value=''; $('#hTexto').value=''; ajustarFechas(); buscarHist(); };
 async function buscarHist(){
   let q = sb.from('reportes_vista').select('*').order('creado_en', { ascending:false }).limit(300);
   if($('#hForm').value) q = q.eq('formulario_id', $('#hForm').value);
@@ -455,9 +470,11 @@ async function buscarHist(){
   if($('#hDesde').value) q = q.gte('fecha', $('#hDesde').value);
   if($('#hHasta').value) q = q.lte('fecha', $('#hHasta').value);
   if($('#hEstado').value) q = q.eq('estado', $('#hEstado').value);
+  const texto = $('#hTexto').value.trim();
+  if(texto){ if(/^pm-?\d+$/i.test(texto)) q = q.ilike('folio', `%${texto.replace(/^pm-?/i,'')}%`); else q = q.textSearch('busqueda', texto, { type:'websearch', config:'spanish' }); }
   const { data, error } = await q;
   if(error){ $('#hErr').textContent = error.message; return; }
-  $('#hErr').textContent=''; HIST_DATA = data;
+  $('#hErr').textContent=''; HIST_DATA = data; $('#hTotal').textContent = `${data.length} reporte(s)${data.length>=300?' (se muestran los 300 más recientes; afina los filtros)':''}`; if(HIST_VISTA==='galeria') pintarGaleria();
   const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
   $('#tbHist').innerHTML = data.map(r => `<tr><td><b>${esc(r.folio||r.id)}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||r.formulario_id||'—')}</td>
     <td>${esc(r.usuario||'—')}<br><span class="muted">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td>
@@ -578,7 +595,15 @@ async function cargarAutomatizacion(){
     m.textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Prueba enviada.' : 'Error: '+((data&&(data.error||data.motivo))||'sin respuesta');
   });
   if(typeof cargarProgramadas === 'function') cargarProgramadas();
+  $('#cajaRespaldo').hidden = !esSuperadmin(yo);
 }
+$('#bRespaldo').onclick = async () => {
+  if(!confirm('Se descargará un ZIP con todos los datos' + ($('#bImg').checked ? ' e imágenes' : '') + '. Puede tardar varios minutos. ¿Continuar?')) return;
+  $('#bMsg').textContent = '';
+  try{ const r = await respaldoCompleto({ imagenes: $('#bImg').checked }); $('#bMsg').textContent = `Última copia: ${new Date().toLocaleString('es-CO')} · ${r.imagenes} imágenes`;
+    await sb.rpc('auditar_respaldo', { p_detalle: r }).then(()=>{}, ()=>{}); }
+  catch(x){ $('#bMsg').textContent = 'No se pudo generar: ' + (x.message||x); }
+};
 
 // ====================== REVISIÓN DE REPORTES ======================
 const etiquetaEstado = r => { const e = r.estado || 'aprobado'; const t = e==='pendiente' ? '<span class="tag pend">Pendiente</span>' : e==='rechazado' ? '<span class="tag off">Rechazado</span>' : (r.requiere_aprobacion ? '<span class="tag on">Aprobado</span>' : '<span class="tag on" title="Formulario sin revisión">Aprobado</span>');

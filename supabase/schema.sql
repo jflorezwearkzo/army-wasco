@@ -713,3 +713,16 @@ create policy insignias_select on public.insignias for select using (coalesce(pu
 --   programar(clave, activo, hora, minuto, dia) -> cron.schedule('pm_<clave>', ...) en UTC (hora Bogotá +5); guarda configuracion.programadas
 create extension if not exists pg_net with schema extensions;
 -- El rol Administrador tiene "turnos" y "anuncios".
+
+-- ---------- Búsqueda de texto completo, respaldo ----------
+alter table public.reportes add column if not exists busqueda tsvector generated always as (to_tsvector('spanish', coalesce(resumen,'') || ' ' || coalesce(datos::text,''))) stored;
+create index if not exists reportes_busqueda_idx on public.reportes using gin (busqueda);
+-- reportes_vista expone "busqueda" (Historial: .textSearch('busqueda', q, {type:'websearch', config:'spanish'}))
+create or replace function public.auditar_respaldo(p_detalle jsonb default '{}'::jsonb) returns void language plpgsql security definer set search_path=public as $$
+begin
+  if not coalesce(public.soy_superadmin(),false) then raise exception 'Solo el Administrador'; end if;
+  insert into public.auditoria (usuario_id, usuario, accion, tabla, registro, detalle) values (auth.uid(), (select usuario from public.perfiles where id=auth.uid()), 'respaldo', 'sistema', 'zip', coalesce(p_detalle,'{}'::jsonb));
+end $$;
+revoke execute on function public.auditar_respaldo(jsonb) from anon, public;
+grant execute on function public.auditar_respaldo(jsonb) to authenticated;
+-- 2FA (TOTP): lo gestiona Supabase Auth (Authentication → Multi-Factor → TOTP habilitado). El cliente exige aal2 en requerir() cuando el usuario tiene factor.
