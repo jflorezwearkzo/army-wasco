@@ -1,11 +1,11 @@
-import { requerir, barraUsuario, tiene, sb, esc, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','ver_como'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', ver_como:'Ver la página como otro usuario (solo lectura)' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password']],
   ['roles',       'Roles',       ['crear_roles']],
@@ -19,7 +19,7 @@ let roles = [], formularios = [], rangosPM = [];
 // ---------- Pestañas según permisos ----------
 const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id);
 if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
-$('#rPermisos').innerHTML = PERMS.map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('');
+$('#rPermisos').innerHTML = PERMS.filter(p => p!=='ver_como').map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('') + `<p class="muted" style="margin:6px 0 0;font-size:12px">👁 "Ver la página como otro usuario" es exclusivo del rol Administrador.</p>`;
 $('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre]) => `<button data-t="${id}">${nombre}</button>`).join('');
 function abrir(t){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
@@ -65,10 +65,14 @@ async function cargarUsuarios(){
     return `<tr><td><b>${esc(u.usuario)}</b></td><td>${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}</td>
       <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
       <td><span class="tag ${(u.activo&&u.visible!==false)?'on':'off'}" title="${u.activo?'':'Los usuarios inactivos nunca aparecen en los formularios'}">${u.visible===false?'Oculto':'Visible'}</span></td>
-      <td style="white-space:nowrap">${(r && !rolAsignable(r) && u.id!==yo.id) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `${(tiene(yo,'usuarios')||tiene(yo,'asignar_roles')) ? `<button class="ghost sm" data-e="${u.id}">Editar</button>` : ''}
+      <td style="white-space:nowrap">${(tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ? `<button class="ghost sm" data-vc="${u.id}" data-u="${esc(nombreCompleto(u))}" title="Ver toda la página tal como la ve este usuario (solo lectura)">👁 Ver como</button> ` : ''}${(r && !rolAsignable(r) && u.id!==yo.id) ? `<span class="muted">${r.protegido?'Solo Administrador':'Fuera de tus permisos'}</span>` : `${(tiene(yo,'usuarios')||tiene(yo,'asignar_roles')) ? `<button class="ghost sm" data-e="${u.id}">Editar</button>` : ''}
       ${tiene(yo,'usuarios') ? `<button class="ghost sm" data-a="${u.id}" data-v="${u.activo?0:1}">${u.activo?'Desactivar':'Activar'}</button> <button class="ghost sm" data-vis="${u.id}" data-v="${u.visible===false?1:0}" title="Mostrar u ocultar en los desplegables de los formularios">${u.visible===false?'Mostrar en formularios':'Ocultar en formularios'}</button>` : ''}
       ${(tiene(yo,'reset_password') && u.id!==yo.id) ? `<button class="ghost sm" data-rp="${u.id}" data-u="${esc(u.usuario)}">Contraseña</button>` : ''}`}</td></tr>`;
   }).join('') || '<tr><td colspan=6 class="muted">Sin usuarios</td></tr>';
+  document.querySelectorAll('[data-vc]').forEach(b => b.onclick = async () => {
+    if(!confirm(`Vas a ver la página como "${b.dataset.u}" (solo lectura). Verás una franja amarilla arriba para salir del modo. Esta acción queda en la auditoría.\n\n¿Continuar?`)) return;
+    try{ await entrarVerComo(b.dataset.vc); }catch(x){ alert(x.message); }
+  });
   document.querySelectorAll('[data-vis]').forEach(b => b.onclick = async () => {
     const { error } = await sb.from('perfiles').update({ visible: b.dataset.v==='1' }).eq('id', b.dataset.vis);
     if(error) alert(error.message); cargarUsuarios();
@@ -326,7 +330,7 @@ async function buscarHist(){
 }
 
 // ====================== AUDITORÍA ======================
-const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado' };
+const ACCION = { insert:'Creó', update:'Modificó', delete:'Eliminó', reset_password:'Restableció contraseña', reset_password_denegado:'Intento de reset denegado', ver_como_inicio:'👁 Empezó a ver como', ver_como_fin:'👁 Dejó de ver como' };
 const TABLA = { perfiles:'usuario', roles:'rol', formularios:'formulario', reportes:'reporte', rangos_pm:'Rango PM', auth:'cuenta' };
 async function cargarAud(){ buscarAud(); }
 $('#aBuscar').onclick = buscarAud; $('#aTabla').onchange = buscarAud;

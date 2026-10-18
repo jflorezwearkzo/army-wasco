@@ -108,6 +108,16 @@ El formulario queda en `reportes/plantilla/?id=<id>` y se comporta como los dem�
 
 Panel › Formularios › Editar › **Webhook de Discord** (requiere gestión de reportes). Al sellar un reporte de ese formulario, el navegador llama a la Edge Function `notificar-discord`, que verifica que quien llama puede ver el reporte, lee el webhook con la clave de servicio (nunca viaja al navegador), descarga la imagen del bucket y la publica en el canal con folio, fecha, quién reporta y resumen. Marca `reportes.discord_enviado_en` para no repetir y deja rastro en auditoría (`discord_publicado`). "Enviar prueba" manda un mensaje de verificación al canal. Si Discord falla, el reporte igual queda sellado y en el historial; el mensaje de éxito indica el motivo.
 
+## "Ver como" (solo Administrador)
+
+En Admin → Usuarios, el rol Administrador tiene el botón **👁 Ver como** en cada usuario. Al pulsarlo, toda la página (inicio, formularios, panel, Mi cuenta…) se muestra exactamente como la vería esa persona, con una **franja amarilla fija** arriba ("Estás viendo como … · solo lectura · Salir de Ver como"). Sirve para comprobar quejas tipo "a mí no me aparece el formulario X".
+
+- Es **solo lectura**: el cliente bloquea cualquier escritura (insert/update/delete, RPCs de escritura, subida a storage, funciones, cambio de contraseña) con el mensaje "No disponible en modo Ver como". Exportar reportes y los botones de guardar quedan deshabilitados.
+- La sesión sigue siendo la del admin: no se genera ningún token del otro usuario. El RPC `ver_como(p_usuario, p_evento)` (SECURITY DEFINER, exige el permiso `ver_como`) devuelve el perfil y rol del otro usuario; el estado vive en `sessionStorage` (`pm_ver_como`) y se pierde al cerrar la pestaña o al pulsar Salir.
+- Queda en Auditoría como `ver_como_inicio` / `ver_como_fin` (quién vio a quién).
+- El permiso `ver_como` es exclusivo del rol Administrador: no aparece en el editor de roles.
+- Lo que se ve en "Ver como" está limitado por los permisos reales de quien lo usa (el admin ve todo, así que coincide con lo que verá el usuario).
+
 ## Exportación bloqueada y limpieza automática
 
 Al pulsar **Exportar imagen** se muestra una pantalla de bloqueo (`bloquearPantalla` en `src/auth.js`) con un indicador de carga y el paso en curso (registrando, generando imagen, guardando en el historial, Discord). Mientras dura, no se puede pulsar nada, ni usar Esc/Enter/Tab/F5/Ctrl+R, y el navegador avisa si se intenta cerrar la pestaña. Al terminar aparece "✅ Reporte exportado" con el folio y un botón **Aceptar** (se cierra solo a los pocos segundos); el formulario queda **limpio** para que no se exporte dos veces el mismo reporte (en el formulario genérico se recarga la página). Si algo falla, el bloqueo se quita y el formulario conserva lo escrito.

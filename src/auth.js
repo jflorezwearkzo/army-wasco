@@ -54,9 +54,10 @@ export const esAdminDeAlgo = yo => ['usuarios','asignar_roles','reset_password',
 // Exige sesión activa; opcionalmente un permiso o un formulario. Redirige a login si no cumple.
 export async function requerir({ permiso=null, formulario=null } = {}){
   if(!configurado){ document.body.innerHTML = aviso('Falta configurar <code>config.js</code> con la URL y la clave pública de Supabase.'); throw new Error('sin config'); }
-  const yo = await cargarYo();
+  let yo = await cargarYo();
   if(!yo || !yo.activo){ location.replace(RAIZ + 'login.html?next=' + encodeURIComponent(location.href)); throw new Error('sin sesión'); }
   vigilarInactividad();
+  yo = await aplicarVerComo(yo);
   if(permiso && !tiene(yo, permiso)){ document.body.innerHTML = aviso('No tienes permiso para ver esta sección.'); throw new Error('sin permiso'); }
   if(formulario && !puedeFormulario(yo, formulario)){ document.body.innerHTML = aviso('Tu rol no tiene acceso a este formulario.'); throw new Error('sin acceso'); }
   return yo;
@@ -64,6 +65,59 @@ export async function requerir({ permiso=null, formulario=null } = {}){
 function aviso(html){
   return `<div style="font-family:Arial,sans-serif;color:#f3f3f3;background:#0b1216;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center">
     <div><p style="font-size:18px">${html}</p><a href="${RAIZ}" style="color:#f0c24d">Volver al inicio</a></div></div>`;
+}
+
+// ---------- "Ver como": el admin ve la página tal como la vería otro usuario (solo lectura) ----------
+const K_VC = 'pm_ver_como';
+export const enVerComo = yo => !!(yo && yo._verComo);
+const ERR_VC = 'No disponible en modo "Ver como": estás viendo la página como otro usuario y no puedes hacer cambios.';
+const BLOQ = new Proxy(function(){}, { get:(t,k)=> k==='then' ? (res,rej)=>{ rej(new Error(ERR_VC)); } : ()=>BLOQ, apply:()=>BLOQ });
+const RPC_LECTURA = ['listar_integrantes','buscar_folios','ver_como'];
+function activarSoloLectura(){
+  const of = sb.from.bind(sb);
+  sb.from = t => { const b = of(t); for(const m of ['insert','update','upsert','delete']) b[m] = () => BLOQ; return b; };
+  const orpc = sb.rpc.bind(sb);
+  sb.rpc = (n, a, o) => RPC_LECTURA.includes(n) ? orpc(n, a, o) : BLOQ;
+  const osf = sb.storage.from.bind(sb.storage);
+  sb.storage.from = b => { const o = osf(b); for(const m of ['upload','update','remove','move','copy']) o[m] = () => BLOQ; return o; };
+  if(sb.functions) sb.functions.invoke = () => BLOQ;
+  sb.auth.updateUser = () => BLOQ;
+}
+async function aplicarVerComo(yoReal){
+  let id = null; try{ id = sessionStorage.getItem(K_VC); }catch(e){}
+  if(!id) return yoReal;
+  if(!tiene(yoReal, 'ver_como') || id === yoReal.id){ try{ sessionStorage.removeItem(K_VC); }catch(e){} return yoReal; }
+  const { data, error } = await sb.rpc('ver_como', { p_usuario: id });
+  if(error || !data || !data.perfil){ try{ sessionStorage.removeItem(K_VC); }catch(e){} return yoReal; }
+  const yo = { ...data.perfil, rol: data.rol || { id:null, nombre:'Sin rol', permisos:{}, formularios:[], rango_pm:null }, _verComo:true, _real:yoReal };
+  activarSoloLectura();
+  const pintar = () => {
+    if(!document.body) return;
+    const s = document.createElement('style'); s.textContent = `
+.pm-vc{position:sticky;top:0;z-index:200;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;padding:8px 14px;background:#f0c24d;color:#1a1200;font:600 13px "Roboto Condensed",Arial,sans-serif;border-bottom:2px solid #a8831f}
+.pm-vc b{font-weight:800}.pm-vc .rl{opacity:.75;font-weight:500}
+.pm-vc button{background:#1a1200;color:#f0c24d;border:0;border-radius:6px;padding:5px 10px;font:inherit;cursor:pointer}
+body.pm-modo-vc #btnExport,body.pm-modo-vc button[type=submit]{opacity:.5;cursor:not-allowed}`;
+    document.head.append(s);
+    const d = document.createElement('div'); d.className = 'pm-vc';
+    d.innerHTML = `👁 Estás viendo como <b>${esc(nombreCompleto(yo))}</b> <span class="rl">(${esc(yo.rol.nombre)}${yo.activo?'':' · inactivo'})</span> · solo lectura <button type="button" id="btnSalirVC">Salir de Ver como</button>`;
+    d.querySelector('#btnSalirVC').onclick = () => salirVerComo(yo.id);
+    document.body.prepend(d); document.body.classList.add('pm-modo-vc');
+    document.addEventListener('click', e => { const b = e.target.closest('#btnExport,button[type=submit]'); if(b){ e.preventDefault(); e.stopImmediatePropagation(); alert(ERR_VC); } }, true);
+  };
+  if(document.body) pintar(); else document.addEventListener('DOMContentLoaded', pintar);
+  return yo;
+}
+export async function entrarVerComo(usuarioId){
+  const { error } = await sb.rpc('ver_como', { p_usuario: usuarioId, p_evento: 'inicio' });
+  if(error) throw new Error(error.message);
+  try{ sessionStorage.setItem(K_VC, usuarioId); }catch(e){ throw new Error('Tu navegador no permite guardar el modo Ver como.'); }
+  location.href = RAIZ;
+}
+export async function salirVerComo(usuarioId){
+  try{ await sb.rpc('ver_como', { p_usuario: usuarioId, p_evento: 'fin' }); }catch(e){}
+  try{ sessionStorage.removeItem(K_VC); }catch(e){}
+  location.href = RAIZ + 'admin/#usuarios';
 }
 
 // Barra superior con usuario, rol, enlaces y salir. Se inserta al inicio de <body>.
@@ -104,7 +158,7 @@ export function barraUsuario(yo){
   const btn = b.querySelector('.btn');
   btn.onclick = e => { e.stopPropagation(); const ab = b.classList.toggle('abierta'); btn.setAttribute('aria-expanded', ab); };
   document.addEventListener('click', e => { if(!b.contains(e.target)){ b.classList.remove('abierta'); btn.setAttribute('aria-expanded','false'); } });
-  b.querySelector('#btnSalir').onclick = e => { e.preventDefault(); cerrarSesion(); };
+  b.querySelector('#btnSalir').onclick = e => { e.preventDefault(); try{ sessionStorage.removeItem(K_VC); }catch(x){} cerrarSesion(); };
   document.body.prepend(b);
 }
 

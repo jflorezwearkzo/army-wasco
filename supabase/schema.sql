@@ -531,3 +531,32 @@ begin
 end $$;
 revoke all on function public.registrar_intento_inactivo() from public;
 grant execute on function public.registrar_intento_inactivo() to authenticated;
+
+-- ---------- "Ver como" (solo rol Administrador) ----------
+-- Devuelve perfil + rol de otro usuario para que el admin vea la página como él (solo lectura en el cliente).
+-- Con p_evento 'inicio'/'fin' deja rastro en auditoría.
+create or replace function public.ver_como(p_usuario uuid, p_evento text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_yo uuid := auth.uid(); v_p record; v_r record; v_out jsonb;
+begin
+  if not coalesce(public.mi_perfil_activo(), false) or not coalesce(public.tengo_permiso('ver_como'), false) then
+    raise exception 'No tienes permiso para ver la página como otro usuario';
+  end if;
+  if p_usuario = v_yo then raise exception 'No puedes verte como tú mismo'; end if;
+  select id, usuario, nombre, rango, activo, rol_id, visible into v_p from public.perfiles where id = p_usuario;
+  if not found then raise exception 'Usuario no encontrado'; end if;
+  select id, nombre, permisos, formularios, rango_pm, protegido into v_r from public.roles where id = v_p.rol_id;
+  v_out := jsonb_build_object('perfil', to_jsonb(v_p), 'rol', case when v_r.id is null then null else to_jsonb(v_r) end);
+  if p_evento in ('inicio','fin') then
+    insert into public.auditoria (usuario_id, usuario, accion, tabla, registro, detalle)
+    select v_yo, (select usuario from public.perfiles where id = v_yo), 'ver_como_' || p_evento, 'perfiles', v_p.usuario,
+           jsonb_build_object('como_usuario', v_p.usuario, 'como_nombre', v_p.nombre, 'como_id', v_p.id);
+  end if;
+  return v_out;
+end $$;
+revoke execute on function public.ver_como(uuid, text) from anon, public;
+grant execute on function public.ver_como(uuid, text) to authenticated;
+-- El permiso vive solo en el rol protegido (Administrador)
+alter table public.roles disable trigger roles_validar_protegido;
+update public.roles set permisos = permisos || '{"ver_como": true}'::jsonb where protegido = true;
+alter table public.roles enable trigger roles_validar_protegido;
