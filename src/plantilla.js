@@ -136,7 +136,7 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
           box.appendChild(f); filas.push({nombre:o, chk, txt}); }
         el[c.id]=filas; break; }
       case 'formula': { const i=document.createElement('input'); i.type='text'; i.readOnly=true; i.tabIndex=-1; i.style.opacity='.75'; i.title='Se calcula automáticamente'; box.appendChild(i); el[c.id]=i; break; }
-      case 'foto': { const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.style.fontSize='13px'; const t=document.createElement('div'); t.className='thumb'; t.textContent='Sin foto';
+      case 'foto': { const nf=document.createElement('p'); nf.className='nota-foto'; nf.innerHTML='📱 Sube <b>pantallazos del celular o del PC</b>, no la "foto" de la herramienta del juego: esa cámara oculta el chat, las macros y la HORA DEL SERVIDOR.'; box.appendChild(nf); const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.style.fontSize='13px'; const t=document.createElement('div'); t.className='thumb'; t.textContent='Sin foto';
         i.addEventListener('change',async e=>{ const f=e.target.files[0]; if(!f) return; fotos[c.id]={img:await cargarImagen(f),name:f.name}; t.innerHTML=`<img src="${fotos[c.id].img.src}" alt=""><button type="button" title="Quitar">✕</button>`; t.querySelector('button').onclick=()=>{ delete fotos[c.id]; t.textContent='Sin foto'; i.value=''; onChange(); }; onChange(); });
         box.appendChild(i); box.appendChild(t); el[c.id]=i; break; }
     }
