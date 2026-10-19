@@ -73,20 +73,21 @@
   .ints input{padding:6px 8px;font-size:14px}
   @media (max-width:520px){.ints{grid-template-columns:1fr}}
 </style>
-<script src="../../js/tema.js?v=ad26f20e"></script>
+<script src="../../js/tema.js?v=6100d807"></script>
 </head>
 <body>
 <header>
   <a href="../../" style="color:var(--muted);text-decoration:none;font-size:13px">&larr; Volver a Reportes</a>
   <h1>Reporte de Operaciones · Toma de Territorio (AK) · Ejército Wasco</h1>
   <p>Llena los datos de la operación, los integrantes del convoy y adjunta las fotos de evidencia; se exporta como imagen con el anexo fotográfico debajo.</p>
+  <p class="aviso-ia">🔎 <b>Cada reporte se valida con IA</b>, que lee las capturas y detecta fraude, duplicados y errores. La información falsa puede considerarse <b>falta grave</b> y la reincidencia puede llevar a una <b>sanción</b>. Indica siempre la fecha y hora en que <b>ocurrió</b> la situación, en tu hora local.</p>
 </header>
 <main>
   <section>
     <form id="form">
       <fieldset>
         <legend>Operación</legend>
-        <label for="fecha">Fecha *</label>
+        <label for="fecha">Fecha * <small>(la fecha en que ocurrió, no la de hoy si fue antes)</small></label>
         <input id="fecha" type="date" required>
         <label for="objetivo">Objetivo de la operación *</label>
         <input id="objetivo" type="text" maxlength="110" placeholder="p. ej. Asegurar puntos AK." required>
@@ -148,6 +149,6 @@
     <canvas id="cv" width="2048" height="1536"></canvas>
   </section>
 </main>
-<script type="module" src="../../js/form-toma-territorio.js?v=135d8032"></script>
+<script type="module" src="../../js/form-toma-territorio.js?v=e1cfd339"></script>
 </body>
 </html>

@@ -108,6 +108,7 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
   for(const c of CAMPOS){
     const w=document.createElement('div'); w.className='campo'; w.dataset.id=c.id; wraps[c.id]=w;
     const lab=document.createElement('label'); lab.textContent=c.etiqueta+(c.req?' *':''); w.appendChild(lab);
+    if(c.tipo==='fecha'||c.tipo==='hora'){ const sm=document.createElement('small'); sm.textContent=c.tipo==='fecha'?' (la fecha en que ocurrió, en tu hora local)':' (tu hora local; el reloj del juego va en UTC)'; lab.appendChild(sm); }
     const v0=valorDefecto(c,yo);
     let box=document.createElement('div'); w.appendChild(box);
     const bloquear=i=>{ if(c.bloqueado){ i.readOnly=true; i.tabIndex=-1; i.style.opacity='.75'; i.title='Lo asigna el administrador'; if(i.tagName==='SELECT') i.style.pointerEvents='none'; } };

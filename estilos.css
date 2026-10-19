@@ -40,3 +40,5 @@ tr:hover td{background:var(--hover)}
 .ia-det ul{margin:6px 0;padding-left:18px}.ia-det li{margin:2px 0}.ia-det p{margin:6px 0}
 .ia-det .ia-alto{display:inline-block;padding:2px 8px;border-radius:6px}
 .ia-chk{list-style:none;padding-left:0!important;margin:6px 0;border-top:1px dashed var(--line2);padding-top:6px}
+/* Aviso de validación con IA en los formularios */
+.aviso-ia{background:var(--avisobg);border:1px solid var(--avisoline);border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0 0}

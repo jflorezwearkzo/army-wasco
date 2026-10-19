@@ -67,20 +67,21 @@
   .tabs button.act{background:var(--gold);color:var(--gold-text)}
   .ok{color:#7fd38a}
 </style>
-<script src="../../js/tema.js?v=ad26f20e"></script>
+<script src="../../js/tema.js?v=6100d807"></script>
 </head>
 <body>
 <header>
   <a href="../../" style="color:var(--muted);text-decoration:none;font-size:13px">&larr; Volver a Reportes</a>
   <h1>Reporte de Fin de Día · Patrullaje PM · Army de Wasco · Policía Militar</h1>
   <p>Indica cuántos patrullajes hubo en el día: se genera una página (imagen) por cada patrullaje, cada una con su propio folio.</p>
+  <p class="aviso-ia">🔎 <b>Cada reporte se valida con IA</b>, que lee las capturas y detecta fraude, duplicados y errores. La información falsa puede considerarse <b>falta grave</b> y la reincidencia puede llevar a una <b>sanción</b>. Indica siempre la fecha y hora en que <b>ocurrió</b> la situación, en tu hora local.</p>
 </header>
 <main>
   <section>
     <form id="form">
       <fieldset>
         <legend>Datos del reporte</legend>
-        <label for="fecha">Fecha *</label>
+        <label for="fecha">Fecha * <small>(la fecha en que ocurrió, no la de hoy si fue antes)</small></label>
         <input id="fecha" type="date" required>
         <label for="nombre">Nombre del responsable *</label>
         <input id="nombre" type="text" maxlength="40" required>
@@ -113,7 +114,7 @@
 <template id="tplPag">
   <div class="pag" data-i="">
     <h3>Patrullaje N° <span class="num"></span></h3>
-    <label>Hora inicio / fin (formato militar) *</label>
+    <label>Hora inicio / fin (formato militar) * <small>(tu hora local; el reloj del juego va en UTC, no importa que no coincida)</small></label>
     <div class="fila">
       <div class="hora"><select class="hIniH"></select><span>:</span><select class="hIniM"></select></div>
       <div class="hora"><select class="hFinH"></select><span>:</span><select class="hFinM"></select></div>
@@ -138,6 +139,6 @@
     <textarea class="obs" maxlength="400" placeholder="Notas o acontecimientos relevantes del patrullaje"></textarea>
   </div>
 </template>
-<script type="module" src="../../js/form-patrullaje.js?v=78aba37e"></script>
+<script type="module" src="../../js/form-patrullaje.js?v=1311bbcf"></script>
 </body>
 </html>
