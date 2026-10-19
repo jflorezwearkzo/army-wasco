@@ -74,11 +74,11 @@ $('#btnExport').onclick=async()=>{
       const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
       await descargarSiProcede(ID, blob, `reporte-${ID}-${reg.folio}-${fecha}${n>1?`-p${i+1}`:''}.png`);
       ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:ID, pngBlob:blob });
-      const dc=await notificarDiscord(reg.id, reg.estado); if(dc==='ok') publicados++; if(dc==='pendiente') pendientes++;
+      const dc=await notificarDiscord(reg.id, reg.estado); if(dc==='ok') publicados++; if(reg.estado==='pendiente') pendientes++;
       hechos.push(reg.folio); SELLO=null; if(i<n-1) await espera(700);
     }
     BORR.limpiar();
-    const msg = n>1 ? `${hechos.length} reporte(s) enviado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'')+(pendientes?` ${pendientes} pendiente(s) de revisión (un revisor debe aprobarlos).`:'') : `Reporte ${hechos[0]} enviado y guardado en el historial.`+(publicados?' Publicado en Discord.':'')+(pendientes?' Queda pendiente de revisión: un revisor debe aprobarlo.':'');
+    const msg = n>1 ? `${hechos.length} reporte(s) enviado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'')+(pendientes?` ${pendientes} pendiente(s) de revisión para el ranking (un revisor debe aprobarlos).`:'') : `Reporte ${hechos[0]} enviado y guardado en el historial.`+(publicados?' Publicado en Discord.':'')+(pendientes?' Queda pendiente de revisión para el ranking: un revisor debe aprobarlo.':'');
     showErr(msg, true); ov.exito(msg, ()=>location.reload(), 6);
   }catch(x){ ov.quitar(); SELLO=null; showErr((hechos.length?`Se enviaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
   draw(); btn.disabled=false; btn.textContent='📤 Enviar reporte';

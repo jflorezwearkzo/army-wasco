@@ -708,7 +708,7 @@ async function cargarRevision(){
     const { data: res, error } = await sb.rpc('revisar_reporte', { p_id: id, p_estado: est2, p_comentario: comentario||null });
     if(error){ alert(error.message); b.disabled=false; return; }
     let extra = '';
-    if(est2==='aprobado'){ const dc = await notificarDiscord(id, 'aprobado'); if(dc==='ok') extra = ' Publicado en Discord.'; else if(dc && dc.startsWith('error')) extra = ' (No se pudo publicar en Discord: '+dc.slice(7)+')'; }
+    if(est2==='aprobado'){ const dc = await notificarDiscord(id, 'aprobado'); if(dc==='ok') extra = ' Publicado en Discord.'; else if(dc && dc.startsWith('error')) extra = ' (No se pudo publicar en Discord: '+dc.slice(7)+')'; }  // normalmente ya se publicó al enviarse; esto solo cubre el caso en que falló
     toast(`${r.folio||id}: ${est2}.${extra}`, false);
     cargarRevision(); contarPendientes();
   });

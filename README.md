@@ -172,8 +172,8 @@ Cada formulario tiene la casilla **Descargar la imagen al enviar** (`formularios
 ## Revisión y aprobación de reportes
 
 - Se activa **por formulario**: Admin → Formularios → Editar → "Requiere aprobación de un revisor" (badge *Con revisión* en la lista). Mientras no se active, todo funciona como antes (los reportes nacen aprobados).
-- Con la opción activa, cada reporte nuevo queda **pendiente** (`reportes.estado`): se descarga y se guarda igual, pero no cuenta en el Resumen ni se publica en Discord hasta que alguien con el permiso **Revisar y aprobar reportes** (`aprobar_reportes`) lo apruebe. El autor lo ve en Mi cuenta → Mis reportes con la etiqueta y, si lo rechazan, con el motivo.
-- Pestaña **Revisión** del panel: tarjetas con imagen, autor y resumen; Aprobar (comentario opcional, publica en Discord si el formulario tiene webhook) / Rechazar (motivo obligatorio) / Volver a pendiente. La pestaña muestra el número de pendientes. Historial tiene filtro y columna de estado; el CSV incluye estado, revisor y comentario.
+- Con la opción activa, cada reporte nuevo queda **pendiente** (`reportes.estado`): se guarda y **se publica en Discord igual** (la publicación es inmediata para todos los reportes), pero no cuenta en el Resumen, el ranking ni las estadísticas hasta que alguien con el permiso **Revisar y aprobar reportes** (`aprobar_reportes`) lo apruebe. El autor lo ve en Mi cuenta → Mis reportes con la etiqueta y, si lo rechazan, con el motivo.
+- Pestaña **Revisión** del panel: tarjetas con imagen, autor y resumen; Aprobar (comentario opcional; si la publicación en Discord hubiera fallado al enviar, la reintenta) / Rechazar (motivo obligatorio) / Volver a pendiente. La pestaña muestra el número de pendientes. Historial tiene filtro y columna de estado; el CSV incluye estado, revisor y comentario.
 - Servidor: trigger `reportes_estado_inicial`, RPC `revisar_reporte(id, estado, comentario)` (no permite revisar los propios salvo Administrador; audita `revision_aprobado/rechazado/pendiente`) y el trigger de inmutabilidad solo deja cambiar la revisión a través de ese RPC.
 
 ## Auditoría con IA de los reportes (gratis, Gemini)

@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
     username: "Policía Militar · Reportes",
     embeds: [{ title: `${r.formulario} · ${r.folio}`, description: r.resumen || "", color: 0xf0c24d,
       fields: [{ name: "Fecha", value: fecha || "—", inline: true }, { name: "Reporta", value: quien || "—", inline: true }],
-      image: { url: `attachment://${r.folio}.${ext}` }, footer: { text: `Sellado por el servidor · Army de Wasco` }, timestamp: new Date(r.creado_en).toISOString() }],
+      image: { url: `attachment://${r.folio}.${ext}` }, footer: { text: r.estado === "pendiente" ? `⏳ Pendiente de revisión para el ranking · Sellado por el servidor · Army de Wasco` : `Sellado por el servidor · Army de Wasco` }, timestamp: new Date(r.creado_en).toISOString() }],
   };
   const form = new FormData();
   form.append("payload_json", JSON.stringify(payload));

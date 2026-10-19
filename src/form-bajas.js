@@ -221,7 +221,7 @@ $('#btnExport').onclick=async()=>{
     // 3) Adjuntar al historial
     ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'bajas', pngBlob:blob });
     BORR.limpiar(); ov.texto('Publicando en Discord…'); const dc=await notificarDiscord(reg.id, reg.estado);
-    const msg=`Reporte ${FOLIO} enviado y guardado en el historial.`+textoDiscord(dc);
+    const msg=`Reporte ${FOLIO} enviado y guardado en el historial.`+textoDiscord(dc, reg.estado);
     FOLIO=null; SELLO=null; limpiarFormulario(); $('#err').style.color='#7fd38a'; showErr(msg); ov.exito(msg);
   }catch(x){ ov.quitar(); $('#err').style.color=''; showErr('No se pudo completar: '+x.message); }
   FOLIO=null; SELLO=null;

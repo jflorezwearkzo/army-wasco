@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=7c19fa05"></script>
+<script src="../js/tema.js?v=0c7dbc1b"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -306,7 +306,7 @@
     <div class="caja">
       <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Revisión de reportes <span class="muted" id="rvContador" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px"></span></span>
         <span style="display:flex;gap:8px;align-items:center"><select id="rvEstado" style="width:auto"><option value="pendiente">Pendientes</option><option value="rechazado">Rechazados</option><option value="aprobado">Aprobados (últimos)</option></select></span></h3>
-      <p class="muted" id="rvAviso" style="margin-top:0;font-size:13px">Solo entran aquí los reportes de formularios con "Requiere aprobación de un revisor" (Formularios → Editar). Un reporte aprobado cuenta en el Resumen y se publica en Discord; uno rechazado queda en el historial con el motivo y no cuenta.</p>
+      <p class="muted" id="rvAviso" style="margin-top:0;font-size:13px">Solo entran aquí los reportes de formularios con "Requiere aprobación de un revisor" (Formularios → Editar). Todos los reportes se publican en Discord al enviarse; la revisión decide si cuentan para el Resumen, el ranking y las estadísticas. Uno rechazado queda en el historial con el motivo y no cuenta.</p>
       <div id="rvLista" class="rv-lista"></div>
       <div class="err" id="rvErr"></div>
     </div>
@@ -487,6 +487,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=ef49ac94"></script>
+<script type="module" src="../js/app-admin.js?v=14add2d8"></script>
 </body>
 </html>

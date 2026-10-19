@@ -243,13 +243,13 @@ export async function adjuntarImagen({ yo, id, formularioId, pngBlob }){
 // Publica el reporte en Discord si el formulario tiene webhook (lo hace el servidor; nunca falla el exportado por esto).
 // Devuelve: 'ok' | 'sin_webhook' | 'error: …'
 export async function notificarDiscord(reporteId, estado='aprobado'){
-  if(estado==='pendiente') return 'pendiente';   // se publica cuando un revisor lo apruebe
+  // Se publica siempre, también si queda pendiente de revisión (la revisión solo afecta al ranking y las estadísticas).
   try{ const { data, error } = await sb.functions.invoke('notificar-discord', { body:{ reporte_id: reporteId } });
     if(error) return 'error: ' + (error.message||'sin respuesta');
     if(data && data.ok) return 'ok'; if(data && data.motivo==='sin_webhook') return 'sin_webhook'; return 'error: ' + ((data&&data.error)||'desconocido'); }
   catch(e){ return 'error: ' + e.message; }
 }
-export const textoDiscord = r => r==='ok' ? ' Publicado en Discord.' : r==='pendiente' ? ' Queda pendiente de revisión: un revisor debe aprobarlo para que cuente y se publique en Discord.' : r && r.startsWith('error') ? ` (No se pudo publicar en Discord: ${r.slice(7)})` : '';
+export const textoDiscord = (r, estado=null) => (r==='ok' ? ' Publicado en Discord.' : r && r.startsWith('error') ? ` (No se pudo publicar en Discord: ${r.slice(7)})` : '') + (estado==='pendiente' ? ' Queda pendiente de revisión: un revisor debe aprobarlo para que cuente en el ranking y las estadísticas.' : '');
 // Compatibilidad: flujo completo en una llamada (sin folio en la imagen)
 export async function guardarReporte({ yo, formularioId, fecha, resumen, datos, pngBlob }){
   const r = await crearReporte({ formularioId, fecha, resumen, datos });

@@ -213,7 +213,7 @@ $('#btnExport').onclick=async()=>{
     await descargarSiProcede('toma-territorio', blob, `reporte-toma-territorio-${FOLIO}-${d.fecha}.png`);
     ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:FORM, pngBlob:blob });
     BORR.limpiar(); ov.texto('Publicando en Discord…'); const dc=await notificarDiscord(reg.id, reg.estado);
-    const msg=`Reporte ${FOLIO} enviado y guardado en el historial.`+textoDiscord(dc);
+    const msg=`Reporte ${FOLIO} enviado y guardado en el historial.`+textoDiscord(dc, reg.estado);
     FOLIO=null; SELLO=null; limpiarFormulario(); showErr(msg,true); ov.exito(msg);
   }catch(x){ ov.quitar(); showErr('No se pudo completar: '+x.message); }
   FOLIO=null; SELLO=null; draw();
