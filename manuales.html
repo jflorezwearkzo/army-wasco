@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=1eea8625"></script>
+<script src="js/tema.js?v=7c19fa05"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -76,7 +76,7 @@
       <li>Llena los campos marcados con <b>*</b>. Los integrantes se eligen escribiendo el nombre (solo aparecen miembros activos y visibles). No se puede repetir un integrante.</li>
       <li>Adjunta las fotos de evidencia: deben ser <b>pantallazos (capturas de pantalla) del celular o del PC</b>, no la "foto" de la herramienta del juego, porque esa cámara oculta el chat, las macros y la HORA DEL SERVIDOR y la IA no podrá validarlas. Se reducen solas antes de subir.</li>
       <li>Revisa la <b>vista previa</b> a la derecha (o abajo en el celular): es exactamente la imagen que se exportará.</li>
-      <li>Pulsa <b>Exportar imagen</b>. La pantalla se bloquea mientras se registra en el servidor, se descarga la imagen, se guarda en el historial y se publica en Discord. Al terminar sale "✅ Reporte exportado" con el folio y el formulario se limpia solo.</li></ol>
+      <li>Pulsa <b>📤 Enviar reporte</b>. La pantalla se bloquea mientras se registra en el servidor, se genera la imagen, se guarda en el historial y se publica en Discord (si el formulario lo tiene configurado, la imagen también se descarga a tu dispositivo). Al terminar sale "✅ Reporte enviado" con el folio y el formulario se limpia solo.</li></ol>
     <div class="tip">Cada reporte recibe un <b>folio único</b> (PM-000123) y un sello con tu usuario y la hora del servidor. No se puede editar después: si te equivocaste, avisa a un revisor o administrador.</div></div>
   <div class="bloque"><h3>Borradores</h3><p>Lo que escribes se guarda en tu navegador. Si cierras y vuelves, verás un aviso con <i>Continuar</i> o <i>Descartar</i>. Se borra al exportar o al pulsar <i>Limpiar</i>; caduca a los 7 días. Las fotos no se guardan en el borrador.</p></div>
   <div class="bloque"><h3>Pendiente de revisión</h3><p>Algunos formularios exigen que un revisor apruebe el reporte. En ese caso el mensaje final dice <i>Queda pendiente de revisión</i>: ya está guardado, pero no cuenta en el Resumen ni se publica en Discord hasta que lo aprueben. Lo ves en <span class="ruta">Mi cuenta → Mis reportes</span> con su estado; si lo rechazan, verás el motivo.</p></div>
@@ -130,6 +130,7 @@
   <h2 class="sec">Formularios<small>Catálogo, aprobación, Discord y diseñador</small></h2>
   <div class="bloque"><h3>Catálogo</h3><p>Cada fila es un formulario del inicio; clic en la fila abre su <b>ficha</b> (configuración, Discord, quién lo usa, reportes recientes, estadísticas e historial). ⋯ → <i>Abrir</i>, <i>Editar</i>, <i>Ocultar/Mostrar en el inicio</i>, <i>Diseñar plantilla</i> (si fue creado con el diseñador), <i>Eliminar del catálogo</i> (los reportes del historial se conservan).</p></div>
   <div class="bloque"><h3>Requiere aprobación de un revisor</h3><p>Al editar un formulario, marca esta casilla para que sus reportes nuevos queden <b>pendientes</b> hasta que alguien con permiso de revisión los apruebe. Hasta entonces no cuentan en el Resumen ni se publican en Discord. Desmárcala y todo vuelve a ser inmediato.</p></div>
+  <div class="bloque"><h3>Descargar la imagen al enviar</h3><p>Casilla del editor y de la ficha del formulario. Marcada (por defecto), al pulsar <i>Enviar reporte</i> el navegador descarga también la imagen generada; desmarcada, la imagen solo se guarda en el historial (y se publica en Discord si hay webhook), sin descargas en el dispositivo del integrante.</p></div>
   <div class="bloque"><h3>Webhook de Discord</h3><p>En el editor (o en <span class="ruta">Automatización → Canales por formulario</span>) pega el webhook del canal donde se publican los reportes de ese formulario y pulsa <i>Enviar prueba</i>. El enlace nunca se muestra a los usuarios.</p></div>
   <div class="bloque"><h3>Diseñador de plantillas</h3>
     <ol><li><span class="ruta">Formularios → 🎨 Diseñador de plantillas</span>, ＋ Nuevo formulario.</li><li>Sube la imagen de fondo (la plantilla) y dibuja cajas sobre ella: texto, párrafo, fecha, hora, número, opción, sí/no, rango, persona, lista de personas, lista, casillas, fórmula y foto.</li><li>En cada caja: etiqueta, obligatorio, bloqueado, "en resumen", reglas (mostrar u obligar según otro campo), columnas automáticas en listas, fórmulas (contar, copiar, unir, código, total, página).</li><li>Para reportes de varias páginas activa <i>Reporte en varias páginas</i> y marca los campos que se repiten por página.</li><li><i>Vista previa</i> con datos de ejemplo y <i>Guardar</i>. El formulario queda oculto hasta que lo marques visible.</li></ol>
@@ -204,6 +205,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=b9ae1d5a"></script>
+<script type="module" src="js/app-manuales.js?v=63b3e40f"></script>
 </body>
 </html>

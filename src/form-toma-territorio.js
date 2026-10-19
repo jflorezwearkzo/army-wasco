@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, RANGOS, esc, cargarFoto } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, RANGOS, esc, cargarFoto, descargarSiProcede } from './auth.js';
 const FORM='toma-territorio';
 const YO = await requerir({ formulario:FORM }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id',FORM).maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
@@ -208,16 +208,16 @@ $('#btnExport').onclick=async()=>{
       datos:{...d, totalTomados:totalTomados(d), codigo:codigoDoc(d.fecha), fotos:photos.map(p=>p.name)} });
     FOLIO=reg.folio; SELLO=`${(reg.datos.usuario||'')} · ${new Date(reg.datos.sellado_en||Date.now()).toLocaleString('es-CO')}`;
     draw();
-    btn.textContent='Exportando…'; ov.texto(`Folio ${FOLIO} asignado. Generando la imagen…`);
+    btn.textContent='Generando imagen…'; ov.texto(`Folio ${FOLIO} asignado. Generando la imagen…`);
     const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
-    const a=document.createElement('a'); a.download=`reporte-toma-territorio-${FOLIO}-${d.fecha}.png`; a.href=URL.createObjectURL(blob); a.click();
+    await descargarSiProcede('toma-territorio', blob, `reporte-toma-territorio-${FOLIO}-${d.fecha}.png`);
     ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:FORM, pngBlob:blob });
     BORR.limpiar(); ov.texto('Publicando en Discord…'); const dc=await notificarDiscord(reg.id, reg.estado);
-    const msg=`Reporte ${FOLIO} exportado y guardado en el historial.`+textoDiscord(dc);
+    const msg=`Reporte ${FOLIO} enviado y guardado en el historial.`+textoDiscord(dc);
     FOLIO=null; SELLO=null; limpiarFormulario(); showErr(msg,true); ov.exito(msg);
   }catch(x){ ov.quitar(); showErr('No se pudo completar: '+x.message); }
   FOLIO=null; SELLO=null; draw();
-  btn.disabled=false; btn.textContent='Exportar imagen';
+  btn.disabled=false; btn.textContent='📤 Enviar reporte';
 };
 function limpiarFormulario(){ BORR.limpiar(); $('#form').reset(); photos=[]; renderThumbs(); showErr(''); document.querySelectorAll('.tRes').forEach(i=>i.value=''); precargar(); draw(); }
 $('#btnReset').onclick=limpiarFormulario;

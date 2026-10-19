@@ -165,6 +165,10 @@ Permiso **Sanciones y advertencias** (`sanciones`). Se registran desde el expedi
 
 Todo cambio de rango queda en `ascensos` (trigger sobre `perfiles.rango`), con motivo y quién lo otorgó cuando se hace desde el expediente ("⬆ Cambiar rango", permiso `usuarios`; publica en Discord *avisos*). Admin → **Ascensos**: lista de elegibles al siguiente rango según **requisitos por rango** editables (días mínimos en el rango anterior y reportes aprobados desde el último ascenso; quien tiene advertencias activas no cumple). RPC `datos_ascensos`, tabla `requisitos_ascenso`.
 
+## Imagen al enviar (por formulario)
+
+Cada formulario tiene la casilla **Descargar la imagen al enviar** (`formularios.descarga_imagen`, por defecto sí; editor y ficha). El botón de los formularios es **📤 Enviar reporte**: siempre registra el reporte, genera la imagen con el folio, la guarda en el historial (y la analiza la IA) y la publica en Discord; la descarga al dispositivo solo ocurre si la casilla está marcada (`descargarSiProcede` en `src/auth.js`, con caché por formulario).
+
 ## Revisión y aprobación de reportes
 
 - Se activa **por formulario**: Admin → Formularios → Editar → "Requiere aprobación de un revisor" (badge *Con revisión* en la lista). Mientras no se active, todo funciona como antes (los reportes nacen aprobados).

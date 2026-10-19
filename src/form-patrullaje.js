@@ -1,4 +1,4 @@
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, esc, cargarFoto } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, hoyISO, faviconEmoji, sb, esc, cargarFoto, descargarSiProcede } from './auth.js';
 const YO = await requerir({ formulario:'patrullaje' }); barraUsuario(YO);
 sb.from('formularios').select('icono').eq('id','patrullaje').maybeSingle().then(({data}) => faviconEmoji(data && data.icono));
 
@@ -224,18 +224,18 @@ $('#btnExport').onclick=async()=>{
         datos:{...d, ...p, fotos:{salida:paginas[i].fotos.sal.name, regreso:paginas[i].fotos.reg.name}} });
       FOLIO=reg.folio; SELLO=`${(reg.datos.usuario||'')} · ${new Date(reg.datos.sellado_en||Date.now()).toLocaleString('es-CO')}`;
       ACTUAL=i; tabs(); draw(i);
-      btn.textContent=`Exportando ${i+1}/${paginas.length}…`; ov.texto(`Patrullaje ${i+1} de ${paginas.length}: folio ${FOLIO}. Generando la imagen…`);
+      btn.textContent=`Generando ${i+1}/${paginas.length}…`; ov.texto(`Patrullaje ${i+1} de ${paginas.length}: folio ${FOLIO}. Generando la imagen…`);
       const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
-      const a=document.createElement('a'); a.download=`reporte-patrullaje-${FOLIO}-${fmtFecha(d.fecha)}-p${p.n}.png`; a.href=URL.createObjectURL(blob); a.click();
+      await descargarSiProcede('patrullaje', blob, `reporte-patrullaje-${FOLIO}-${fmtFecha(d.fecha)}-p${p.n}.png`);
       ov.texto(`Patrullaje ${i+1} de ${paginas.length}: guardando en el historial…`); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:'patrullaje', pngBlob:blob });
       const dc=await notificarDiscord(reg.id, reg.estado); if(dc==='ok') publicados++; if(dc==='pendiente') pendientes++;
       hechos.push(FOLIO); FOLIO=null; SELLO=null;
       if(i<paginas.length-1) await espera(700);   // el navegador necesita un respiro entre descargas
     }
-    const msg=`${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'')+(pendientes?` ${pendientes} pendiente(s) de revisión (un revisor debe aprobarlos).`:'');
+    const msg=`${hechos.length} reporte(s) enviado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'')+(pendientes?` ${pendientes} pendiente(s) de revisión (un revisor debe aprobarlos).`:'');
     limpiarFormulario(); showErr(msg,true); ov.exito(msg);
-  }catch(x){ ov.quitar(); FOLIO=null; SELLO=null; showErr((hechos.length?`Se exportaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
-  draw(); btn.disabled=false; btn.textContent='Exportar imágenes';
+  }catch(x){ ov.quitar(); FOLIO=null; SELLO=null; showErr((hechos.length?`Se enviaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
+  draw(); btn.disabled=false; btn.textContent='📤 Enviar reporte';
 };
 function limpiarFormulario(){ BORR.limpiar(); $('#form').reset(); paginas.splice(0).forEach(p=>p.el.remove()); ACTUAL=0; showErr(''); precargar(); $('#nPat').value='1'; ajustarPaginas(); }
 $('#btnReset').onclick=limpiarFormulario;

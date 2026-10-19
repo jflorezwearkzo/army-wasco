@@ -396,7 +396,7 @@ $('#fNuevo').onclick = () => nuevoForm();
 function editarForm(f){
   $('#tituloForm').textContent='Editar formulario · '+f.titulo; $('#fGuardar').textContent='Guardar';
   $('#fId').value=f.id; $('#fId').disabled=true; $('#fTitulo').value=f.titulo; $('#fDesc').value=f.descripcion||''; $('#fIcono').value=f.icono||'';
-  $('#fOrden').value=f.orden; $('#fRuta').value=f.ruta; $('#fActivo').checked=f.activo; $('#fAprob').checked=!!f.requiere_aprobacion; msg('f','');
+  $('#fOrden').value=f.orden; $('#fRuta').value=f.ruta; $('#fActivo').checked=f.activo; $('#fAprob').checked=!!f.requiere_aprobacion; $('#fDescarga').checked=f.descarga_imagen!==false; msg('f','');
   $('#fWebhook').value=''; $('#fWebhookOn').checked=true; $('#fDiscordMsg').textContent='';
   if(tiene(yo,'gestion_reportes')) sb.from('formularios_discord').select('webhook,activo').eq('formulario_id',f.id).maybeSingle().then(({data})=>{ if(data){ $('#fWebhook').value=data.webhook; $('#fWebhookOn').checked=data.activo; } });
   abrirDialogo('formularios', 'editar/'+f.id);
@@ -421,7 +421,7 @@ $('#fForm').onsubmit = async e => {
   e.preventDefault(); msg('f','');
   if($('#fId').disabled ? !tiene(yo,'gestion_reportes') : !tiene(yo,'crear_reportes')){ msg('f', $('#fId').disabled ? 'No tienes permiso de gestión de reportes.' : 'No tienes permiso de creación de reportes.'); return; }
   const f = { id:$('#fId').value.trim().toLowerCase(), titulo:$('#fTitulo').value.trim(), descripcion:$('#fDesc').value.trim(), icono:$('#fIcono').value.trim(),
-    orden:parseInt($('#fOrden').value)||100, ruta:$('#fRuta').value.trim(), activo:$('#fActivo').checked, requiere_aprobacion:$('#fAprob').checked };
+    orden:parseInt($('#fOrden').value)||100, ruta:$('#fRuta').value.trim(), activo:$('#fActivo').checked, requiere_aprobacion:$('#fAprob').checked, descarga_imagen:$('#fDescarga').checked };
   const { error } = await sb.from('formularios').upsert(f); if(error){ msg('f', error.message); return; }
   try{ await guardarDiscord(f.id); }catch(x){ msg('f','Formulario guardado, pero el webhook no: '+x.message); cargarForms(); return; }
   RESALTAR = f.id; $('#dlgForm').close(); limpiarForm(); toast('Formulario guardado.'); cargarForms();

@@ -763,6 +763,9 @@ alter table public.perfiles add column if not exists notas_admin text;
 --   solo se otorgan permisos/formularios que el llamante tiene; no sobre uno mismo; a un Administrador solo otro Administrador. Audita "permisos_granulares".
 -- RPC ficha_usuario(p_usuario): cuenta (correo, último acceso, factores 2FA), actividad, efectivos y últimos 40 registros de auditoría relacionados.
 
+-- Por formulario: descargar o no la imagen al enviar (siempre se guarda en el historial).
+alter table public.formularios add column if not exists descarga_imagen boolean not null default true;
+
 -- ---------- Auditoría con IA de reportes (Gemini, Edge Function auditar-reporte) ----------
 -- Secretos del servidor: RLS sin políticas; solo la clave de servicio los lee (GEMINI_API_KEY y el token interno AUDITORIA_INTERNO).
 -- La Edge Function prefiere la variable de entorno GEMINI_API_KEY si existe.

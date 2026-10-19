@@ -1,6 +1,6 @@
 // Formulario genérico: carga la definición JSON del formulario (?id=...) y la ejecuta con el motor de plantillas.
 // Soporta reportes de varias páginas (def.paginas.activo): los campos "por página" se repiten y se exporta una imagen por página.
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, faviconEmoji, sb, esc } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, faviconEmoji, sb, esc, descargarSiProcede } from './auth.js';
 import { construirFormulario, validar, dibujar, cargarFondo, cargarImagen, resumenDe, fmtFecha, calcular, estaActivo } from './plantilla.js';
 
 const ID = new URLSearchParams(location.search).get('id') || '';
@@ -70,18 +70,18 @@ $('#btnExport').onclick=async()=>{
       const datos={ ...v, plantilla_version:F.version, fotos:fotos.map(p=>p.name) }; delete datos.__pagina; delete datos.__paginas; if(n>1){ datos.pagina=i+1; datos.paginas=n; }
       const reg=await crearReporte({ formularioId:ID, fecha, resumen:`${resumen}${fotos.length?` · ${fotos.length} foto(s)`:''}`, datos });
       SELLO={ folio:reg.folio, texto:`${(reg.datos.usuario||'')} · ${new Date(reg.datos.sellado_en||Date.now()).toLocaleString('es-CO')}` };
-      ACTUAL=i; pintarTabs(); draw(i); btn.textContent=n>1?`Exportando ${i+1}/${n}…`:'Exportando…'; ov.texto((n>1?`${ETQ} ${i+1} de ${n}: `:'')+`folio ${reg.folio}. Generando la imagen…`);
+      ACTUAL=i; pintarTabs(); draw(i); btn.textContent=n>1?`Generando ${i+1}/${n}…`:'Generando imagen…'; ov.texto((n>1?`${ETQ} ${i+1} de ${n}: `:'')+`folio ${reg.folio}. Generando la imagen…`);
       const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
-      const a=document.createElement('a'); a.download=`reporte-${ID}-${reg.folio}-${fecha}${n>1?`-p${i+1}`:''}.png`; a.href=URL.createObjectURL(blob); a.click();
+      await descargarSiProcede(ID, blob, `reporte-${ID}-${reg.folio}-${fecha}${n>1?`-p${i+1}`:''}.png`);
       ov.texto('Guardando en el historial…'); await adjuntarImagen({ yo:YO, id:reg.id, formularioId:ID, pngBlob:blob });
       const dc=await notificarDiscord(reg.id, reg.estado); if(dc==='ok') publicados++; if(dc==='pendiente') pendientes++;
       hechos.push(reg.folio); SELLO=null; if(i<n-1) await espera(700);
     }
     BORR.limpiar();
-    const msg = n>1 ? `${hechos.length} reporte(s) exportado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'')+(pendientes?` ${pendientes} pendiente(s) de revisión (un revisor debe aprobarlos).`:'') : `Reporte ${hechos[0]} exportado y guardado en el historial.`+(publicados?' Publicado en Discord.':'')+(pendientes?' Queda pendiente de revisión: un revisor debe aprobarlo.':'');
+    const msg = n>1 ? `${hechos.length} reporte(s) enviado(s) y guardado(s) en el historial: ${hechos.join(', ')}.`+(publicados?` ${publicados} publicado(s) en Discord.`:'')+(pendientes?` ${pendientes} pendiente(s) de revisión (un revisor debe aprobarlos).`:'') : `Reporte ${hechos[0]} enviado y guardado en el historial.`+(publicados?' Publicado en Discord.':'')+(pendientes?' Queda pendiente de revisión: un revisor debe aprobarlo.':'');
     showErr(msg, true); ov.exito(msg, ()=>location.reload(), 6);
-  }catch(x){ ov.quitar(); SELLO=null; showErr((hechos.length?`Se exportaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
-  draw(); btn.disabled=false; btn.textContent='Exportar imagen';
+  }catch(x){ ov.quitar(); SELLO=null; showErr((hechos.length?`Se enviaron ${hechos.join(', ')}. `:'')+'No se pudo completar: '+x.message); }
+  draw(); btn.disabled=false; btn.textContent='📤 Enviar reporte';
 };
 $('#btnReset').onclick=()=>{ BORR.limpiar(); location.reload(); };
 mejorasMovil();

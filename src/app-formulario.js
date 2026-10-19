@@ -24,7 +24,7 @@ async function cargar(){
     <div class="acc"><a class="ghost sm" href="../${esc(f.ruta)}" target="_blank" style="text-decoration:none;display:inline-block">↗ Abrir</a>${(f.definicion && tiene(yo,'disenar_formularios')) ? `<a class="ghost sm" href="disenador.html?id=${esc(f.id)}" style="text-decoration:none;display:inline-block">🎨 Diseñar</a>` : ''}${GEST ? `<button type="button" class="ghost sm" id="bActivo">${f.activo?'🙈 Ocultar del inicio':'👁 Mostrar en el inicio'}</button><button type="button" class="ghost sm" id="bEliminar">🗑 Eliminar del catálogo</button>` : ''}<a class="ghost sm" href="./#formularios" style="text-decoration:none;display:inline-block">← Formularios</a></div>`;
   const ba = $('#bActivo'); if(ba) ba.onclick = async () => { const { error: e } = await sb.from('formularios').update({ activo: !f.activo }).eq('id', ID); if(e){ toast(e.message, true); return; } toast(f.activo ? 'Oculto del inicio.' : 'Visible en el inicio.'); cargar(); };
   const be = $('#bEliminar'); if(be) be.onclick = async () => { if(!confirm(`¿Eliminar "${f.titulo}" del catálogo? Los reportes del historial se conservan.`)) return; const { error: e } = await sb.from('formularios').delete().eq('id', ID); if(e){ toast(e.message, true); return; } location.href = './#formularios'; };
-  $('#kvForm').innerHTML = [['Identificador', f.id], ['Ruta', f.ruta], ['Orden', f.orden], ['Creado', fmtD(f.creado_en)], ['Plantilla', f.definicion ? `Diseñador · v${f.version||1} · ${(f.definicion.campos||[]).length} campos` : 'Página propia (repositorio)'], ['Aprobación', f.requiere_aprobacion ? 'Requiere revisor' : 'Inmediata']].map(([k,v]) => `<span>${esc(k)}</span><span>${esc(String(v ?? '—'))}</span>`).join('');
+  $('#kvForm').innerHTML = [['Identificador', f.id], ['Ruta', f.ruta], ['Orden', f.orden], ['Creado', fmtD(f.creado_en)], ['Plantilla', f.definicion ? `Diseñador · v${f.version||1} · ${(f.definicion.campos||[]).length} campos` : 'Página propia (repositorio)'], ['Aprobación', f.requiere_aprobacion ? 'Requiere revisor' : 'Inmediata'], ['Imagen al enviar', f.descarga_imagen === false ? 'Solo historial' : 'Se descarga']].map(([k,v]) => `<span>${esc(k)}</span><span>${esc(String(v ?? '—'))}</span>`).join('');
   // Estadísticas
   if(tiene(yo,'historial')){
     const { data: st } = await sb.from('reportes_vista').select('id,fecha,estado,usuario').eq('formulario_id', ID).limit(5000);
@@ -33,8 +33,8 @@ async function cargar(){
     $('#kvStats').innerHTML = [['Reportes aprobados', apr.length], ['Pendientes', L.filter(r => r.estado==='pendiente').length], ['Rechazados', L.filter(r => r.estado==='rechazado').length], ['Últimos 30 días', apr.filter(r => r.fecha >= hace30).length], ['Último', fmtD(apr.map(r => r.fecha).sort().pop())], ['Quién más reporta', t3 || '—']].map(([k,v]) => `<span>${esc(k)}</span><span>${esc(String(v))}</span>`).join('');
   } else $('#kvStats').innerHTML = '<span class="nota" style="grid-column:1/-1">Necesitas "Ver historial" para ver estadísticas.</span>';
   // Configuración
-  $('#cTitulo').value = f.titulo; $('#cIcono').value = f.icono || ''; $('#cOrden').value = f.orden ?? 100; $('#cDesc').value = f.descripcion || ''; $('#cRuta').value = f.ruta || ''; $('#cActivo').checked = !!f.activo; $('#cAprob').checked = !!f.requiere_aprobacion;
-  ['#cTitulo','#cIcono','#cOrden','#cDesc','#cRuta','#cActivo','#cAprob'].forEach(x => $(x).disabled = !GEST); $('#cGuardar').style.display = GEST ? '' : 'none'; $('#cfgNota').textContent = GEST ? '' : 'Solo lectura: necesitas "Gestión de reportes".';
+  $('#cTitulo').value = f.titulo; $('#cIcono').value = f.icono || ''; $('#cOrden').value = f.orden ?? 100; $('#cDesc').value = f.descripcion || ''; $('#cRuta').value = f.ruta || ''; $('#cActivo').checked = !!f.activo; $('#cAprob').checked = !!f.requiere_aprobacion; $('#cDescarga').checked = f.descarga_imagen !== false;
+  ['#cTitulo','#cIcono','#cOrden','#cDesc','#cRuta','#cActivo','#cAprob','#cDescarga'].forEach(x => $(x).disabled = !GEST); $('#cGuardar').style.display = GEST ? '' : 'none'; $('#cfgNota').textContent = GEST ? '' : 'Solo lectura: necesitas "Gestión de reportes".';
   // Discord
   $('#dWebhook').value = dc ? (dc.webhook||'') : ''; $('#dOn').checked = dc ? dc.activo !== false : true; ['#dWebhook','#dOn'].forEach(x => $(x).disabled = !GEST); $('#dGuardar').style.display = GEST ? '' : 'none'; $('#dProbar').style.display = GEST ? '' : 'none'; if(!GEST) $('#dMsg').textContent = 'Solo "Gestión de reportes" puede ver o cambiar el webhook.';
   // Acceso
@@ -48,7 +48,7 @@ async function cargar(){
 }
 await cargar();
 $('#cGuardar').onclick = async () => { $('#cErr').textContent='';
-  const cambios = { titulo: $('#cTitulo').value.trim(), icono: $('#cIcono').value.trim(), orden: parseInt($('#cOrden').value)||100, descripcion: $('#cDesc').value.trim(), ruta: $('#cRuta').value.trim(), activo: $('#cActivo').checked, requiere_aprobacion: $('#cAprob').checked };
+  const cambios = { titulo: $('#cTitulo').value.trim(), icono: $('#cIcono').value.trim(), orden: parseInt($('#cOrden').value)||100, descripcion: $('#cDesc').value.trim(), ruta: $('#cRuta').value.trim(), activo: $('#cActivo').checked, requiere_aprobacion: $('#cAprob').checked, descarga_imagen: $('#cDescarga').checked };
   if(!cambios.titulo || !cambios.ruta){ $('#cErr').textContent='Título y ruta son obligatorios.'; return; }
   const { error } = await sb.from('formularios').update(cambios).eq('id', ID); if(error){ $('#cErr').textContent = error.message; return; } toast('Configuración guardada.'); cargar(); };
 async function guardarDiscord(){ const w = $('#dWebhook').value.trim();

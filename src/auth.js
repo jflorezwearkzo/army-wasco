@@ -289,6 +289,19 @@ export function detalleIA(a){
     ${(a.texto_leido||[]).length ? `<p class="muted" style="font-size:12px"><b>Texto leído en las capturas:</b> ${a.texto_leido.map(esc).join(' · ')}</p>` : ''}
     <p class="muted" style="font-size:11px">La IA solo orienta; la decisión de aprobar o rechazar es siempre del revisor.</p></details>`;
 }
+// Descarga la imagen generada solo si el formulario lo tiene habilitado (formularios.descarga_imagen; por defecto sí).
+// La imagen siempre se guarda en el historial; esto solo decide si además baja al dispositivo.
+const DESCARGA = {};
+export async function descargaHabilitada(formularioId){
+  if(DESCARGA[formularioId] !== undefined) return DESCARGA[formularioId];
+  try{ const { data } = await sb.from('formularios').select('descarga_imagen').eq('id', formularioId).maybeSingle(); DESCARGA[formularioId] = !data || data.descarga_imagen !== false; }
+  catch(e){ DESCARGA[formularioId] = true; }
+  return DESCARGA[formularioId];
+}
+export async function descargarSiProcede(formularioId, blob, nombre){
+  if(!(await descargaHabilitada(formularioId))) return false;
+  const a = document.createElement('a'); a.download = nombre; a.href = URL.createObjectURL(blob); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); return true;
+}
 export async function urlImagen(path){
   const { data, error } = await sb.storage.from('reportes').createSignedUrl(path, 3600);
   if(error) throw new Error(error.message);
@@ -367,7 +380,7 @@ export function mejorasMovil(){
   const exportar=document.getElementById('btnExport'), preview=document.querySelector('.preview');
   if(exportar && preview){
     const bar=document.createElement('div'); bar.className='pm-flot';
-    bar.innerHTML='<button type="button" class="secondary">👁 Vista previa</button><button type="button" class="primary">⬇ Exportar</button>';
+    bar.innerHTML='<button type="button" class="secondary">👁 Vista previa</button><button type="button" class="primary">📤 Enviar</button>';
     const [bp,be]=bar.querySelectorAll('button');
     bp.onclick=()=>{ const b=document.getElementById('btnPreview'); if(b) b.click(); preview.scrollIntoView({behavior:'smooth',block:'start'}); };
     be.onclick=()=>{ exportar.click(); setTimeout(()=>{ const e=document.getElementById('err'); if(e && e.textContent.trim()) e.scrollIntoView({behavior:'smooth',block:'center'}); },400); };
@@ -416,7 +429,7 @@ export function bloquearPantalla(texto='Procesando…'){
   return {
     texto:t=>{ p.textContent=t; },
     quitar,
-    exito:(mensaje, alCerrar=null, segundos=8, titulo='Reporte exportado', nota='El formulario se limpió para el siguiente reporte.')=>{ document.removeEventListener('keydown',bloquearTeclas,true); window.removeEventListener('beforeunload',avisoSalir);
+    exito:(mensaje, alCerrar=null, segundos=8, titulo='Reporte enviado', nota='El formulario se limpió para el siguiente reporte.')=>{ document.removeEventListener('keydown',bloquearTeclas,true); window.removeEventListener('beforeunload',avisoSalir);
       ov.querySelector('.c').innerHTML=`<div class="ok">✅</div><h3>${titulo}</h3><p>${mensaje.replace(/[<>]/g,'')}</p>${nota?`<p style="margin-top:10px;font-size:12px">${nota}</p>`:''}<button type="button">Aceptar</button>`;
       let t=null; const cerrar=()=>{ clearTimeout(t); ov.remove(); if(alCerrar) alCerrar(); }; ov.querySelector('button').onclick=cerrar; t=setTimeout(cerrar, segundos*1000); }
   };

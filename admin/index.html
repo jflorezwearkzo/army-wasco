@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=1eea8625"></script>
+<script src="../js/tema.js?v=7c19fa05"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -274,7 +274,7 @@
             <input id="fWebhook" type="url" placeholder="https://discord.com/api/webhooks/…">
             <div style="display:flex;gap:10px;align-items:center;margin-top:6px"><label style="margin:0"><input type="checkbox" id="fWebhookOn" checked> Publicar automáticamente</label><button type="button" class="ghost sm" id="fProbar">Enviar prueba</button><span id="fDiscordMsg" class="muted"></span></div>
           </div>
-          <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="fActivo" checked> Visible en el inicio</label><label title="Los reportes nuevos quedan pendientes hasta que alguien con permiso de revisión los apruebe; solo entonces cuentan en el Resumen y se publican en Discord"><input type="checkbox" id="fAprob"> Requiere aprobación de un revisor</label></label>
+          <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="fActivo" checked> Visible en el inicio</label><label title="Los reportes nuevos quedan pendientes hasta que alguien con permiso de revisión los apruebe; solo entonces cuentan en el Resumen y se publican en Discord"><input type="checkbox" id="fAprob"> Requiere aprobación de un revisor</label><label title="Al enviar, el navegador descarga además la imagen del reporte. La imagen siempre se guarda en el historial"><input type="checkbox" id="fDescarga" checked> Descargar la imagen al enviar</label></label>
           <div class="fila" style="margin-top:14px"><button class="primary" id="fGuardar">Crear</button><button type="button" class="ghost" id="fCancelar">Cancelar</button></div>
           <div class="err" id="fErr"></div><div class="ok" id="fOk"></div>
         </form>
@@ -487,6 +487,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=f6c20c11"></script>
+<script type="module" src="../js/app-admin.js?v=ef49ac94"></script>
 </body>
 </html>
