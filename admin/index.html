@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=d136cf09"></script>
+<script src="../js/tema.js?v=4dad3a46"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -418,6 +418,16 @@
       <table><thead><tr><th>Tarea</th><th>Canal</th><th>Activa</th><th>Hora</th><th></th><th></th></tr></thead><tbody id="tbProg"></tbody></table>
       <div class="err" id="pErr"></div>
     </div>
+    <div class="caja" style="margin-top:18px" id="cajaIA">
+      <h3>Auditoría con IA de los reportes</h3>
+      <p class="muted" style="margin-top:0;font-size:13px">Cuando un reporte recibe su imagen, el servidor la envía a Gemini (nivel gratuito de Google) para leer el texto de las capturas del juego, compararlas con lo declarado en el formulario y detectar indicios de falsedad o capturas reutilizadas. El resultado aparece como semáforo en Revisión, Historial y el expediente. La IA solo orienta: aprobar o rechazar sigue siendo decisión del revisor. Si la IA falla, el reporte entra igual, marcado "sin análisis".</p>
+      <div class="fila" style="align-items:center">
+        <label style="margin:0;display:flex;gap:6px;align-items:center;flex:0 0 auto"><input type="checkbox" id="iaActivo" style="width:auto"> Analizar automáticamente cada reporte nuevo</label>
+        <label style="margin:0;display:flex;gap:6px;align-items:center;flex:0 0 auto">Modelo <select id="iaModelo" style="width:auto"><option value="gemini-flash-latest">Gemini Flash (última versión)</option><option value="gemini-2.5-flash">Gemini 2.5 Flash</option><option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (más rápido)</option></select></label>
+        <button type="button" class="primary" id="iaGuardar" style="flex:0 0 auto">Guardar</button><span class="muted" id="iaMsg" style="font-size:13px"></span>
+      </div>
+      <p class="muted" id="iaStats" style="font-size:12px;margin:10px 0 0"></p>
+    </div>
     <div class="caja" style="margin-top:18px" id="cajaRespaldo" hidden>
       <h3>Copia de seguridad</h3>
       <p class="muted" style="margin-top:0;font-size:13px">Descarga un ZIP con todas las tablas (JSON y CSV) y las imágenes del historial. No incluye contraseñas, webhooks ni claves. Solo el Administrador puede generarla; queda registrada en la auditoría. Con muchas imágenes puede tardar varios minutos.</p>
@@ -477,6 +487,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=a36c2d1e"></script>
+<script type="module" src="../js/app-admin.js?v=bc0bc311"></script>
 </body>
 </html>

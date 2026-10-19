@@ -762,3 +762,36 @@ alter table public.perfiles add column if not exists notas_admin text;
 -- RPC fijar_permisos_usuario(p_usuario, p_extra, p_negados, p_formularios, p_notas): permiso "permisos_granulares" (por defecto solo Administrador);
 --   solo se otorgan permisos/formularios que el llamante tiene; no sobre uno mismo; a un Administrador solo otro Administrador. Audita "permisos_granulares".
 -- RPC ficha_usuario(p_usuario): cuenta (correo, último acceso, factores 2FA), actividad, efectivos y últimos 40 registros de auditoría relacionados.
+
+-- ---------- Auditoría con IA de reportes (Gemini, Edge Function auditar-reporte) ----------
+-- Secretos del servidor: RLS sin políticas; solo la clave de servicio los lee (GEMINI_API_KEY y el token interno AUDITORIA_INTERNO).
+-- La Edge Function prefiere la variable de entorno GEMINI_API_KEY si existe.
+create table if not exists public.secretos (clave text primary key, valor text not null, actualizado_en timestamptz not null default now());
+alter table public.secretos enable row level security;
+revoke all on public.secretos from anon, authenticated;
+-- insert into public.secretos (clave, valor) values ('GEMINI_API_KEY', '<clave de Google AI Studio>');
+insert into public.secretos (clave, valor) values ('AUDITORIA_INTERNO', encode(gen_random_bytes(32), 'hex')) on conflict (clave) do nothing;
+-- Resultado del análisis (riesgo bajo/medio/alto, puntaje, resumen, hallazgos, texto_leido, huella, es_captura_del_juego, modelo, en; o {error}) y hash SHA-256 del archivo.
+alter table public.reportes add column if not exists auditoria_ia jsonb, add column if not exists imagen_hash text;
+create index if not exists reportes_imagen_hash_idx on public.reportes (imagen_hash) where imagen_hash is not null;
+insert into public.configuracion (clave, valor) values ('auditoria_ia', '{"activo": true, "modelo": "gemini-flash-latest"}'::jsonb) on conflict (clave) do nothing;
+-- validar_update_reporte(): conserva auditoria_ia e imagen_hash en cualquier update con sesión o en revisión (solo los escribe el servidor).
+-- registrar_auditoria(): excluye auditoria_ia/imagen_hash del detalle; la función deja su propio evento "auditoria_ia" {riesgo, puntaje, modelo, origen}.
+-- reportes_vista: añade auditoria_ia e imagen_hash. expediente(): reportes_recientes incluye auditoria_ia resumido (riesgo, puntaje, resumen, error).
+-- Disparo automático: al recibir imagen, el trigger llama a la Edge Function por pg_net con el token interno (asíncrono; nunca bloquea el reporte).
+create or replace function public.reportes_auditar_ia() returns trigger language plpgsql security definer set search_path = public as $$
+declare tok text; cfg jsonb;
+begin
+  if new.imagen_path is null or old.imagen_path is not null then return new; end if;
+  select valor into cfg from public.configuracion where clave = 'auditoria_ia';
+  if coalesce((cfg->>'activo')::boolean, true) = false then return new; end if;
+  select valor into tok from public.secretos where clave = 'AUDITORIA_INTERNO';
+  if tok is null then return new; end if;
+  perform net.http_post(url := 'https://rvwvnrqwlaudjgzvrzgf.supabase.co/functions/v1/auditar-reporte',
+    body := jsonb_build_object('reporte_id', new.id), headers := jsonb_build_object('Content-Type', 'application/json', 'x-pm-interno', tok), timeout_milliseconds := 120000);
+  return new;
+exception when others then return new;
+end $$;
+revoke all on function public.reportes_auditar_ia() from public, anon, authenticated;
+create or replace trigger reportes_auditar_ia after update of imagen_path on public.reportes for each row execute function public.reportes_auditar_ia();
+-- Reanálisis manual (botón en Revisión): la función se llama con la sesión del revisor (permiso aprobar_reportes) y { forzar: true }.

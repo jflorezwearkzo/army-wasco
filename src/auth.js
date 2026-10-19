@@ -256,6 +256,32 @@ export async function guardarReporte({ yo, formularioId, fecha, resumen, datos, 
   await adjuntarImagen({ yo, id: r.id, formularioId, pngBlob });
   return r.id;
 }
+// ---- Auditoría con IA (análisis de la imagen del reporte; lo hace el servidor con Gemini) ----
+// Pide el análisis de un reporte. forzar=true reanaliza (solo revisores). Devuelve { ok, auditoria } o { ok:false, error }.
+export async function auditarReporte(id, forzar=false){
+  try{ const { data, error } = await sb.functions.invoke('auditar-reporte', { body:{ reporte_id: id, forzar } });
+    if(error){ let msg = error.message || 'sin respuesta'; try{ const j = await error.context.json(); if(j && j.error) msg = j.error; }catch(e){} return { ok:false, error: msg }; }
+    if(data && data.ok) return { ok:true, auditoria: data.auditoria }; return { ok:false, error: (data && (data.error || data.motivo)) || 'sin respuesta' }; }
+  catch(e){ return { ok:false, error: e.message }; }
+}
+// Etiqueta compacta (semáforo) para tablas y tarjetas. r = fila de reportes_vista (o { auditoria_ia, imagen_path, creado_en }).
+export function badgeIA(r){
+  const a = r && r.auditoria_ia;
+  if(!a){ if(!r || !r.imagen_path) return ''; const reciente = r.creado_en && (Date.now() - new Date(r.creado_en).getTime()) < 5*60e3; return `<span class="ia ia-na" title="${reciente ? 'La IA está analizando la imagen' : 'Sin análisis de IA'}">${reciente ? '⏳ Analizando' : '— Sin análisis'}</span>`; }
+  if(a.error) return `<span class="ia ia-err" title="${esc(a.error)}">⚠ Análisis fallido</span>`;
+  const k = a.riesgo || 'medio', t = { bajo:'🟢 Riesgo bajo', medio:'🟡 Riesgo medio', alto:'🔴 Riesgo alto' }[k] || k;
+  return `<span class="ia ia-${esc(k)}" title="${esc(a.resumen||'')}">${t}${typeof a.puntaje==='number' ? ` · ${a.puntaje}` : ''}</span>`;
+}
+// Detalle desplegable del análisis (resumen, hallazgos y texto leído).
+export function detalleIA(a){
+  if(!a || a.error) return '';
+  const g = { grave:'🔴', aviso:'🟡', info:'🟢' };
+  return `<details class="ia-det"><summary>Análisis de la IA <span class="muted">(${esc(a.modelo||'')} · ${a.en ? new Date(a.en).toLocaleString('es-CO') : ''})</span></summary>
+    <p>${esc(a.resumen||'')}</p>${a.es_captura_del_juego===false ? '<p class="ia-alto">La IA considera que la imagen NO parece una captura del juego.</p>' : ''}
+    <ul>${(a.hallazgos||[]).map(h => `<li>${g[h.gravedad]||'•'} <b>${esc(h.tipo)}</b>: ${esc(h.detalle)}</li>`).join('') || '<li class="muted">Sin hallazgos.</li>'}</ul>
+    ${(a.texto_leido||[]).length ? `<p class="muted" style="font-size:12px"><b>Texto leído en las capturas:</b> ${a.texto_leido.map(esc).join(' · ')}</p>` : ''}
+    <p class="muted" style="font-size:11px">La IA solo orienta; la decisión de aprobar o rechazar es siempre del revisor.</p></details>`;
+}
 export async function urlImagen(path){
   const { data, error } = await sb.storage.from('reportes').createSignedUrl(path, 3600);
   if(error) throw new Error(error.message);

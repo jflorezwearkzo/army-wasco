@@ -1,5 +1,5 @@
 // Ficha de formulario: configuración, canal de Discord, quién lo usa, reportes recientes, estadísticas e historial.
-import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, badgeIA } from './auth.js';
 const yo = await requerir(); barraUsuario(yo);
 if(!['crear_reportes','gestion_reportes','disenar_formularios'].some(p => tiene(yo,p))){ document.querySelector('main').innerHTML = '<p class="err" style="padding:30px;text-align:center">No tienes permiso para ver fichas de formularios.</p>'; throw new Error('sin permiso'); }
 const $ = s => document.querySelector(s);
@@ -16,7 +16,7 @@ async function cargar(){
     sb.from('formularios').select('*').eq('id', ID).maybeSingle(), sb.from('roles').select('id,nombre,formularios').order('nombre'),
     sb.from('perfiles').select('id,usuario,nombre,rango').contains('formularios_extra', [ID]).order('usuario'),
     GEST ? sb.from('formularios_discord').select('webhook,activo').eq('formulario_id', ID).maybeSingle() : Promise.resolve({ data:null }),
-    tiene(yo,'historial') ? sb.from('reportes_vista').select('id,folio,fecha,usuario,usuario_nombre,usuario_rango,resumen,estado,creado_en').eq('formulario_id', ID).order('id',{ascending:false}).limit(25) : Promise.resolve({ data:null }),
+    tiene(yo,'historial') ? sb.from('reportes_vista').select('id,folio,fecha,usuario,usuario_nombre,usuario_rango,resumen,estado,creado_en,imagen_path,auditoria_ia').eq('formulario_id', ID).order('id',{ascending:false}).limit(25) : Promise.resolve({ data:null }),
     sb.from('auditoria').select('en,usuario,accion,detalle').eq('tabla','formularios').eq('registro', ID).order('id',{ascending:false}).limit(40)]);
   if(error || !f){ $('#cab').innerHTML = `<p class="err">${esc(error ? error.message : 'Formulario no encontrado')}</p>`; return; }
   F = f; document.title = `${f.titulo} · Administración`; $('#migaNombre').textContent = f.titulo;
@@ -42,7 +42,7 @@ async function cargar(){
   $('#acceso').innerHTML = `<p style="margin:0 0 6px"><b>Roles:</b> ${conRol.map(r => `<a href="rol.html?id=${esc(r.id)}" class="tag on" style="text-decoration:none">${esc(r.nombre)}${(r.formularios||[]).includes('*') ? ' (todos)' : ''}</a>`).join(' ') || '<span class="nota">ningún rol</span>'}</p>
     <p style="margin:0"><b>Usuarios con acceso extra:</b> ${(extra||[]).map(u => `<a href="usuario.html?id=${esc(u.id)}" class="tag" style="text-decoration:none">${esc(nombreCompleto(u))}</a>`).join(' ') || '<span class="nota">ninguno</span>'}</p>`;
   // Reportes
-  $('#tbRep').innerHTML = reps === null ? '<tr><td colspan=5 class="nota">Necesitas "Ver historial".</td></tr>' : (reps||[]).map(r => `<tr><td><b>${esc(r.folio||r.id)}</b></td><td>${fmtD(r.fecha)}</td><td>${esc(r.usuario||'')}<br><span class="nota">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td><td>${r.estado==='pendiente' ? '<span class="tag pend" style="background:var(--avisobg);color:#e0a92a">Pendiente</span>' : r.estado==='rechazado' ? '<span class="tag off">Rechazado</span>' : '<span class="tag on">Aprobado</span>'}</td></tr>`).join('') || '<tr><td colspan=5 class="nota">Sin reportes.</td></tr>';
+  $('#tbRep').innerHTML = reps === null ? '<tr><td colspan=5 class="nota">Necesitas "Ver historial".</td></tr>' : (reps||[]).map(r => `<tr><td><b>${esc(r.folio||r.id)}</b></td><td>${fmtD(r.fecha)}</td><td>${esc(r.usuario||'')}<br><span class="nota">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td><td>${r.estado==='pendiente' ? '<span class="tag pend" style="background:var(--avisobg);color:#e0a92a">Pendiente</span>' : r.estado==='rechazado' ? '<span class="tag off">Rechazado</span>' : '<span class="tag on">Aprobado</span>'}${r.imagen_path ? `<br>${badgeIA(r)}` : ''}</td></tr>`).join('') || '<tr><td colspan=5 class="nota">Sin reportes.</td></tr>';
   const sinEmoji = t => String(t).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,'');
   $('#actividad').innerHTML = (aud||[]).map(a => `<div class="act"><b>${esc({insert:'Creó',update:'Modificó',delete:'Eliminó'}[a.accion]||a.accion)}</b> — por ${esc(a.usuario||'sistema')}<div class="f">${fmt(a.en)} · ${esc(sinEmoji(JSON.stringify(a.detalle||{})).slice(0,200))}</div></div>`).join('') || '<p class="nota">Sin registros.</p>';
 }

@@ -1,6 +1,6 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
 import { respaldoCompleto } from './respaldo.js';
-import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
@@ -506,7 +506,7 @@ async function buscarHist(){
   const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
   $('#tbHist').innerHTML = data.map(r => `<tr><td><b>${esc(r.folio||r.id)}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||r.formulario_id||'—')}</td>
     <td>${esc(r.usuario||'—')}<br><span class="muted">${esc([r.usuario_rango, r.usuario_nombre].filter(Boolean).join(' '))}</span></td><td>${esc(r.resumen||'')}</td>
-    <td>${etiquetaEstado(r)}</td>
+    <td>${etiquetaEstado(r)}${r.imagen_path ? `<br>${badgeIA(r)}` : ''}</td>
     <td class="muted">${new Date(r.creado_en).toLocaleString('es-CO')}</td>
     <td>${r.imagen_path ? `<button class="ghost sm" data-hv="${esc(r.imagen_path)}" data-n="reporte-${esc(r.folio||r.id)}.${(r.imagen_path||'').split('.').pop()||'png'}">Ver</button>` : '—'}</td>
     <td>${tiene(yo,'eliminar_historial') ? `<button class="ghost sm" data-hd="${r.id}" data-p="${esc(r.imagen_path||'')}">Eliminar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=9 class="muted">Sin reportes</td></tr>';
@@ -624,6 +624,7 @@ async function cargarAutomatizacion(){
     m.textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Prueba enviada.' : 'Error: '+((data&&(data.error||data.motivo))||'sin respuesta');
   });
   if(typeof cargarProgramadas === 'function') cargarProgramadas();
+  cargarConfigIA();
   $('#cajaRespaldo').hidden = !esSuperadmin(yo);
   // Canales por formulario (formularios_discord)
   const { data: fd } = await sb.from('formularios_discord').select('formulario_id,webhook,activo'); const mapa = {}; (fd||[]).forEach(x => mapa[x.formulario_id] = x);
@@ -639,6 +640,21 @@ async function cargarAutomatizacion(){
   document.querySelectorAll('[data-fp]').forEach(b => b.onclick = async () => { const id = b.dataset.fp, m = $(`[data-fm="${id}"]`); if(!(await guardarF(id))) return; m.textContent='Enviando…';
     const { data, error } = await sb.functions.invoke('notificar-discord', { body:{ formulario_id: id, prueba: true } }); m.textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Prueba enviada.' : 'Error: '+((data&&data.error)||'sin respuesta'); });
 }
+// Auditoría con IA: interruptor y modelo (configuracion.auditoria_ia); la clave vive en el servidor.
+async function cargarConfigIA(){
+  const { data } = await sb.from('configuracion').select('valor').eq('clave', 'auditoria_ia').maybeSingle();
+  const v = (data && data.valor) || {}; $('#iaActivo').checked = v.activo !== false; if(v.modelo) $('#iaModelo').value = v.modelo;
+  const puede = tiene(yo,'gestion_reportes'); ['#iaActivo','#iaModelo'].forEach(s => $(s).disabled = !puede); $('#iaGuardar').style.display = puede ? '' : 'none';
+  try{ const hace30 = new Date(Date.now()-30*864e5).toISOString();
+    const { data: rs } = await sb.from('reportes_vista').select('auditoria_ia,imagen_path').gte('creado_en', hace30).limit(1000);
+    const L = (rs||[]).filter(r => r.imagen_path), con = L.filter(r => r.auditoria_ia && !r.auditoria_ia.error), n = k => con.filter(r => r.auditoria_ia.riesgo===k).length;
+    $('#iaStats').textContent = L.length ? `Últimos 30 días: ${con.length} de ${L.length} reportes con imagen analizados · 🟢 ${n('bajo')} bajo · 🟡 ${n('medio')} medio · 🔴 ${n('alto')} alto · ${L.filter(r => r.auditoria_ia && r.auditoria_ia.error).length} con error.` : 'Sin reportes con imagen en los últimos 30 días.'; }catch(e){}
+}
+$('#iaGuardar').onclick = async () => {
+  const valor = { activo: $('#iaActivo').checked, modelo: $('#iaModelo').value };
+  const { error } = await sb.from('configuracion').upsert({ clave: 'auditoria_ia', valor, actualizado_en: new Date().toISOString(), actualizado_por: yo.id });
+  $('#iaMsg').textContent = error ? 'Error: ' + error.message : (valor.activo ? 'Guardado: se analizará cada reporte nuevo.' : 'Guardado: análisis automático desactivado (se puede analizar a mano en Revisión).');
+};
 $('#bRespaldo').onclick = async () => {
   if(!confirm('Se descargará un ZIP con todos los datos' + ($('#bImg').checked ? ' e imágenes' : '') + '. Puede tardar varios minutos. ¿Continuar?')) return;
   $('#bMsg').textContent = '';
@@ -666,6 +682,8 @@ async function cargarRevision(){
         <div>${esc([r.usuario_rango, r.usuario_nombre||r.usuario].filter(Boolean).join(' '))} <span class="muted">(${esc(r.usuario||'')})</span></div>
         <div class="muted">${esc(r.resumen||'')}</div>
         <div class="muted" style="font-size:11px">Registrado ${new Date(r.creado_en).toLocaleString('es-CO')}${r.revisado_en ? ` · Revisado ${new Date(r.revisado_en).toLocaleString('es-CO')} por ${esc(r.revisor||'')}` : ''}${r.comentario_revision ? `<br>Motivo: ${esc(r.comentario_revision)}` : ''}</div>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">${badgeIA(r)}${r.imagen_path ? `<button type="button" class="ghost sm" data-ia="${r.id}" title="Pedir a la IA que analice la imagen de nuevo">${r.auditoria_ia && !r.auditoria_ia.error ? '🔎 Reanalizar' : '🔎 Analizar'}</button>` : ''}<span class="muted" style="font-size:11px" data-iam="${r.id}"></span></div>
+        ${detalleIA(r.auditoria_ia)}
         <div class="acciones">
           ${est!=='aprobado' ? `<button type="button" class="sm aprobar" data-rv="aprobado" data-id="${r.id}">✅ Aprobar</button>` : ''}
           ${est!=='rechazado' ? `<button type="button" class="sm rechazar" data-rv="rechazado" data-id="${r.id}">⛔ Rechazar</button>` : ''}
@@ -675,6 +693,12 @@ async function cargarRevision(){
   document.querySelectorAll('[data-rvimg]').forEach(d => d.onclick = async () => { if(!d.dataset.rvimg) return;
     if(!d.querySelector('img')){ try{ const u = await urlImagen(d.dataset.rvimg); d.innerHTML = `<img src="${u}" alt="">`; d.dataset.u = u; }catch(x){ alert(x.message); return; } }
     else { $('#dlgImg').src = d.dataset.u; $('#dlgDl').href = d.dataset.u; $('#dlgDl').download = d.dataset.n; $('#dlg').showModal(); } });
+  document.querySelectorAll('[data-ia]').forEach(b => b.onclick = async () => {
+    const id = +b.dataset.ia, m = $(`[data-iam="${id}"]`); b.disabled = true; m.textContent = 'Analizando la imagen… (10-30 s)';
+    const res = await auditarReporte(id, true); b.disabled = false;
+    if(!res.ok){ m.textContent = 'No se pudo analizar: ' + res.error; return; }
+    m.textContent = ''; toast(`Análisis listo: riesgo ${res.auditoria.riesgo}.`); cargarRevision();
+  });
   document.querySelectorAll('[data-rv]').forEach(b => b.onclick = async () => {
     const id = +b.dataset.id, est2 = b.dataset.rv, r = lista.find(x => x.id===id); let comentario = null;
     if(est2==='rechazado'){ comentario = prompt(`Motivo del rechazo de ${r.folio||id} (lo verá el autor):`); if(comentario===null) return; if(!comentario.trim()){ alert('Indica el motivo.'); return; } }

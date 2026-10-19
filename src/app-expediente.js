@@ -1,5 +1,5 @@
 // Expediente por integrante: perfil, KPIs, sanciones, ascensos y reportes. ?id=<uuid> (sin id: el propio).
-import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, urlImagen, RANGOS, avisoDiscord, hoyISO, cargarFoto, esSuperadmin } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, nombreCompleto, urlImagen, RANGOS, avisoDiscord, hoyISO, cargarFoto, esSuperadmin, badgeIA } from './auth.js';
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 const ID = new URLSearchParams(location.search).get('id') || yo.id;
@@ -49,7 +49,7 @@ async function cargar(){
   const reps = E.reportes_recientes || []; $('#repN').textContent = reps.length ? `últimos ${reps.length}` : '';
   const verImg = PROPIO || tiene(yo,'historial') || tiene(yo,'aprobar_reportes');
   $('#tbRep').innerHTML = reps.map(r => `<tr><td><b>${esc(r.folio||r.id)}</b></td><td>${fmt(r.fecha)}</td><td>${esc(r.formulario||r.formulario_id)}</td><td>${esc(r.resumen||'')}</td>
-    <td>${r.estado==='pendiente' ? '<span class="tag" style="background:var(--avisobg);color:#e0a92a">Pendiente</span>' : r.estado==='rechazado' ? '<span class="tag off">Rechazado</span>' : '<span class="tag on">Aprobado</span>'}</td>
+    <td>${r.estado==='pendiente' ? '<span class="tag" style="background:var(--avisobg);color:#e0a92a">Pendiente</span>' : r.estado==='rechazado' ? '<span class="tag off">Rechazado</span>' : '<span class="tag on">Aprobado</span>'}${(r.imagen_path && (tiene(yo,'aprobar_reportes') || tiene(yo,'historial'))) ? `<br>${badgeIA(r)}` : ''}</td>
     <td>${(r.imagen_path && verImg) ? `<button class="ghost sm" data-img="${esc(r.imagen_path)}" data-n="reporte-${esc(r.folio||r.id)}.${esc((r.imagen_path||'png').split('.').pop())}">Ver</button>` : ''}</td></tr>`).join('') || '<tr><td colspan=6 class="muted">Sin reportes</td></tr>';
   document.querySelectorAll('[data-img]').forEach(b => b.onclick = async () => { try{ const u = await urlImagen(b.dataset.img); $('#dlgImg').src = u; $('#dlgDl').href = u; $('#dlgDl').download = b.dataset.n; $('#dlg').showModal(); }catch(x){ alert(x.message); } });
 }

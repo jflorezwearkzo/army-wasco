@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=d136cf09"></script>
+<script src="js/tema.js?v=4dad3a46"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -138,6 +138,11 @@
   <div class="bloque"><h3>Cómo revisar</h3>
     <ol><li><span class="ruta">Administración → Revisión</span>. La pestaña muestra cuántos hay pendientes.</li><li>Cada tarjeta trae autor, fecha y resumen; pulsa la imagen para verla en grande.</li><li><b>Aprobar</b> (comentario opcional): el reporte cuenta en el Resumen y, si el formulario tiene webhook, se publica en Discord.</li><li><b>Rechazar</b> (motivo obligatorio): no cuenta; el autor ve el motivo en Mis reportes.</li><li><i>Volver a pendiente</i> deshace una decisión.</li></ol>
     <div class="tip">No puedes revisar tus propios reportes (salvo el Administrador). Todo queda en Auditoría.</div></div>
+  <div class="bloque"><h3>Semáforo de la IA</h3>
+    <p>Cuando un reporte recibe su imagen, el servidor la analiza con una IA (Gemini): lee el texto de las capturas del juego (nombres, cifras, horas, chat), lo compara con lo que escribió el autor y busca indicios de montaje o de capturas reutilizadas de reportes anteriores.</p>
+    <ul><li><b>🟢 Riesgo bajo</b>: la evidencia respalda lo declarado.</li><li><b>🟡 Riesgo medio</b>: hay dudas o algo no se pudo verificar (captura borrosa, cifra que no aparece…). Mira la imagen con calma.</li><li><b>🔴 Riesgo alto</b>: indicios claros de falsedad. Revísalo a fondo antes de decidir.</li><li><b>— Sin análisis / ⏳ Analizando</b>: aún no hay resultado; el botón <i>🔎 Analizar</i> lo pide de nuevo.</li></ul>
+    <p>Despliega <i>Análisis de la IA</i> en la tarjeta para ver el resumen, los hallazgos y el texto leído. El semáforo también aparece en Historial, en la ficha del formulario y en el expediente del autor.</p>
+    <div class="tip">La IA solo orienta y puede equivocarse: nunca aprueba ni rechaza nada. La decisión es del revisor. En Automatización se puede desactivar el análisis automático o cambiar el modelo.</div></div>
 </section>
 
 <section class="sec-panel" id="sec-disciplina" data-titulo="Disciplina" data-icono="⚠️" data-grupo="Administración" data-permisos="sanciones" hidden>
@@ -183,6 +188,7 @@
     <ol><li>En Discord: ajustes del canal → Integraciones → Webhooks → Nuevo webhook → Copiar URL.</li><li>En <span class="ruta">Automatización → Canales</span> pega la URL en el canal que corresponda (avisos, anuncios, ranking, resumen, recordatorios) o en el formulario, Guardar y <b>Probar</b>.</li></ol>
     <p>Sin webhook la página funciona igual; simplemente no publica.</p></div>
   <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b> y <b>Ranking mensual</b> (otorga las insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato para probar.</p></div>
+  <div class="bloque"><h3>Auditoría con IA</h3><p>Interruptor del análisis automático de cada reporte nuevo y modelo a usar (Gemini, nivel gratuito). Muestra cuántos reportes se analizaron en los últimos 30 días y su reparto por riesgo. La clave de Google vive en el servidor; nadie la ve desde la página.</p></div>
   <div class="bloque" data-solo="superadmin"><h3>Copia de seguridad (solo Administrador)</h3><p>Descarga un ZIP con todas las tablas (JSON y CSV) y las imágenes del historial. Hazla periódicamente y guárdala fuera de la página. No incluye contraseñas ni webhooks.</p></div>
 </section>
 
@@ -195,6 +201,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=7abcbe97"></script>
+<script type="module" src="js/app-manuales.js?v=bcb3a54f"></script>
 </body>
 </html>
