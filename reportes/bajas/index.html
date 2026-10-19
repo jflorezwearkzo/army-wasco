@@ -50,21 +50,21 @@
   canvas{width:100%;height:auto;display:block;border-radius:4px;background:#000}
   small{color:var(--muted)}
 </style>
-<script src="../../js/tema.js?v=6100d807"></script>
+<script src="../../js/tema.js?v=5f2595bd"></script>
 </head>
 <body>
 <header>
   <a href="../../" style="color:var(--muted);text-decoration:none;font-size:13px">&larr; Volver a Reportes</a>
   <h1>Reporte de Bajas · Army de Wasco · Policía Militar</h1>
   <p>Llena los campos, adjunta las pruebas (1 a 10 fotos) y exporta el formato como imagen en alta resolución (las fotos se repiten en grande debajo del formato). El reporte queda registrado con folio en el historial de la PM.</p>
-  <p class="aviso-ia">🔎 <b>Cada reporte se valida con IA</b>, que lee las capturas y detecta fraude, duplicados y errores. La información falsa puede considerarse <b>falta grave</b> y la reincidencia puede llevar a una <b>sanción</b>. Indica siempre la fecha y hora en que <b>ocurrió</b> la situación, en tu hora local.</p>
+  <p class="aviso-ia">🔎 <b>Cada reporte se valida con IA</b>, que lee las capturas y detecta fraude, duplicados y errores. La información falsa puede considerarse <b>falta grave</b> y la reincidencia puede llevar a una <b>sanción</b>. Indica siempre la <b>fecha y hora que muestra la captura del juego</b> (<i>HORA DEL SERVIDOR</i>), no la de tu reloj: la IA las compara.</p>
 </header>
 <main>
   <section>
     <form id="form">
       <fieldset>
         <legend>Datos del emisor</legend>
-        <label for="fecha">Fecha * <small>(la fecha en que ocurrió, no la de hoy si fue antes)</small></label>
+        <label for="fecha">Fecha * <small>(la fecha que muestra la captura del juego: HORA DEL SERVIDOR)</small></label>
         <input id="fecha" type="date" required>
         <label for="nombre">Nombre de quien reporta *</label>
         <input id="nombre" type="text" maxlength="40" required>
@@ -100,6 +100,6 @@
   </section>
 </main>
 
-<script type="module" src="../../js/form-bajas.js?v=229bf917"></script>
+<script type="module" src="../../js/form-bajas.js?v=7fbfce39"></script>
 </body>
 </html>
