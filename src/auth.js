@@ -278,6 +278,12 @@ export function detalleIA(a){
   const g = { grave:'🔴', aviso:'🟡', info:'🟢' };
   return `<details class="ia-det"><summary>Análisis de la IA <span class="muted">(${esc(a.modelo||'')} · ${a.en ? new Date(a.en).toLocaleString('es-CO') : ''})</span></summary>
     <p>${esc(a.resumen||'')}</p>${a.es_captura_del_juego===false ? '<p class="ia-alto">La IA considera que la imagen NO parece una captura del juego.</p>' : ''}
+    ${(a.reglas||[]).length ? `<p class="ia-alto" style="background:var(--errbg)">Riesgo elevado por regla: ${a.reglas.map(esc).join('; ')}.</p>` : ''}
+    ${a.verificaciones ? (v => { const ok = s => s==='si' ? '✅' : s==='no' ? '❌' : '❔'; return `<ul class="ia-chk">
+      <li>${ok(v.autor_en_pantalla)} <b>Autor en pantalla</b>: quien actúa en el chat → ${esc((v.actores_en_chat||[]).join(', ')||'no legible')}</li>
+      <li>${(v.nombres_declarados_no_vistos||[]).length ? '❌' : '✅'} <b>Nombres declarados</b>: vistos ${esc((v.nombres_declarados_vistos||[]).join(', ')||'—')}${(v.nombres_declarados_no_vistos||[]).length ? ` · <span class="ia-alto">no vistos: ${esc(v.nombres_declarados_no_vistos.join(', '))}</span>` : ''}${(v.nombres_vistos_no_declarados||[]).length ? ` · sin declarar: ${esc(v.nombres_vistos_no_declarados.join(', '))}` : ''}</li>
+      <li>${ok(v.fecha_coherente)} <b>Hora del servidor</b>: ${esc((v.horas_servidor||[]).join(' · ')||'no legible')}</li>
+      <li>${v.capturas_reutilizadas ? '❌' : '✅'} <b>Capturas reutilizadas</b>: ${v.capturas_reutilizadas ? 'sí' : 'no'}</li></ul>`; })(a.verificaciones) : ''}
     <ul>${(a.hallazgos||[]).map(h => `<li>${g[h.gravedad]||'•'} <b>${esc(h.tipo)}</b>: ${esc(h.detalle)}</li>`).join('') || '<li class="muted">Sin hallazgos.</li>'}</ul>
     ${(a.texto_leido||[]).length ? `<p class="muted" style="font-size:12px"><b>Texto leído en las capturas:</b> ${a.texto_leido.map(esc).join(' · ')}</p>` : ''}
     <p class="muted" style="font-size:11px">La IA solo orienta; la decisión de aprobar o rechazar es siempre del revisor.</p></details>`;

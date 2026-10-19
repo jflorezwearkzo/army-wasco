@@ -18,13 +18,14 @@ const cors = {
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
-const MODELOS_RESPALDO = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+// Orden de respaldo: si uno da 404/429/503 (o tarda más de 30 s) se prueba el siguiente.
+const MODELOS_RESPALDO = ["gemini-flash-latest", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
 
 const PISTAS: Record<string, string> = {
-  bajas: "Reporte de bajas: `rows` lista las bajas (nombre, rango, motivo); solo cuentan las filas con nombre. Comprueba que las capturas muestren evidencia de esas bajas (kill feed, nombres, cantidad).",
-  patrullaje: "Fin de día / patrullaje: `horaIni`/`horaFin`, `integrantes` (nombres), `novedadesN`, fotos de salida y regreso. Comprueba que las capturas correspondan a salida y regreso, que la hora del HUD sea coherente con horaIni/horaFin y que aparezcan los integrantes.",
-  reclutamiento: "Reclutamiento: `nombre`/`rango` del reclutado y `ofNombre`/`ofRango` del oficial. Comprueba que la captura muestre al reclutado (nombre en pantalla, uniforme, chat de aceptación).",
-  "toma-territorio": "Toma de territorio: `integrantes`, `totalTomados` (AK tomados). Comprueba que las capturas muestren la toma y que la cantidad sea coherente.",
+  bajas: "Reporte de bajas: `rows` lista las bajas (nombre, rango, motivo); solo cuentan las filas con nombre. El AUTOR debe ser quien actúa: sus macros de rol (/me, /do, '¡Fuego!', '¡Taser!', 'Amenaza confirmada') deben aparecer en el chat con SU nombre. Cada nombre declarado debe verse sobre un cuerpo abatido o en el kill feed.",
+  patrullaje: "Fin de día / patrullaje: `horaIni`/`horaFin`, `integrantes` (nombres), `novedadesN`, fotos de salida y regreso. Quien actúa en el chat puede ser el autor o cualquiera de los integrantes declarados. La hora del HUD debe ser coherente con horaIni/horaFin.",
+  reclutamiento: "Reclutamiento: `nombre`/`rango` del reclutado y `ofNombre`/`ofRango` del oficial. La captura debe mostrar al reclutado (nombre en pantalla, uniforme, chat de aceptación) y el autor u oficial declarado debe aparecer como quien lo recluta.",
+  "toma-territorio": "Toma de territorio: `integrantes`, `totalTomados` (AK tomados). Quien actúa puede ser el autor o cualquiera de los integrantes. La cantidad debe ser coherente con lo visible.",
 };
 
 const ESQUEMA = {
@@ -41,8 +42,18 @@ const ESQUEMA = {
     texto_leido: { type: "ARRAY", items: { type: "STRING" }, description: "Fragmentos de texto legibles en las capturas del juego (nombres, cifras, horas, mensajes)" },
     huella: { type: "STRING", description: "Descripción corta y objetiva de las capturas del juego (escena, nombres visibles, hora del HUD, cifras) para detectar reutilización futura" },
     es_captura_del_juego: { type: "BOOLEAN" },
+    verificaciones: { type: "OBJECT", properties: {
+      actores_en_chat: { type: "ARRAY", items: { type: "STRING" }, description: "Nombres de los jugadores que envían las macros de rol o mensajes de acción en el chat de las capturas" },
+      autor_en_pantalla: { type: "STRING", enum: ["si", "no", "no_determinable"], description: "¿El autor del reporte (o un integrante declarado, si aplica) es quien actúa en el chat?" },
+      nombres_declarados_vistos: { type: "ARRAY", items: { type: "STRING" } },
+      nombres_declarados_no_vistos: { type: "ARRAY", items: { type: "STRING" } },
+      nombres_vistos_no_declarados: { type: "ARRAY", items: { type: "STRING" }, description: "Cuerpos/abatidos visibles que no están en el formulario" },
+      horas_servidor: { type: "ARRAY", items: { type: "STRING" }, description: "Cada 'HORA DEL SERVIDOR' legible, tal cual (dd/mm hh:mm:ss)" },
+      fecha_coherente: { type: "STRING", enum: ["si", "no", "no_determinable"], description: "¿Las horas del servidor caen en la fecha declarada (±1 día) y son coherentes entre sí?" },
+      capturas_reutilizadas: { type: "BOOLEAN" },
+    }, required: ["actores_en_chat", "autor_en_pantalla", "nombres_declarados_vistos", "nombres_declarados_no_vistos", "nombres_vistos_no_declarados", "horas_servidor", "fecha_coherente", "capturas_reutilizadas"] },
   },
-  required: ["riesgo", "puntaje", "resumen", "hallazgos", "texto_leido", "huella", "es_captura_del_juego"],
+  required: ["riesgo", "puntaje", "resumen", "hallazgos", "texto_leido", "huella", "es_captura_del_juego", "verificaciones"],
 };
 
 function b64(bytes: Uint8Array): string {
@@ -56,21 +67,24 @@ async function sha256(bytes: Uint8Array): Promise<string> {
 }
 
 async function gemini(clave: string, modelos: string[], partes: unknown[]): Promise<{ modelo: string; salida: Record<string, unknown> }> {
-  let ultimo = "";
+  const errores: string[] = [];
   for (const modelo of modelos) {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": clave },
-      body: JSON.stringify({ contents: [{ role: "user", parts: partes }],
-        generationConfig: { temperature: 0.1, responseMimeType: "application/json", responseSchema: ESQUEMA } }),
-    });
-    if (r.status === 404 || r.status === 429 || r.status === 503 || r.status === 400) { ultimo = `${modelo}: ${r.status} ${(await r.text()).slice(0, 160)}`; continue; }
+    let r: Response;
+    try {
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+        method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": clave }, signal: AbortSignal.timeout(30000),
+        body: JSON.stringify({ contents: [{ role: "user", parts: partes }],
+          generationConfig: { temperature: 0.1, responseMimeType: "application/json", responseSchema: ESQUEMA } }),
+      });
+    } catch (e) { errores.push(`${modelo}: ${(e as Error).name === "TimeoutError" ? "sin respuesta en 30 s" : (e as Error).message}`); continue; }
+    if (r.status === 404 || r.status === 429 || r.status === 503 || r.status === 400) { errores.push(`${modelo}: ${r.status} ${(await r.text()).replace(/\s+/g, " ").slice(0, 220)}`); continue; }
     if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 200)}`);
     const d = await r.json();
     const texto = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
     if (!texto) throw new Error(`Gemini sin respuesta (${d?.promptFeedback?.blockReason ?? d?.candidates?.[0]?.finishReason ?? "vacío"})`);
     try { return { modelo, salida: JSON.parse(texto) }; } catch { throw new Error("Gemini devolvió un JSON inválido"); }
   }
-  throw new Error("Ningún modelo disponible: " + ultimo);
+  throw new Error("Ningún modelo disponible · " + errores.join(" · "));
 }
 
 Deno.serve(async (req: Request) => {
@@ -130,18 +144,29 @@ Deno.serve(async (req: Request) => {
 
   const datos = { ...(r.datos ?? {}) };
   delete (datos as Record<string, unknown>).fotos;
+  const autorNombre = String(r.usuario_nombre || datos.nombre || r.usuario || "").trim();
+  const autorEtiqueta = [datos.rango || r.usuario_rango, autorNombre].filter(Boolean).join(" ");
+  const integrantes = Array.isArray(datos.integrantes) ? (datos.integrantes as unknown[]).map(String).filter(Boolean) : [];
+  const declarados: string[] = r.formulario_id === "bajas" && Array.isArray(datos.rows) ? (datos.rows as { nombre?: string }[]).map((x) => String(x.nombre || "").trim()).filter(Boolean)
+    : r.formulario_id === "reclutamiento" ? [String(datos.nombre || "")].filter(Boolean) : [];
+  const enviadoBogota = new Date(r.creado_en).toLocaleString("es-CO", { timeZone: "America/Bogota", hour12: false });
   const prompt = `Eres auditor de reportes de un clan de rol (RP) del videojuego One State RP. Los miembros envían reportes con capturas de pantalla del juego como evidencia.
 La imagen adjunta es el REPORTE EXPORTADO: una ficha con los datos que escribió el autor y, dentro de ella, las capturas del juego que adjuntó.
-Tu tarea: (1) leer el texto legible en las capturas del juego (nombres de jugadores, cifras, horas del HUD, mensajes de chat, kill feed);
-(2) comparar esas capturas con los DATOS del formulario y señalar coincidencias e inconsistencias;
-(3) detectar indicios de falsedad: imágenes que no son del juego, montajes, texto superpuesto, recortes sospechosos, fotos de otra pantalla, capturas borrosas o ilegibles, o capturas reutilizadas de reportes anteriores;
-(4) dar un riesgo global. Sé concreto y prudente: "bajo" si la evidencia respalda el reporte; "medio" si hay dudas o no se puede verificar; "alto" solo con indicios claros de falsedad.
-Responde en español, en el JSON indicado.
+En las capturas suele verse: el HUD con "HORA DEL SERVIDOR: dd/mm hh:mm:ss" y el saldo, el chat con mensajes de rol (macros) precedidos por el nombre del jugador que los envía, y los nombres de los jugadores sobre sus personajes (los abatidos aparecen tendidos con su nombre encima).
 
-Formulario: ${r.formulario} (${r.formulario_id}). Folio ${r.folio}. Fecha declarada: ${r.fecha}. Autor: ${[r.usuario_rango, r.usuario_nombre || r.usuario].filter(Boolean).join(" ")}.
+COMPROBACIONES OBLIGATORIAS (responde cada una en "verificaciones" y refleja las fallas en "hallazgos"):
+1. AUTOR EN PANTALLA. El autor del reporte es "${autorEtiqueta}" (usuario ${r.usuario}). Lista los nombres que envían las macros/mensajes de acción en el chat. ${integrantes.length ? `En este formulario también vale cualquiera de los integrantes declarados: ${integrantes.join(", ")}.` : "En este formulario el autor debe ser quien actúa."} Si quien actúa es otra persona, la evidencia es de otro jugador: autor_en_pantalla = "no" y hallazgo grave de tipo "inconsistencia". Si no hay chat legible, "no_determinable".
+2. NOMBRES DECLARADOS. ${declarados.length ? `El formulario declara: ${declarados.join(", ")}. Indica cuáles se ven (sobre un cuerpo o en el kill feed) y cuáles no.` : "Compara los nombres que declara el formulario con los visibles."} Nombres vistos que no fueron declarados también se anotan.
+3. HORA DEL SERVIDOR. Transcribe cada "HORA DEL SERVIDOR" legible. La fecha declarada del reporte es ${r.fecha} y se envió el ${enviadoBogota} (hora de Colombia). Las capturas deben caer en esa fecha (se tolera ±1 día por el cambio de medianoche) y ser coherentes entre sí (capturas de días distintos en un mismo reporte son sospechosas). Si no caen, fecha_coherente = "no" y hallazgo de tipo "inconsistencia".
+4. REUTILIZACIÓN. Compara con las huellas de reportes anteriores: mismas horas de servidor, mismos saldos o misma escena = capturas_reutilizadas = true y hallazgo grave de tipo "reutilizacion".
+5. AUTENTICIDAD. Imagen que no es del juego, montaje, texto superpuesto, recortes, foto de otra pantalla, borrosa o ilegible: hallazgo de tipo "manipulacion" o "legibilidad".
+
+Riesgo global: "alto" si falla 1, 4 o hay manipulación clara; "medio" si falla 2 o 3, o si algo no se puede verificar; "bajo" solo si todo se verifica. Sé concreto. Responde en español, en el JSON indicado.
+
+Formulario: ${r.formulario} (${r.formulario_id}). Folio ${r.folio}. Fecha declarada: ${r.fecha}. Autor: ${autorEtiqueta}.
 ${PISTAS[r.formulario_id] ?? "Comprueba que las capturas respalden lo declarado."}
 DATOS del formulario (JSON): ${JSON.stringify(datos).slice(0, 6000)}
-${huellas.length ? `Huellas de capturas de reportes ANTERIORES del mismo autor (si las capturas actuales parecen las mismas, es reutilización):\n${huellas.join("\n")}` : "No hay reportes anteriores del autor con huella registrada."}
+${huellas.length ? `Huellas de capturas de reportes ANTERIORES del mismo autor:\n${huellas.join("\n")}` : "No hay reportes anteriores del autor con huella registrada."}
 ${mismoHash?.length ? `AVISO: el archivo de imagen es idéntico al de ${mismoHash.map((m) => m.folio_v2).join(", ")}.` : ""}`;
 
   let salida: Record<string, unknown>, modelo: string;
@@ -151,7 +176,18 @@ ${mismoHash?.length ? `AVISO: el archivo de imagen es idéntico al de ${mismoHas
     await admin.from("reportes").update({ auditoria_ia: { error: msg, en: new Date().toISOString() }, imagen_hash: hash }).eq("id", id);
     return json(502, { error: msg });
   }
-  const auditoria = { ...salida, modelo, en: new Date().toISOString(), version: 1, forzado: !!body.forzar };
+  // Escalado por reglas: las comprobaciones objetivas mandan sobre el veredicto libre del modelo.
+  const v = (salida.verificaciones ?? {}) as { autor_en_pantalla?: string; nombres_declarados_no_vistos?: string[]; fecha_coherente?: string; capturas_reutilizadas?: boolean };
+  const nivel: Record<string, number> = { bajo: 0, medio: 1, alto: 2 }; const nombre = ["bajo", "medio", "alto"];
+  let n = nivel[String(salida.riesgo)] ?? 1; const motivos: string[] = [];
+  if (v.autor_en_pantalla === "no") { n = Math.max(n, 2); motivos.push("quien actúa en el chat no es el autor del reporte"); }
+  if (v.capturas_reutilizadas === true || (mismoHash?.length ?? 0) > 0) { n = Math.max(n, 2); motivos.push("capturas reutilizadas de otro reporte"); }
+  if (salida.es_captura_del_juego === false) { n = Math.max(n, 2); motivos.push("la imagen no parece una captura del juego"); }
+  if ((v.nombres_declarados_no_vistos?.length ?? 0) > 0) { n = Math.max(n, 1); motivos.push(`nombres declarados que no se ven: ${v.nombres_declarados_no_vistos!.join(", ")}`); }
+  if (v.fecha_coherente === "no") { n = Math.max(n, 1); motivos.push("la hora del servidor no coincide con la fecha declarada"); }
+  if (v.autor_en_pantalla === "no_determinable" || v.fecha_coherente === "no_determinable") { n = Math.max(n, 1); }
+  const puntajeMin = [0, 40, 75][n];
+  const auditoria = { ...salida, riesgo: nombre[n], puntaje: Math.max(Number(salida.puntaje) || 0, puntajeMin), reglas: motivos, modelo, en: new Date().toISOString(), version: 2, forzado: !!body.forzar };
   const { error: e4 } = await admin.from("reportes").update({ auditoria_ia: auditoria, imagen_hash: hash }).eq("id", id);
   if (e4) return json(500, { error: "No se pudo guardar el análisis: " + e4.message });
   await admin.rpc("auditar_evento", { p_usuario_id: llamante ?? r.usuario_id, p_accion: "auditoria_ia", p_tabla: "reportes", p_registro: r.folio,

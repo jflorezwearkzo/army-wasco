@@ -771,7 +771,8 @@ alter table public.secretos enable row level security;
 revoke all on public.secretos from anon, authenticated;
 -- insert into public.secretos (clave, valor) values ('GEMINI_API_KEY', '<clave de Google AI Studio>');
 insert into public.secretos (clave, valor) values ('AUDITORIA_INTERNO', encode(gen_random_bytes(32), 'hex')) on conflict (clave) do nothing;
--- Resultado del análisis (riesgo bajo/medio/alto, puntaje, resumen, hallazgos, texto_leido, huella, es_captura_del_juego, modelo, en; o {error}) y hash SHA-256 del archivo.
+-- Resultado del análisis (riesgo bajo/medio/alto, puntaje, resumen, hallazgos, texto_leido, huella, es_captura_del_juego, verificaciones{actores_en_chat, autor_en_pantalla,
+--   nombres_declarados_vistos/no_vistos, nombres_vistos_no_declarados, horas_servidor, fecha_coherente, capturas_reutilizadas}, reglas[], modelo, en, version; o {error}) y hash SHA-256 del archivo.
 alter table public.reportes add column if not exists auditoria_ia jsonb, add column if not exists imagen_hash text;
 create index if not exists reportes_imagen_hash_idx on public.reportes (imagen_hash) where imagen_hash is not null;
 insert into public.configuracion (clave, valor) values ('auditoria_ia', '{"activo": true, "modelo": "gemini-flash-latest"}'::jsonb) on conflict (clave) do nothing;

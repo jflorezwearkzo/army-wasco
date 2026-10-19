@@ -39,3 +39,4 @@ tr:hover td{background:var(--hover)}
 .ia-det summary{cursor:pointer;color:var(--gold);font-weight:700}
 .ia-det ul{margin:6px 0;padding-left:18px}.ia-det li{margin:2px 0}.ia-det p{margin:6px 0}
 .ia-det .ia-alto{display:inline-block;padding:2px 8px;border-radius:6px}
+.ia-chk{list-style:none;padding-left:0!important;margin:6px 0;border-top:1px dashed var(--line2);padding-top:6px}

@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=4dad3a46"></script>
+<script src="../js/tema.js?v=210d4650"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -423,7 +423,7 @@
       <p class="muted" style="margin-top:0;font-size:13px">Cuando un reporte recibe su imagen, el servidor la envía a Gemini (nivel gratuito de Google) para leer el texto de las capturas del juego, compararlas con lo declarado en el formulario y detectar indicios de falsedad o capturas reutilizadas. El resultado aparece como semáforo en Revisión, Historial y el expediente. La IA solo orienta: aprobar o rechazar sigue siendo decisión del revisor. Si la IA falla, el reporte entra igual, marcado "sin análisis".</p>
       <div class="fila" style="align-items:center">
         <label style="margin:0;display:flex;gap:6px;align-items:center;flex:0 0 auto"><input type="checkbox" id="iaActivo" style="width:auto"> Analizar automáticamente cada reporte nuevo</label>
-        <label style="margin:0;display:flex;gap:6px;align-items:center;flex:0 0 auto">Modelo <select id="iaModelo" style="width:auto"><option value="gemini-flash-latest">Gemini Flash (última versión)</option><option value="gemini-2.5-flash">Gemini 2.5 Flash</option><option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (más rápido)</option></select></label>
+        <label style="margin:0;display:flex;gap:6px;align-items:center;flex:0 0 auto">Modelo preferido (si falla o tarda, se usa el siguiente disponible) <select id="iaModelo" style="width:auto"><option value="gemini-flash-latest">Gemini Flash (última versión)</option><option value="gemini-3.8-flash">Gemini 3.8 Flash</option><option value="gemini-3.5-flash">Gemini 3.5 Flash</option><option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (más rápido)</option></select></label>
         <button type="button" class="primary" id="iaGuardar" style="flex:0 0 auto">Guardar</button><span class="muted" id="iaMsg" style="font-size:13px"></span>
       </div>
       <p class="muted" id="iaStats" style="font-size:12px;margin:10px 0 0"></p>
@@ -487,6 +487,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=bc0bc311"></script>
+<script type="module" src="../js/app-admin.js?v=0d988ffc"></script>
 </body>
 </html>

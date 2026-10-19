@@ -643,7 +643,7 @@ async function cargarAutomatizacion(){
 // Auditoría con IA: interruptor y modelo (configuracion.auditoria_ia); la clave vive en el servidor.
 async function cargarConfigIA(){
   const { data } = await sb.from('configuracion').select('valor').eq('clave', 'auditoria_ia').maybeSingle();
-  const v = (data && data.valor) || {}; $('#iaActivo').checked = v.activo !== false; if(v.modelo) $('#iaModelo').value = v.modelo;
+  const v = (data && data.valor) || {}; $('#iaActivo').checked = v.activo !== false; if(v.modelo && [...$('#iaModelo').options].some(o => o.value === v.modelo)) $('#iaModelo').value = v.modelo;
   const puede = tiene(yo,'gestion_reportes'); ['#iaActivo','#iaModelo'].forEach(s => $(s).disabled = !puede); $('#iaGuardar').style.display = puede ? '' : 'none';
   try{ const hace30 = new Date(Date.now()-30*864e5).toISOString();
     const { data: rs } = await sb.from('reportes_vista').select('auditoria_ia,imagen_path').gte('creado_en', hace30).limit(1000);
