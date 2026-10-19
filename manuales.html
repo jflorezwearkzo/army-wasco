@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=0c7dbc1b"></script>
+<script src="js/tema.js?v=91295605"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -141,6 +141,7 @@
   <h2 class="sec">Revisión de reportes<small>Aprobar o rechazar</small></h2>
   <div class="bloque"><h3>Cómo revisar</h3>
     <ol><li><span class="ruta">Administración → Revisión</span>. La pestaña muestra cuántos hay pendientes.</li><li>Cada tarjeta trae autor, fecha y resumen; pulsa la imagen para verla en grande.</li><li><b>Aprobar</b> (comentario opcional): el reporte cuenta en el Resumen y, si el formulario tiene webhook, se publica en Discord.</li><li><b>Rechazar</b> (motivo obligatorio): no cuenta; el autor ve el motivo en Mis reportes.</li><li><i>Volver a pendiente</i> deshace una decisión.</li></ol>
+    <p>Al aprobar o rechazar, en el canal de Discord del formulario aparece un aviso de texto (sin imagen): <i>Reporte PM-000045 fue revisado y aprobado por Líder PM</i>, con tu Rango PM y el motivo si lo escribiste.</p>
     <div class="tip">No puedes revisar tus propios reportes (salvo el Administrador). Todo queda en Auditoría.</div></div>
   <div class="bloque"><h3>Semáforo de la IA</h3>
     <p>Cuando un reporte recibe su imagen, el servidor la analiza con una IA (Gemini): lee el texto de las capturas del juego (nombres, cifras, horas, chat), lo compara con lo que escribió el autor y busca indicios de montaje o de capturas reutilizadas de reportes anteriores.</p>
@@ -205,6 +206,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=bdcfaea2"></script>
+<script type="module" src="js/app-manuales.js?v=596496dd"></script>
 </body>
 </html>

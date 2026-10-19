@@ -799,3 +799,9 @@ end $$;
 revoke all on function public.reportes_auditar_ia() from public, anon, authenticated;
 create or replace trigger reportes_auditar_ia after update of imagen_path on public.reportes for each row execute function public.reportes_auditar_ia();
 -- Reanálisis manual (botón en Revisión): la función se llama con la sesión del revisor (permiso aprobar_reportes) y { forzar: true }.
+
+-- ---------- Aviso en Discord al revisar ----------
+-- discord_enviar_formulario(formulario_id, payload): envía por pg_net a la webhook del formulario (formularios_discord).
+-- revisar_reporte(): tras aprobar o rechazar publica en el canal del formulario un mensaje de solo texto:
+--   "✅ Reporte PM-000045 fue revisado y aprobado por Líder PM" (Rango PM del rol del revisor; con el comentario/motivo citado si lo hay).
+-- Devuelve además 'aviso_discord' ('ok' | 'sin_webhook'). Volver a pendiente no avisa.
