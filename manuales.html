@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=7b0610b2"></script>
+<script src="js/tema.js?v=1eea8625"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -144,7 +144,7 @@
   <div class="bloque"><h3>Semáforo de la IA</h3>
     <p>Cuando un reporte recibe su imagen, el servidor la analiza con una IA (Gemini): lee el texto de las capturas del juego (nombres, cifras, horas, chat), lo compara con lo que escribió el autor y busca indicios de montaje o de capturas reutilizadas de reportes anteriores.</p>
     <ul><li><b>🟢 Riesgo bajo</b>: la evidencia respalda lo declarado.</li><li><b>🟡 Riesgo medio</b>: hay dudas o algo no se pudo verificar (captura borrosa, cifra que no aparece…). Mira la imagen con calma.</li><li><b>🔴 Riesgo alto</b>: indicios claros de falsedad. Revísalo a fondo antes de decidir.</li><li><b>— Sin análisis / ⏳ Analizando</b>: aún no hay resultado; el botón <i>🔎 Analizar</i> lo pide de nuevo.</li></ul>
-    <p>Despliega <i>Análisis de la IA</i> en la tarjeta para ver el resumen, la lista de comprobaciones (✅/❌: <b>autor en pantalla</b> —quien envía las macros de rol debe ser el autor—, <b>nombres declarados</b> vistos y no vistos, <b>hora del servidor</b> de cada captura frente a la fecha del reporte, <b>capturas reutilizadas</b>), los hallazgos y el texto leído. Si una comprobación objetiva falla, el riesgo sube por regla aunque la IA dude. El semáforo también aparece en Historial, en la ficha del formulario y en el expediente del autor.</p>
+    <p>Despliega <i>Análisis de la IA</i> en la tarjeta para ver el resumen, la lista de comprobaciones (✅/❌: <b>autor en pantalla</b> —quien envía las macros de rol debe ser el autor—, <b>nombres declarados</b> vistos y no vistos, <b>hora del servidor</b> de cada captura frente a la fecha del reporte, <b>capturas reutilizadas</b>, <b>HUD y chat visibles</b> —una foto de la cámara del juego, sin HUD, deja el reporte en riesgo medio—), los hallazgos y el texto leído. Si una comprobación objetiva falla, el riesgo sube por regla aunque la IA dude. El semáforo también aparece en Historial, en la ficha del formulario y en el expediente del autor.</p>
     <div class="tip">La IA solo orienta y puede equivocarse: nunca aprueba ni rechaza nada. La decisión es del revisor. En Automatización se puede desactivar el análisis automático o cambiar el modelo.</div></div>
 </section>
 
@@ -204,6 +204,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=c09e08dd"></script>
+<script type="module" src="js/app-manuales.js?v=b9ae1d5a"></script>
 </body>
 </html>

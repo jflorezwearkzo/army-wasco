@@ -51,7 +51,8 @@ const ESQUEMA = {
       horas_servidor: { type: "ARRAY", items: { type: "STRING" }, description: "Cada 'HORA DEL SERVIDOR' legible, tal cual (dd/mm hh:mm:ss)" },
       fecha_coherente: { type: "STRING", enum: ["si", "no", "no_determinable"], description: "¿Las horas del servidor caen en la fecha declarada (±1 día) y son coherentes entre sí?" },
       capturas_reutilizadas: { type: "BOOLEAN" },
-    }, required: ["actores_en_chat", "autor_en_pantalla", "nombres_declarados_vistos", "nombres_declarados_no_vistos", "nombres_vistos_no_declarados", "horas_servidor", "fecha_coherente", "capturas_reutilizadas"] },
+      hud_visible: { type: "STRING", enum: ["si", "parcial", "no"], description: "¿Las capturas muestran la interfaz del juego (HUD con HORA DEL SERVIDOR y chat)? 'no' = parecen tomadas con la cámara del juego o están recortadas sin HUD" },
+    }, required: ["actores_en_chat", "autor_en_pantalla", "nombres_declarados_vistos", "nombres_declarados_no_vistos", "nombres_vistos_no_declarados", "horas_servidor", "fecha_coherente", "capturas_reutilizadas", "hud_visible"] },
   },
   required: ["riesgo", "puntaje", "resumen", "hallazgos", "texto_leido", "huella", "es_captura_del_juego", "verificaciones"],
 };
@@ -160,8 +161,9 @@ COMPROBACIONES OBLIGATORIAS (responde cada una en "verificaciones" y refleja las
 3. HORA DEL SERVIDOR. Transcribe cada "HORA DEL SERVIDOR" legible (dd/mm hh:mm:ss). REGLA DEL CLAN: el autor debe declarar la fecha y las horas TAL COMO aparecen en el HUD de sus capturas, no las de su reloj. La fecha declarada es ${r.fecha} (el reporte se envió el ${enviadoBogota}, hora de Colombia; el envío puede ser horas o incluso un día después de la captura, eso es normal). Es inconsistencia (fecha_coherente = "no" + hallazgo "inconsistencia") si: la fecha del HUD no coincide con la declarada; las capturas de un mismo reporte tienen fechas de servidor distintas; o, en patrullaje, horaIni/horaFin se alejan más de ~15 minutos de las horas del HUD de salida y regreso. Si no hay hora legible, "no_determinable".
 4. REUTILIZACIÓN. Compara con las huellas de reportes anteriores: mismas horas de servidor, mismos saldos o misma escena = capturas_reutilizadas = true y hallazgo grave de tipo "reutilizacion".
 5. AUTENTICIDAD. Imagen que no es del juego, montaje, texto superpuesto, recortes, foto de otra pantalla, borrosa o ilegible: hallazgo de tipo "manipulacion" o "legibilidad".
+6. HUD VISIBLE. Las capturas deben ser pantallazos del dispositivo con la interfaz completa del juego (HUD con "HORA DEL SERVIDOR", saldo, minimapa y chat). Una "foto" tomada con la cámara interna del juego muestra solo la escena, sin HUD ni chat, y no sirve como evidencia: hud_visible = "no" y hallazgo de tipo "legibilidad" indicando que debe subir un pantallazo del celular o PC. "parcial" si alguna captura lo muestra y otra no.
 
-Riesgo global: "alto" si falla 1, 4 o hay manipulación clara; "medio" si falla 2 o 3, o si algo no se puede verificar; "bajo" solo si todo se verifica. Sé concreto. Responde en español, en el JSON indicado.
+Riesgo global: "alto" si falla 1, 4 o hay manipulación clara; "medio" si falla 2, 3 o 6, o si algo no se puede verificar; "bajo" solo si todo se verifica. Sé concreto. Responde en español, en el JSON indicado.
 
 Formulario: ${r.formulario} (${r.formulario_id}). Folio ${r.folio}. Fecha declarada: ${r.fecha}. Autor: ${autorEtiqueta}.
 ${PISTAS[r.formulario_id] ?? "Comprueba que las capturas respalden lo declarado."}
@@ -177,7 +179,7 @@ ${mismoHash?.length ? `AVISO: el archivo de imagen es idéntico al de ${mismoHas
     return json(502, { error: msg });
   }
   // Escalado por reglas: las comprobaciones objetivas mandan sobre el veredicto libre del modelo.
-  const v = (salida.verificaciones ?? {}) as { autor_en_pantalla?: string; nombres_declarados_no_vistos?: string[]; fecha_coherente?: string; capturas_reutilizadas?: boolean };
+  const v = (salida.verificaciones ?? {}) as { autor_en_pantalla?: string; nombres_declarados_no_vistos?: string[]; fecha_coherente?: string; capturas_reutilizadas?: boolean; hud_visible?: string };
   const nivel: Record<string, number> = { bajo: 0, medio: 1, alto: 2 }; const nombre = ["bajo", "medio", "alto"];
   let n = nivel[String(salida.riesgo)] ?? 1; const motivos: string[] = [];
   if (v.autor_en_pantalla === "no") { n = Math.max(n, 2); motivos.push("quien actúa en el chat no es el autor del reporte"); }
@@ -185,6 +187,8 @@ ${mismoHash?.length ? `AVISO: el archivo de imagen es idéntico al de ${mismoHas
   if (salida.es_captura_del_juego === false) { n = Math.max(n, 2); motivos.push("la imagen no parece una captura del juego"); }
   if ((v.nombres_declarados_no_vistos?.length ?? 0) > 0) { n = Math.max(n, 1); motivos.push(`nombres declarados que no se ven: ${v.nombres_declarados_no_vistos!.join(", ")}`); }
   if (v.fecha_coherente === "no") { n = Math.max(n, 1); motivos.push("la hora del servidor no coincide con la fecha declarada"); }
+  if (v.hud_visible === "no") { n = Math.max(n, 1); motivos.push("las capturas no muestran el HUD ni el chat (foto de la cámara del juego o recorte): debe subir pantallazos del celular o PC"); }
+  if (v.hud_visible === "parcial") { n = Math.max(n, 1); motivos.push("alguna captura no muestra el HUD ni el chat"); }
   if (v.autor_en_pantalla === "no_determinable" || v.fecha_coherente === "no_determinable") { n = Math.max(n, 1); }
   const puntajeMin = [0, 40, 75][n];
   const auditoria = { ...salida, riesgo: nombre[n], puntaje: Math.max(Number(salida.puntaje) || 0, puntajeMin), reglas: motivos, modelo, modelos_fallidos: fallidos, en: new Date().toISOString(), version: 2, forzado: !!body.forzar };
