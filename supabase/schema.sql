@@ -775,7 +775,7 @@ insert into public.secretos (clave, valor) values ('AUDITORIA_INTERNO', encode(g
 --   nombres_declarados_vistos/no_vistos, nombres_vistos_no_declarados, horas_servidor, fecha_coherente, capturas_reutilizadas}, reglas[], modelo, en, version; o {error}) y hash SHA-256 del archivo.
 alter table public.reportes add column if not exists auditoria_ia jsonb, add column if not exists imagen_hash text;
 create index if not exists reportes_imagen_hash_idx on public.reportes (imagen_hash) where imagen_hash is not null;
-insert into public.configuracion (clave, valor) values ('auditoria_ia', '{"activo": true, "modelo": "gemini-flash-latest"}'::jsonb) on conflict (clave) do nothing;
+insert into public.configuracion (clave, valor) values ('auditoria_ia', '{"activo": true, "modelo": "gemini-3.8-flash"}'::jsonb) on conflict (clave) do nothing;
 -- validar_update_reporte(): conserva auditoria_ia e imagen_hash en cualquier update con sesión o en revisión (solo los escribe el servidor).
 -- registrar_auditoria(): excluye auditoria_ia/imagen_hash del detalle; la función deja su propio evento "auditoria_ia" {riesgo, puntaje, modelo, origen}.
 -- reportes_vista: añade auditoria_ia e imagen_hash. expediente(): reportes_recientes incluye auditoria_ia resumido (riesgo, puntaje, resumen, error).

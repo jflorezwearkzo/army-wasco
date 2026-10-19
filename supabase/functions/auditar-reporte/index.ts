@@ -18,8 +18,8 @@ const cors = {
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
-// Orden de respaldo: si uno da 404/429/503 (o tarda más de 30 s) se prueba el siguiente.
-const MODELOS_RESPALDO = ["gemini-flash-latest", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.1-flash-lite"];
+// Orden de respaldo: si uno da 404/429/503 (o tarda más de 45 s) se prueba el siguiente; máximo 3 intentos por análisis.
+const MODELOS_RESPALDO = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
 
 const PISTAS: Record<string, string> = {
   bajas: "Reporte de bajas: `rows` lista las bajas (nombre, rango, motivo); solo cuentan las filas con nombre. El AUTOR debe ser quien actúa: sus macros de rol (/me, /do, '¡Fuego!', '¡Taser!', 'Amenaza confirmada') deben aparecer en el chat con SU nombre. Cada nombre declarado debe verse sobre un cuerpo abatido o en el kill feed.",
@@ -66,23 +66,23 @@ async function sha256(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function gemini(clave: string, modelos: string[], partes: unknown[]): Promise<{ modelo: string; salida: Record<string, unknown> }> {
+async function gemini(clave: string, modelos: string[], partes: unknown[]): Promise<{ modelo: string; salida: Record<string, unknown>; fallidos: string[] }> {
   const errores: string[] = [];
   for (const modelo of modelos) {
     let r: Response;
     try {
       r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-        method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": clave }, signal: AbortSignal.timeout(30000),
+        method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": clave }, signal: AbortSignal.timeout(45000),
         body: JSON.stringify({ contents: [{ role: "user", parts: partes }],
           generationConfig: { temperature: 0.1, responseMimeType: "application/json", responseSchema: ESQUEMA } }),
       });
-    } catch (e) { errores.push(`${modelo}: ${(e as Error).name === "TimeoutError" ? "sin respuesta en 30 s" : (e as Error).message}`); continue; }
+    } catch (e) { errores.push(`${modelo}: ${(e as Error).name === "TimeoutError" ? "sin respuesta en 45 s" : (e as Error).message}`); continue; }
     if (r.status === 404 || r.status === 429 || r.status === 503 || r.status === 400) { errores.push(`${modelo}: ${r.status} ${(await r.text()).replace(/\s+/g, " ").slice(0, 220)}`); continue; }
     if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 200)}`);
     const d = await r.json();
     const texto = d?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
     if (!texto) throw new Error(`Gemini sin respuesta (${d?.promptFeedback?.blockReason ?? d?.candidates?.[0]?.finishReason ?? "vacío"})`);
-    try { return { modelo, salida: JSON.parse(texto) }; } catch { throw new Error("Gemini devolvió un JSON inválido"); }
+    try { return { modelo, salida: JSON.parse(texto), fallidos: errores }; } catch { throw new Error("Gemini devolvió un JSON inválido"); }
   }
   throw new Error("Ningún modelo disponible · " + errores.join(" · "));
 }
@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
   if (cfg.activo === false && !body.forzar) return json(200, { ok: false, motivo: "desactivado" });
   const clave = Deno.env.get("GEMINI_API_KEY") || sec.GEMINI_API_KEY;
   if (!clave) return json(500, { error: "Falta la clave de Gemini (GEMINI_API_KEY)" });
-  const modelos = [...new Set([cfg.modelo, ...MODELOS_RESPALDO].filter(Boolean))] as string[];
+  const modelos = ([...new Set([cfg.modelo, ...MODELOS_RESPALDO].filter(Boolean))] as string[]).slice(0, 3);
 
   // ---- Reporte ----
   const { data: r } = await admin.from("reportes_vista").select("*").eq("id", id).maybeSingle();
@@ -169,8 +169,8 @@ DATOS del formulario (JSON): ${JSON.stringify(datos).slice(0, 6000)}
 ${huellas.length ? `Huellas de capturas de reportes ANTERIORES del mismo autor:\n${huellas.join("\n")}` : "No hay reportes anteriores del autor con huella registrada."}
 ${mismoHash?.length ? `AVISO: el archivo de imagen es idéntico al de ${mismoHash.map((m) => m.folio_v2).join(", ")}.` : ""}`;
 
-  let salida: Record<string, unknown>, modelo: string;
-  try { ({ salida, modelo } = await gemini(clave, modelos, [{ text: prompt }, { inlineData: { mimeType: mime, data: b64(bytes) } }])); }
+  let salida: Record<string, unknown>, modelo: string, fallidos: string[];
+  try { ({ salida, modelo, fallidos } = await gemini(clave, modelos, [{ text: prompt }, { inlineData: { mimeType: mime, data: b64(bytes) } }])); }
   catch (e) {
     const msg = (e as Error).message;
     await admin.from("reportes").update({ auditoria_ia: { error: msg, en: new Date().toISOString() }, imagen_hash: hash }).eq("id", id);
@@ -187,7 +187,7 @@ ${mismoHash?.length ? `AVISO: el archivo de imagen es idéntico al de ${mismoHas
   if (v.fecha_coherente === "no") { n = Math.max(n, 1); motivos.push("la hora del servidor no coincide con la fecha declarada"); }
   if (v.autor_en_pantalla === "no_determinable" || v.fecha_coherente === "no_determinable") { n = Math.max(n, 1); }
   const puntajeMin = [0, 40, 75][n];
-  const auditoria = { ...salida, riesgo: nombre[n], puntaje: Math.max(Number(salida.puntaje) || 0, puntajeMin), reglas: motivos, modelo, en: new Date().toISOString(), version: 2, forzado: !!body.forzar };
+  const auditoria = { ...salida, riesgo: nombre[n], puntaje: Math.max(Number(salida.puntaje) || 0, puntajeMin), reglas: motivos, modelo, modelos_fallidos: fallidos, en: new Date().toISOString(), version: 2, forzado: !!body.forzar };
   const { error: e4 } = await admin.from("reportes").update({ auditoria_ia: auditoria, imagen_hash: hash }).eq("id", id);
   if (e4) return json(500, { error: "No se pudo guardar el análisis: " + e4.message });
   await admin.rpc("auditar_evento", { p_usuario_id: llamante ?? r.usuario_id, p_accion: "auditoria_ia", p_tabla: "reportes", p_registro: r.folio,

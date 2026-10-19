@@ -276,7 +276,7 @@ export function badgeIA(r){
 export function detalleIA(a){
   if(!a || a.error) return '';
   const g = { grave:'🔴', aviso:'🟡', info:'🟢' };
-  return `<details class="ia-det"><summary>Análisis de la IA <span class="muted">(${esc(a.modelo||'')} · ${a.en ? new Date(a.en).toLocaleString('es-CO') : ''})</span></summary>
+  return `<details class="ia-det"><summary>Análisis de la IA <span class="muted">(${esc(a.modelo||'')} · ${a.en ? new Date(a.en).toLocaleString('es-CO') : ''}${(a.modelos_fallidos||[]).length ? ` · <span title="${esc(a.modelos_fallidos.join(' | '))}">${a.modelos_fallidos.length} modelo(s) no respondieron</span>` : ''})</span></summary>
     <p>${esc(a.resumen||'')}</p>${a.es_captura_del_juego===false ? '<p class="ia-alto">La IA considera que la imagen NO parece una captura del juego.</p>' : ''}
     ${(a.reglas||[]).length ? `<p class="ia-alto" style="background:var(--errbg)">Riesgo elevado por regla: ${a.reglas.map(esc).join('; ')}.</p>` : ''}
     ${a.verificaciones ? (v => { const ok = s => s==='si' ? '✅' : s==='no' ? '❌' : '❔'; return `<ul class="ia-chk">
