@@ -1,6 +1,6 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
 import { respaldoCompleto } from './respaldo.js';
-import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA, mensajesDiscord } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
@@ -843,7 +843,8 @@ $('#fTurno').onsubmit = async e => {
 
 // ====================== ANUNCIOS ======================
 async function cargarAnuncios(){
-  const [{ data, error }, { data: vis }] = await Promise.all([sb.from('anuncios').select('*').order('fijado',{ascending:false}).order('publicado_en',{ascending:false}).limit(200), sb.from('anuncios_vistos').select('anuncio_id')]);
+  const [{ data, error }, { data: vis }, msgs] = await Promise.all([sb.from('anuncios').select('*').order('fijado',{ascending:false}).order('publicado_en',{ascending:false}).limit(200), sb.from('anuncios_vistos').select('anuncio_id'), mensajesDiscord('anuncios')]);
+  const DMSG = {}; (msgs||[]).forEach(m => { if(m.mensaje_id && !DMSG[m.origen_id]) DMSG[m.origen_id] = m; });
   if(error){ $('#nErr').textContent = error.message; return; } $('#nErr').textContent=''; ANUN = data || [];
   const vistos = {}; (vis||[]).forEach(v => vistos[v.anuncio_id] = (vistos[v.anuncio_id]||0)+1);
   const activos = USUARIOS.length ? USUARIOS.filter(u => u.activo).length : null; const editaA = tiene(yo,'anuncios');
@@ -852,16 +853,19 @@ async function cargarAnuncios(){
     <td class="muted" style="white-space:nowrap">${a.imagen_path ? `<img src="${esc(urlAnuncio(a.imagen_path))}" alt="" style="height:40px;border-radius:4px;border:1px solid var(--line2);display:block;margin-bottom:3px">` : ''}${fFecha(a.publicado_en)}</td><td class="muted">${a.expira_en ? fFecha(a.expira_en) : '—'}</td><td>${vistos[a.id]||0}${activos?` <span class="muted">/ ${activos}</span>`:''}</td>
     <td>${cad ? '<span class="tag off">Caducado</span>' : a.activo ? '<span class="tag on">Visible</span>' : '<span class="tag off">Oculto</span>'}</td><td class="acc" style="text-align:right">${editaA ? botonMenu(a.id) : ''}</td></tr>`; }).join('') || '<tr><td colspan=6 class="muted">Sin anuncios</td></tr>';
   document.querySelectorAll('#tbAnun [data-menu]').forEach(b => b.onclick = e => { e.stopPropagation(); const a = ANUN.find(x => x.id==b.dataset.menu);
-    abrirMenu(b, 'anun:'+a.id, `<b style="color:var(--text)">${esc(a.titulo)}</b>`, [['editar','✏️ Editar'], ['discord','📣 Publicar en Discord'], [a.activo?'ocultar':'mostrar', a.activo?'🙈 Ocultar':'👁 Mostrar'], [a.fijado?'desfijar':'fijar', a.fijado?'Quitar fijado':'📌 Fijar arriba'], ['eliminar','🗑 Eliminar', true]], async op => {
+    const dm = DMSG[String(a.id)]; abrirMenu(b, 'anun:'+a.id, `<b style="color:var(--text)">${esc(a.titulo)}</b>${dm ? '<br><span class="muted" style="font-size:11px">Publicado en Discord</span>' : ''}`, [['editar','✏️ Editar'], dm ? ['discord_editar','🔄 Actualizar en Discord'] : ['discord','📣 Publicar en Discord'], ...(dm ? [['discord_borrar','🧹 Borrar de Discord']] : []), [a.activo?'ocultar':'mostrar', a.activo?'🙈 Ocultar':'👁 Mostrar'], [a.fijado?'desfijar':'fijar', a.fijado?'Quitar fijado':'📌 Fijar arriba'], ['eliminar','🗑 Eliminar', true]], async op => {
       if(op==='editar') editarAnuncio(a);
-      if(op==='discord'){ const r = await avisoDiscord('anuncios', { embed: { title: `📣 ${a.titulo}`, description: a.cuerpo||'', ...(a.imagen_path ? { image: { url: urlAnuncio(a.imagen_path) } } : {}) } }); toast(r==='ok' ? 'Publicado en Discord.' : r==='sin_webhook' ? 'El canal de anuncios no tiene webhook (Automatización).' : 'No se pudo publicar: '+r, r!=='ok'); }
+      if(op==='discord_editar'){ const r = await avisoDiscord('anuncios', { accion:'editar', mensaje_id: dm.mensaje_id, embed: embedAnuncio(a) }); toast(r==='ok' ? 'Mensaje de Discord actualizado.' : 'No se pudo actualizar: '+r, r!=='ok'); }
+      if(op==='discord_borrar'){ if(!confirm('¿Borrar el mensaje de este anuncio en Discord? El anuncio sigue en el tablón.')) return; const r = await avisoDiscord('anuncios', { accion:'borrar', mensaje_id: dm.mensaje_id }); toast(r==='ok' ? 'Mensaje borrado de Discord.' : 'No se pudo borrar: '+r, r!=='ok'); cargarAnuncios(); }
+      if(op==='discord'){ const r = await avisoDiscord('anuncios', { embed: embedAnuncio(a), origen: { tabla:'anuncios', id: a.id } }); if(r==='ok') cargarAnuncios(); toast(r==='ok' ? 'Publicado en Discord.' : r==='sin_webhook' ? 'El canal de anuncios no tiene webhook (Automatización).' : 'No se pudo publicar: '+r, r!=='ok'); }
       if(op==='ocultar' || op==='mostrar'){ await sb.from('anuncios').update({ activo: op==='mostrar', actualizado_en: new Date().toISOString() }).eq('id', a.id); cargarAnuncios(); }
       if(op==='fijar' || op==='desfijar'){ await sb.from('anuncios').update({ fijado: op==='fijar', actualizado_en: new Date().toISOString() }).eq('id', a.id); cargarAnuncios(); }
-      if(op==='eliminar'){ if(!confirm(`¿Eliminar el anuncio "${a.titulo}"?`)) return; const { error } = await sb.from('anuncios').delete().eq('id', a.id); if(error) alert(error.message); cargarAnuncios(); }
+      if(op==='eliminar'){ if(!confirm(`¿Eliminar el anuncio "${a.titulo}"?${dm ? ' También se borrará su mensaje en Discord.' : ''}`)) return; if(dm) await avisoDiscord('anuncios', { accion:'borrar', mensaje_id: dm.mensaje_id }); const { error } = await sb.from('anuncios').delete().eq('id', a.id); if(error) alert(error.message); cargarAnuncios(); }
     }); });
   if(editaA) document.querySelectorAll('#tbAnun tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('button,a,input')) return; const a = ANUN.find(x => x.id==tr.dataset.id); if(a) editarAnuncio(a); });
 }
 const urlAnuncio = p => sb.storage.from('anuncios').getPublicUrl(p).data.publicUrl;
+const embedAnuncio = a => ({ title: `📣 ${a.titulo}`, description: a.cuerpo||'', ...(a.imagen_path ? { image: { url: urlAnuncio(a.imagen_path) } } : {}) });
 function anuncioImgPrev(src){ $('#nImgPrev').style.display = src ? '' : 'none'; if(src) $('#nImgPrevImg').src = src; }
 $('#nImagen').onchange = async e => { const f = e.target.files[0]; if(!f) return; try{ const img = await cargarFoto(f, 1600); const c = document.createElement('canvas'); c.width = img.naturalWidth||img.width; c.height = img.naturalHeight||img.height; c.getContext('2d').drawImage(img, 0, 0); let b = await new Promise(r => c.toBlob(r, 'image/webp', 0.9)); if(!b || b.type!=='image/webp') b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)); ANUN_IMG = b; ANUN_IMG_QUITAR = false; anuncioImgPrev(URL.createObjectURL(b)); }catch(x){ $('#nfErr').textContent='No se pudo leer la imagen.'; } };
 $('#nImgQuitar').onclick = () => { ANUN_IMG = null; ANUN_IMG_QUITAR = true; $('#nImagen').value=''; anuncioImgPrev(null); };
@@ -873,11 +877,14 @@ $('#fAnuncio').onsubmit = async e => {
   const id = $('#nId').value; let r; const previo = id ? (ANUN.find(x => x.id==id)||{}).imagen_path : null;
   if(ANUN_IMG){ const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ANUN_IMG.type==='image/webp'?'webp':'jpg'}`; const up = await sb.storage.from('anuncios').upload(path, ANUN_IMG, { contentType: ANUN_IMG.type }); if(up.error){ $('#nfErr').textContent = 'No se pudo subir la imagen: '+up.error.message; return; } fila.imagen_path = path; }
   else if(ANUN_IMG_QUITAR) fila.imagen_path = null;
-  if(id) r = await sb.from('anuncios').update(fila).eq('id', +id); else r = await sb.from('anuncios').insert({ ...fila, autor_id: yo.id });
+  if(id) r = await sb.from('anuncios').update(fila).eq('id', +id).select('id').single(); else r = await sb.from('anuncios').insert({ ...fila, autor_id: yo.id }).select('id').single();
   if(r.error){ $('#nfErr').textContent = r.error.message; return; }
   if(previo && (ANUN_IMG || ANUN_IMG_QUITAR)) sb.storage.from('anuncios').remove([previo]).then(()=>{}, ()=>{});
   $('#dlgAnuncio').close(); let extra = ''; const imgUrl = fila.imagen_path ? urlAnuncio(fila.imagen_path) : (previo && !ANUN_IMG_QUITAR ? urlAnuncio(previo) : null);
-  if($('#nDiscord').checked && fila.activo){ const d = await avisoDiscord('anuncios', { embed: { title: `📣 ${fila.titulo}`, description: fila.cuerpo, ...(imgUrl ? { image: { url: imgUrl } } : {}) } }); extra = d==='ok' ? ' Publicado en Discord.' : d==='sin_webhook' ? ' (Discord: canal de anuncios sin webhook)' : ' (Discord: '+d+')'; }
+  if($('#nDiscord').checked && fila.activo){ const nid = (r.data && r.data.id) || +id; const embed = { title: `📣 ${fila.titulo}`, description: fila.cuerpo, ...(imgUrl ? { image: { url: imgUrl } } : {}) };
+    const previos = id ? await mensajesDiscord('anuncios', nid) : []; const dm = previos.find(m => m.mensaje_id);
+    const d = dm ? await avisoDiscord('anuncios', { accion:'editar', mensaje_id: dm.mensaje_id, embed }) : await avisoDiscord('anuncios', { embed, origen: { tabla:'anuncios', id: nid } });
+    extra = d==='ok' ? (dm ? ' Mensaje de Discord actualizado.' : ' Publicado en Discord.') : d==='sin_webhook' ? ' (Discord: canal de anuncios sin webhook)' : ' (Discord: '+d+')'; }
   toast('Anuncio guardado.'+extra); cargarAnuncios();
 };
 

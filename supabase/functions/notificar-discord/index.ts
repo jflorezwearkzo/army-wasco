@@ -65,9 +65,11 @@ Deno.serve(async (req: Request) => {
   const form = new FormData();
   form.append("payload_json", JSON.stringify(payload));
   form.append("files[0]", file, `${r.folio}.${ext}`);
-  const resp = await fetch(cfg.webhook, { method: "POST", body: form });
+  const resp = await fetch(cfg.webhook + (cfg.webhook.includes("?") ? "&" : "?") + "wait=true", { method: "POST", body: form });
   if (!resp.ok) return json(502, { error: `Discord respondió ${resp.status}: ${(await resp.text()).slice(0, 200)}` });
+  let mensajeId: string | null = null; try { mensajeId = (await resp.json())?.id ?? null; } catch { /* sin id */ }
   await admin.from("reportes").update({ discord_enviado_en: new Date().toISOString() }).eq("id", id);
+  await admin.from("discord_mensajes").insert({ formulario_id: r.formulario_id, origen_tabla: "reportes", origen_id: String(id), mensaje_id: mensajeId, titulo: `${r.formulario} · ${r.folio}` }).then(() => {}, () => {});
   await admin.rpc("auditar_evento", { p_usuario_id: r.usuario_id, p_accion: "discord_publicado", p_tabla: "reportes", p_registro: String(id), p_detalle: { folio: r.folio, formulario: r.formulario_id } }).then(() => {}, () => {});
   return json(200, { ok: true });
 });

@@ -805,3 +805,16 @@ create or replace trigger reportes_auditar_ia after update of imagen_path on pub
 -- revisar_reporte(): tras aprobar o rechazar publica en el canal del formulario un mensaje de solo texto:
 --   "✅ Reporte PM-000045 fue revisado y aprobado por Líder PM" (Rango PM del rol del revisor; con el comentario/motivo citado si lo hay).
 -- Devuelve además 'aviso_discord' ('ok' | 'sin_webhook'). Volver a pendiente no avisa.
+
+-- ---------- Mensajes de Discord con identificador (editar / borrar) ----------
+-- discord_mensajes(canal | formulario_id, origen_tabla, origen_id, request_id, mensaje_id, titulo). Todo envío se hace con ?wait=true
+-- para que Discord devuelva el id del mensaje: las Edge Functions lo guardan al instante; los envíos desde la base de datos
+-- (discord_enviar / discord_enviar_formulario, 4 parámetros con origen) guardan el request_id de pg_net y discord_resolver()
+-- (cron pm_discord_resolver cada 5 min, y antes de editar/borrar) lo convierte en mensaje_id leyendo net._http_response.
+-- Edge notificar-general: { canal, accion:'editar'|'borrar', mensaje_id, embed? } edita/borra por la API del webhook (solo mensajes registrados).
+-- Panel → Anuncios: Publicar / Actualizar en Discord / Borrar de Discord; al guardar un anuncio ya publicado se actualiza el mensaje; al eliminarlo se borra.
+create table if not exists public.discord_mensajes (id bigserial primary key, canal text, formulario_id text, origen_tabla text, origen_id text, request_id bigint, mensaje_id text, titulo text, creado_en timestamptz not null default now());
+create index if not exists discord_mensajes_origen_idx on public.discord_mensajes (origen_tabla, origen_id);
+alter table public.discord_mensajes enable row level security;
+create policy discord_mensajes_select on public.discord_mensajes for select using (public.tengo_permiso('anuncios') or public.tengo_permiso('gestion_reportes') or public.tengo_permiso('historial') or public.tengo_permiso('sanciones'));
+-- select cron.schedule('pm_discord_resolver', '*/5 * * * *', 'select public.discord_resolver()');

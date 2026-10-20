@@ -188,6 +188,10 @@ Toda la interfaz usa variables CSS (`estilos.css`: `--bg`, `--panel`, `--line2`,
 
 Las fotos se reducen en el navegador a 1600 px por lado antes de dibujarlas (`cargarFoto` en `src/auth.js`), lo que acelera la exportación en el celular. La imagen del reporte se descarga en PNG, pero en el historial se guarda en **WebP** (≈60-70 % más liviana; `blobParaHistorial`); en navegadores sin WebP (Safari) se guarda el PNG. Los nombres de descarga y la publicación en Discord respetan la extensión real.
 
+## Mensajes de Discord editables
+
+Cada mensaje que la página envía a Discord se guarda con su identificador en `discord_mensajes` (los envíos se hacen con `?wait=true`; los que salen desde la base de datos por `pg_net` se resuelven con `discord_resolver()`, cron cada 5 min). En Admin → Anuncios, el menú ⋯ ofrece **Publicar en Discord**, y si ya está publicado, **Actualizar en Discord** y **Borrar de Discord**; guardar un anuncio ya publicado actualiza el mensaje y eliminarlo lo borra del canal. Lo hace la Edge Function `notificar-general` (`accion: editar | borrar`) por la API del webhook, solo sobre mensajes registrados por la página; queda en Auditoría como `discord_editado` / `discord_borrado`.
+
 ## Canales de Discord y automatización
 
 Admin → **Automatización** → Canales de Discord: webhooks por propósito y, debajo, los **canales por formulario** (`formularios_discord`, lo mismo que el campo del editor de Formularios, centralizado aquí con botón Probar); también (`discord_canales`: avisos, anuncios, ranking, resumen, recordatorios) con botón Probar. La Edge Function `notificar-general` (`{canal, texto, embed, prueba}`) publica en ellos; exige sesión con alguno de los permisos que generan avisos y audita como `discord_aviso`. En el cliente: `avisoDiscord(canal, {texto, embed})`.

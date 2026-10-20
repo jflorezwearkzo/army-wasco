@@ -143,9 +143,17 @@ export async function salirVerComo(usuarioId){
 }
 
 // Publica un aviso en un canal general de Discord (avisos, anuncios, ranking, resumen, recordatorios). Nunca lanza error.
-export async function avisoDiscord(canal, { texto=null, embed=null } = {}){
-  try{ const { data, error } = await sb.functions.invoke('notificar-general', { body:{ canal, texto, embed } });
-    if(error) return 'error: '+error.message; return (data&&data.ok) ? 'ok' : (data&&data.motivo) || 'error'; }catch(x){ return 'error: '+(x.message||x); }
+// origen {tabla,id} registra el mensaje para poder editarlo/borrarlo después; accion 'editar'|'borrar' + mensaje_id actúan sobre uno enviado.
+export async function avisoDiscord(canal, { texto=null, embed=null, origen=null, accion=null, mensaje_id=null } = {}){
+  try{ const { data, error } = await sb.functions.invoke('notificar-general', { body:{ canal, texto, embed, origen, accion, mensaje_id } });
+    if(error){ let msg = error.message || 'sin respuesta'; try{ const j = await error.context.json(); if(j && j.error) msg = j.error; }catch(e){} return 'error: '+msg; }
+    return (data&&data.ok) ? 'ok' : (data&&data.motivo) || 'error'; }catch(x){ return 'error: '+(x.message||x); }
+}
+// Mensajes de Discord registrados para un origen (p. ej. 'anuncios', id). Resuelve antes los envíos asíncronos pendientes.
+export async function mensajesDiscord(tabla, id=null){
+  try{ await sb.rpc('discord_resolver'); }catch(e){}
+  let q = sb.from('discord_mensajes').select('*').eq('origen_tabla', tabla).order('id', { ascending:false }); if(id!==null) q = q.eq('origen_id', String(id));
+  const { data } = await q; return data || [];
 }
 
 // Barra superior con usuario, rol, enlaces y salir. Se inserta al inicio de <body>.

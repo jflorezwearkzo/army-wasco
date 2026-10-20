@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=f962a881"></script>
+<script src="../js/tema.js?v=fcd672ff"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -394,7 +394,7 @@
         <div class="fila"><div><label>Caduca (opcional)</label><input id="nExpira" type="date"></div></div>
         <label>Imagen (opcional, 1)</label><input type="file" id="nImagen" accept="image/*">
         <div id="nImgPrev" style="display:none;margin-top:8px;position:relative;width:fit-content"><img id="nImgPrevImg" alt="" style="max-width:100%;max-height:220px;border-radius:8px;border:1px solid var(--line2)"><button type="button" class="ghost sm" id="nImgQuitar" style="position:absolute;top:6px;right:6px">✕ Quitar</button></div>
-        <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="nFijado"> 📌 Fijar arriba</label><label><input type="checkbox" id="nActivo" checked> Visible</label><label><input type="checkbox" id="nDiscord" checked> Publicar en Discord al guardar</label></label>
+        <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="nFijado"> 📌 Fijar arriba</label><label><input type="checkbox" id="nActivo" checked> Visible</label><label><input type="checkbox" id="nDiscord" checked> Publicar en Discord al guardar <small class="muted">(si ya está publicado, actualiza el mensaje)</small></label></label>
         <div class="fila" style="margin-top:14px"><button class="primary" id="nGuardar">Publicar</button><button type="button" class="ghost" data-close="dlgAnuncio">Cancelar</button></div>
         <div class="err" id="nfErr"></div>
       </form>
@@ -487,6 +487,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=88d607ed"></script>
+<script type="module" src="../js/app-admin.js?v=61330071"></script>
 </body>
 </html>
