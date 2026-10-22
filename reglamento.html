@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Reglamento · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=0a62b4e9"></script>
+<script src="js/tema.js?v=5407229e"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -95,16 +95,16 @@
 <body>
 <main>
 <div class="cabecera">
-    <p class="unidad">Army de Wasco · Policía Militar</p>
+    <p class="unidad">Army de Wasco · <span data-org-nombre>Policía Militar</span></p>
     <h1>Reglamento<small>Ejército de Wasco · One State</small></h1>
     <p>Normas de conducta, sanciones, rangos, procedimientos y macros de la facción.</p>
   </div>
   <select class="movil" id="navMovil" aria-label="Sección"></select>
   <div class="layout">
 <nav class="lateral" id="nav">
-  <div class="grp">Policía Militar</div>
-  <a href="#patrullaje" data-sec="patrullaje"><span>🚔</span>Patrullaje</a>
-  <a href="#macros-pm" data-sec="macros-pm"><span>📻</span>Macros PM</a>
+  <div class="grp" data-solo-org="pm">Policía Militar</div>
+  <a href="#patrullaje" data-sec="patrullaje" data-solo-org="pm"><span>🚔</span>Patrullaje</a>
+  <a href="#macros-pm" data-sec="macros-pm" data-solo-org="pm"><span>📻</span>Macros PM</a>
   <div class="grp">Reglas</div>
   <a href="#ejercito" data-sec="ejercito"><span>⚔️</span>Reglamento del Ejército</a>
   <a href="#servidor" data-sec="servidor"><span>💬</span>Servidor (Discord)</a>
@@ -124,7 +124,7 @@
   <a href="#docs" data-sec="docs"><span>📚</span>Manual (PDF)</a>
 </nav>
 <div class="contenido">
-<section class="sec-panel" id="sec-patrullaje" hidden>
+<section class="sec-panel" id="sec-patrullaje" data-solo-org="pm" hidden>
 <h2 class="sec" id="patrullaje">Procedimiento de patrullaje<small>Procedimiento propio de la Policía Militar · preparación y reglas para salir a patrullar</small></h2>
   <div class="bloque"><h3>Preparación</h3><ol>
     <li>Ser miembro de <b>PM</b>.</li>
@@ -153,7 +153,7 @@
   <div class="bloque"><h3>⚠️ Novedades · mandar cada 20 minutos</h3><div class="macros"><code><b>/flobby</b> [PM] ALREDEDORES SIN NOVEDAD!! 😎</code></div></div>
   <div class="bloque"><h3>⚠️ En caso de abatir a alguien</h3><div class="macros"><code><b>/me</b> [PM] PROCEDIMIENTO ANTIDISTURBIOS!!!</code></div></div>
 </section>
-<section class="sec-panel" id="sec-macros-pm" hidden>
+<section class="sec-panel" id="sec-macros-pm" data-solo-org="pm" hidden>
 <h2 class="sec" id="macros-pm">Macros de Policía Militar<small>Macros exclusivas de la unidad PM</small></h2>
   <div class="bloque"><div class="macros"><code><b>1.</b> <b>/me</b> PRESENTA SU MÁXIMO RESPETO AL SR/SRA [Tu rango] [NOMBRE] [POLICÍA MILITAR], REPORTÁNDOSE FORMALMENTE.</code>
 <code><b>2.</b> <b>/flobby</b> 10-4 [POLICÍA MILITAR] (Copiado, orden recibida)😎</code>
@@ -412,6 +412,6 @@ Tiempo: [HORAS, DÍAS O SEMANAS QUE SOLICITA]</div></div>
 </div>
   </div>
 </main>
-<script type="module" src="js/app-reglamento.js?v=ead01297"></script>
+<script type="module" src="js/app-reglamento.js?v=4ceb82a5"></script>
 </body>
 </html>

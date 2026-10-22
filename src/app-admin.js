@@ -6,9 +6,9 @@ import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord,
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','permisos_granulares','ver_como'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','permisos_granulares','ver_como','organizaciones'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', permisos_granulares:'Permisos granulares por usuario (ficha de usuario)', ver_como:'Ver la página como otro usuario (solo lectura)' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', permisos_granulares:'Permisos granulares por usuario (ficha de usuario)', ver_como:'Ver la página como otro usuario (solo lectura)', organizaciones:'Control de TODAS las organizaciones' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password','permisos_granulares'], 'Identidad', '👤'],
   ['roles',       'Roles y permisos', ['crear_roles'], 'Identidad', '🛡️'],
@@ -22,15 +22,16 @@ const TABS = [
   ['anuncios',    'Anuncios',    ['anuncios','ver_anuncios'], 'Personal', '📣'],
   ['automatizacion','Automatización',['gestion_reportes'], 'Sistema', '⏰'],
   ['auditoria',   'Auditoría',   ['auditoria'], 'Sistema', '🔎'],
-  ['organizaciones','Organizaciones',['*superadmin'], 'Sistema', '🏛️'],
+  ['organizaciones','Organizaciones',['organizaciones','*superadmin'], 'Sistema', '🏛️'],
 ];
-let roles = [], formularios = [], rangosPM = [];
+let roles = [], formularios = [], rangosPM = [], MEMB = {}, ORGS_TODAS = [];
+const VER_ORGS = esSuperadmin(yo);   // la columna de organizaciones es solo para quien manda en todas
 let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
 
 // ---------- Pestañas según permisos ----------
 const tabs = TABS.filter(([,,ps]) => ps.some(p => p==='*superadmin' ? esSuperadmin(yo) : tiene(yo,p))).map(([id]) => id);
 if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
-$('#rPermisos').innerHTML = PERMS.filter(p => p!=='ver_como').map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('') + `<p class="muted" style="margin:6px 0 0;font-size:12px">👁 "Ver la página como otro usuario" es exclusivo del rol Administrador.</p>`;
+$('#rPermisos').innerHTML = PERMS.filter(p => p!=='ver_como' && p!=='organizaciones').map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('') + `<p class="muted" style="margin:6px 0 0;font-size:12px">👁 "Ver la página como otro usuario" y 🏛️ "Control de todas las organizaciones" son exclusivos del rol Administrador y se otorgan desde la ficha de cada usuario.</p>`;
 { let g = null; $('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre,,grupo,ic]) => (g!==grupo ? (g=grupo, `<div class="grp">${grupo}</div>`) : '') + `<button data-t="${id}"><span class="ic">${ic}</span><span class="tx">${nombre}</span></button>`).join('');
   g = null; $('#tabsMovil').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre,,grupo]) => (g!==grupo ? (g=grupo, `<optgroup label="${grupo}">`) : '') + `<option value="${id}">${nombre}</option>`).join('');
   $('#tabsMovil').onchange = () => { cerrarDialogos(); abrir($('#tabsMovil').value); }; }
@@ -99,8 +100,22 @@ const motivoNoTocar = u => { const r = roles.find(x => x.id===u.rol_id); return 
 async function cargarUsuarios(){
   if(tiene(yo,'auditoria')){ sb.from('auditoria').select('usuario,en').eq('accion','login_inactivo').gte('en', new Date(Date.now()-7*864e5).toISOString()).order('id',{ascending:false}).limit(50).then(({data})=>{ const av=$('#avisoInactivos'); if(!data||!data.length){ av.style.display='none'; return; } const qu=[...new Set(data.map(r=>r.usuario))]; av.style.display=''; av.innerHTML=`⚠️ <b>${data.length}</b> intento(s) de acceso con cuentas inactivas en los últimos 7 días: ${qu.map(esc).join(', ')}. <span class="muted">(Detalle en Auditoría › Usuarios)</span>`; }); }
   const { data, error } = await sb.from('perfiles').select('*').order('usuario');
-  if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=8 class="err">${esc(error.message)}</td></tr>`; return; }
-  USUARIOS = data || []; SEL = new Set([...SEL].filter(id => USUARIOS.some(u => u.id===id)));
+  if(error){ $('#tbUsuarios').innerHTML = `<tr><td colspan=${VER_ORGS?9:8} class="err">${esc(error.message)}</td></tr>`; return; }
+  const orgActual = yo.org ? yo.org.id : null;
+  const [{ data: mem }, { data: orgs }] = await Promise.all([
+    sb.from('membresias').select('usuario_id,org_id,rol_id,rango,activo,visible,permisos_extra,permisos_negados,formularios_extra'),
+    VER_ORGS ? sb.from('organizaciones').select('id,nombre,nombre_corto,orden').order('orden') : Promise.resolve({ data: [] })
+  ]);
+  ORGS_TODAS = orgs || []; MEMB = {};
+  (mem||[]).forEach(m => { (MEMB[m.usuario_id] = MEMB[m.usuario_id] || []).push(m); });
+  // El rol, el rango y el estado que se muestran son los de la organización en la que estoy
+  USUARIOS = (data || []).map(u => { const mias = MEMB[u.id] || []; const m = mias.find(x => x.org_id === orgActual);
+    return m ? { ...u, rol_id:m.rol_id, rango:m.rango, activo:m.activo, visible:m.visible,
+                 permisos_extra:m.permisos_extra, permisos_negados:m.permisos_negados, formularios_extra:m.formularios_extra,
+                 _orgs: mias.map(x => x.org_id) }
+             : { ...u, rol_id:null, rango:null, activo:false, visible:true, _orgs: mias.map(x => x.org_id), _fuera:true }; });
+  SEL = new Set([...SEL].filter(id => USUARIOS.some(u => u.id===id)));
+  document.querySelectorAll('th.colorgs').forEach(th => th.hidden = !VER_ORGS);
   sb.rpc('actividad_usuarios').then(({data}) => { ACTIV={}; (data||[]).forEach(a => ACTIV[a.usuario_id]=a); pintarUsuarios(); });
   $('#uRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option>${esc(r)}</option>`).join('');
   const rolesAsignables = roles.filter(rolAsignable);
@@ -144,11 +159,12 @@ function pintarUsuarios(){
       <td class="chk"><input type="checkbox" data-sel="${u.id}" ${SEL.has(u.id)?'checked':''} ${puedoTocar(u)?'':'disabled title="'+motivoNoTocar(u)+'"'}></td>
       <td class="u"><b>${esc(u.usuario)}</b>${u.id===yo.id?' <span class="muted" style="font-size:11px">(tú)</span>':''}</td>
       <td class="nom">${esc(nombreCompleto(u))}</td><td>${esc(r ? r.nombre : 'Sin rol')}${(u.permisos_extra && Object.keys(u.permisos_extra).length) || (u.permisos_negados && Object.keys(u.permisos_negados).length) || (u.formularios_extra && u.formularios_extra.length) ? ' <span class="tag" style="background:var(--avisobg);color:#e0a92a" title="Tiene permisos granulares propios">+granular</span>' : ''}</td>
-      <td><span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span></td>
+      ${VER_ORGS ? `<td>${(u._orgs||[]).map(id => { const o = ORGS_TODAS.find(x => x.id===id); return `<span class="tag" style="background:var(--avisobg);color:var(--gold);margin-right:3px" title="${esc(o?o.nombre:id)}">${esc(o ? (o.nombre_corto||o.nombre) : id)}</span>`; }).join('') || '<span class="muted">—</span>'}</td>` : ''}
+      <td>${u._fuera ? '<span class="tag off" title="No pertenece a esta organización">Sin acceso</span>' : `<span class="tag ${u.activo?'on':'off'}">${u.activo?'Activo':'Inactivo'}</span>`}</td>
       <td><span class="tag ${(u.activo&&u.visible!==false)?'on':'off'}" title="${u.activo?'':'Los usuarios inactivos nunca aparecen en los formularios'}">${u.visible===false?'Oculto':'Visible'}</span></td>
       <td class="ult muted">${a ? `${fFecha(a.ultimo)} <span style="font-size:11px">(${a.reportes})</span>` : '—'}</td>
       <td class="acc"><button type="button" class="btn-acc" data-menu="${u.id}" title="Acciones" aria-label="Acciones">⋯</button></td></tr>`;
-  }).join('') || '<tr><td colspan=8 class="muted">Sin usuarios que coincidan</td></tr>';
+  }).join('') || `<tr><td colspan=${VER_ORGS?9:8} class="muted">Sin usuarios que coincidan</td></tr>`;
   const todos = $('#uTodos'); const sel = lista.filter(u=>puedoTocar(u));
   todos.checked = sel.length>0 && sel.every(u=>SEL.has(u.id)); todos.indeterminate = !todos.checked && sel.some(u=>SEL.has(u.id));
   document.querySelectorAll('[data-sel]').forEach(c => c.onchange = () => { c.checked ? SEL.add(c.dataset.sel) : SEL.delete(c.dataset.sel); pintarUsuarios(); });

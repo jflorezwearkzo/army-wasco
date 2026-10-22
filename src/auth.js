@@ -47,6 +47,8 @@ export async function cargarYo(){
   if(ses){ p.rol_id = ses.rol_id; p.rango = ses.rango; p.activo = ses.activo; }
   let rol = null;
   if(p.rol_id){ const { data: r } = await sb.from('roles').select('id,nombre,permisos,formularios,rango_pm,protegido').eq('id', p.rol_id).maybeSingle(); rol = r; }
+  // Quien manda en todas las organizaciones entra a cualquiera aunque no tenga rol propio en ella
+  if(!rol && ses && ses.global) rol = { id:null, nombre:'Administrador general', permisos:{}, formularios:['*'], rango_pm:null, protegido:true };
   const yo = armarYo(p, rol, await permisosEfectivos(p.id));
   yo.org = (ses && ses.org) || null; yo.orgs = (ses && ses.orgs) || [];
   return yo;
@@ -164,7 +166,22 @@ export async function mensajesDiscord(tabla, id=null){
 }
 
 // Barra superior con usuario, rol, enlaces y salir. Se inserta al inicio de <body>.
+// Pone el nombre de la organización activa donde corresponde (cabeceras y título de la pestaña).
+export function marcaOrg(yo){
+  const o = yo && yo.org; if(!o) return;
+  document.querySelectorAll('[data-org-nombre]').forEach(e => {
+    if(e.firstChild && e.firstChild.nodeType === 3) e.firstChild.nodeValue = o.nombre; else e.prepend(o.nombre);
+  });
+  document.querySelectorAll('[data-org-corto]').forEach(e => { e.textContent = o.nombre_corto || o.nombre; });
+  // Lo que es propio de una organización desaparece en las demás
+  document.querySelectorAll('[data-solo-org]').forEach(e => {
+    if(e.dataset.soloOrg !== o.id){ e.hidden = true; e.style.display = 'none'; }
+  });
+  if(document.title.includes('Policía Militar')) document.title = document.title.replace('Policía Militar', o.nombre);
+}
+
 export function barraUsuario(yo){
+  marcaOrg(yo);
   if(!document.getElementById('barraCss')){
     const s = document.createElement('style'); s.id = 'barraCss';
     s.textContent = `
