@@ -566,7 +566,7 @@ async function cargarResumen(){
   const max=Math.max(1,...Object.values(porDia));
   $('#rDias').innerHTML=Object.entries(porDia).map(([d,n])=>`<div style="height:${Math.max(2,Math.round(n/max*100))}%" data-t="${d.split('-').reverse().join('-')}: ${n}" title="${d}: ${n}"></div>`).join('');
   // Por formulario
-  const pf={}; R.forEach(r=>{ const k=r.formulario||r.formulario_id; pf[k]=(pf[k]||0)+1; });
+  const pf={}, pfId={}; R.forEach(r=>{ const k=r.formulario||r.formulario_id; pf[k]=(pf[k]||0)+1; pfId[k]=r.formulario_id||k; });
   $('#rPorForm').innerHTML=Object.entries(pf).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<tr><td>${esc(k)}</td><td>${n}</td><td class="muted">${Math.round(n/R.length*100)}%</td></tr>`).join('')||'<tr><td colspan=3 class="muted">Sin reportes en el periodo</td></tr>';
   // Por usuario
   const pu={}; R.forEach(r=>{ const k=r.usuario||'—'; pu[k]=pu[k]||{n:0,nombre:quien(r),ultimo:''}; pu[k].n++; if(r.fecha>pu[k].ultimo) pu[k].ultimo=r.fecha; });
@@ -581,7 +581,7 @@ async function cargarResumen(){
   $('#rReclut').innerHTML=Object.entries(pr).sort((a,b)=>b[1].n-a[1].n).map(([u,x])=>`<tr><td><b>${esc(u)}</b> <span class="muted">${esc(x.nombre)}</span></td><td><b>${x.n}</b></td><td class="muted" style="font-size:12px">${esc(x.nombres.join(', '))}</td></tr>`).join('')||'<tr><td colspan=3 class="muted">Sin reclutamientos en el periodo</td></tr>';
   const fd=d=>d.split('-').reverse().join('-');
   RES={ desde, hasta, total:R.length, kpis:KP, porDia,
-    porForm:Object.entries(pf).sort((a,b)=>b[1]-a[1]).map(([k,n])=>[k,n,Math.round(n/R.length*100)+'%']),
+    porForm:Object.entries(pf).sort((a,b)=>b[1]-a[1]).map(([k,n])=>[k,n,Math.round(n/Math.max(1,R.length)*100)+'%',pfId[k]]),
     porUsuario:Object.entries(pu).sort((a,b)=>b[1].n-a[1].n).map(([u,x])=>[u,x.nombre,x.n,fd(x.ultimo)]),
     integrantes:Object.entries(pi).sort((a,b)=>b[1]-a[1]).slice(0,30),
     bajas:Object.entries(pb).sort((a,b)=>b[1].bajas-a[1].bajas).map(([u,x])=>[u,x.nombre,x.rep,x.bajas]),
@@ -595,7 +595,7 @@ $('#rExportar').onclick=async()=>{
   try{
     await (document.fonts ? document.fonts.ready : Promise.resolve());
     const fmt=$('#rFormato').value; const fd=d=>d.split('-').reverse().join('-');
-    const pags=dibujarResumen(RES, { periodo:`Periodo ${fd(RES.desde)} a ${fd(RES.hasta)} · ${RES.total} reporte(s)`, generado:`Generado por ${nombreCompleto(yo)} · ${new Date().toLocaleString('es-CO')}` });
+    const pags=await dibujarResumen(RES, { periodo:`Periodo ${fd(RES.desde)} a ${fd(RES.hasta)} · ${RES.total} reporte(s)`, generado:`Generado por ${nombreCompleto(yo)} · ${new Date().toLocaleString('es-CO')}` });
     const nombre=`resumen-pm-${RES.desde}_${RES.hasta}`;
     if(fmt==='pdf') descargar(resumenPDF(pags), nombre+'.pdf'); else descargar(await resumenPNG(pags), nombre+'.png');
   }catch(x){ alert('No se pudo exportar: '+x.message); }
