@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=55ac2aa7"></script>
+<script src="../js/tema.js?v=38c8e871"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -415,9 +415,22 @@
     <div class="caja" style="margin-top:18px" id="cajaProgramadas">
       <h3>Tareas programadas</h3>
       <p class="muted" style="margin-top:0;font-size:13px">Se ejecutan en el servidor (pg_cron) y publican en el canal de Discord indicado. Horas en hora de Colombia. "Ejecutar ahora" sirve para probar con los datos de hoy.</p>
-      <table><thead><tr><th>Tarea</th><th>Canal</th><th>Activa</th><th>Hora</th><th></th><th></th></tr></thead><tbody id="tbProg"></tbody></table>
+      <table><thead><tr><th>Tarea</th><th>Canal</th><th>Activa</th><th>Hora</th><th></th><th></th><th></th></tr></thead><tbody id="tbProg"></tbody></table>
       <div class="err" id="pErr"></div>
     </div>
+    <dialog id="dlgPrevia" class="dlg-edit"><div class="caja">
+      <div class="cab-dlg"><button type="button" class="ghost sm volver" data-close="dlgPrevia">← Volver</button><h3 id="tituloPrevia">Vista previa</h3><button type="button" class="cerrar" data-close="dlgPrevia" aria-label="Cerrar">✕</button></div>
+      <p class="muted" style="margin-top:0;font-size:13px">Así se verá el mensaje en Discord. Esta vista no envía nada ni otorga insignias.</p>
+      <div id="previaLienzo" style="overflow:auto;max-height:60vh;border:1px solid var(--line2);border-radius:8px;background:#0b1216"></div>
+      <div class="fila" style="margin-top:14px;flex-wrap:wrap">
+        <button type="button" class="primary" id="pvPng">⬇ Descargar PNG</button>
+        <button type="button" class="ghost" id="pvTxt">⬇ Descargar texto</button>
+        <button type="button" class="ghost" id="pvCopiar">📋 Copiar texto</button>
+        <button type="button" class="ghost" id="pvEnviar">📨 Enviar a Discord</button>
+        <button type="button" class="ghost" data-close="dlgPrevia">Cerrar</button>
+      </div>
+      <div class="err" id="pvErr"></div>
+    </div></dialog>
     <div class="caja" style="margin-top:18px" id="cajaIA">
       <h3>Auditoría con IA de los reportes</h3>
       <p class="muted" style="margin-top:0;font-size:13px">Cuando un reporte recibe su imagen, el servidor la envía a Gemini (nivel gratuito de Google) para leer el texto de las capturas del juego, compararlas con lo declarado en el formulario y detectar indicios de falsedad o capturas reutilizadas. El resultado aparece como semáforo en Revisión, Historial y el expediente. La IA solo orienta: aprobar o rechazar sigue siendo decisión del revisor. Si la IA falla, el reporte entra igual, marcado "sin análisis".</p>
@@ -487,6 +500,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=00c1423f"></script>
+<script type="module" src="../js/app-admin.js?v=e401359a"></script>
 </body>
 </html>

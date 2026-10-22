@@ -1,4 +1,5 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
+import { dibujarEmbed, textoEmbed } from './embed-export.js';
 import { respaldoCompleto } from './respaldo.js';
 import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA, mensajesDiscord } from './auth.js';
 
@@ -902,11 +903,40 @@ async function cargarProgramadas(){
   $('#tbProg').innerHTML = PROGRAMADAS.map(([k, n, canal, desc, h, m, dia]) => { const c = cfg[k] || {}; return `<tr data-p="${k}"><td><b>${esc(n)}</b><br><span class="muted" style="font-size:12px">${esc(desc)}</span></td><td class="muted">${esc(canal)}</td>
     <td><input type="checkbox" data-pa ${c.activo?'checked':''}></td>
     <td style="white-space:nowrap">${(k==='resumen_semanal'||k==='ranking_semanal') ? `<select data-pd style="width:auto;display:inline-block;padding:4px 6px;margin-right:4px">${DIAS.map((d,i)=>`<option value="${i}" ${(c.dia??dia)==i?'selected':''}>${d}</option>`).join('')}</select>` : k==='ranking_mensual' ? '<span class="muted">día 1 · </span>' : ''}<input type="time" data-ph value="${String(c.hora??h).padStart(2,'0')}:${String(c.minuto??m).padStart(2,'0')}" style="width:auto;display:inline-block;padding:4px 6px"></td>
-    <td><button class="ghost sm" data-pg="${k}">Guardar</button></td><td><button class="ghost sm" data-px="${k}" title="Ejecuta la tarea ahora mismo con los datos de hoy">▶ Ejecutar ahora</button></td></tr>`; }).join('');
+    <td><button class="ghost sm" data-pg="${k}">Guardar</button></td><td><button class="ghost sm" data-pv="${k}" data-pn="${esc(n)}" title="Genera el mensaje con los datos de hoy sin enviarlo">👁 Vista previa</button></td><td><button class="ghost sm" data-px="${k}" title="Ejecuta la tarea ahora mismo con los datos de hoy">▶ Ejecutar ahora</button></td></tr>`; }).join('');
   document.querySelectorAll('[data-pg]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); const [hh, mm] = tr.querySelector('[data-ph]').value.split(':').map(Number); const dsel = tr.querySelector('[data-pd]');
     const { data: r, error } = await sb.rpc('programar', { p_clave: b.dataset.pg, p_activo: tr.querySelector('[data-pa]').checked, p_hora: hh, p_minuto: mm, p_dia: dsel ? +dsel.value : 1 });
     if(error){ $('#pErr').textContent = error.message; return; } $('#pErr').textContent=''; toast(r.activo ? `Programada (${r.cron} UTC).` : 'Tarea desactivada.'); });
+  document.querySelectorAll('[data-pv]').forEach(b => b.onclick = async () => { b.disabled = true; await vistaPrevia(b.dataset.pv, b.dataset.pn); b.disabled = false; });
   document.querySelectorAll('[data-px]').forEach(b => b.onclick = async () => { b.disabled = true; const { data: r, error } = await sb.rpc('ejecutar_programada', { p_accion: b.dataset.px }); b.disabled = false;
     if(error){ $('#pErr').textContent = error.message; return; } $('#pErr').textContent='';
     toast(r.enviado ? 'Enviado a Discord.' : r.motivo==='sin_webhook' ? 'Generado, pero el canal no tiene webhook configurado.' : 'Sin nada que enviar: '+(r.motivo||''), !r.enviado); });
+}
+
+// Genera el mensaje de una tarea sin enviarlo y lo muestra tal como se verá en Discord, con opción de exportarlo.
+async function vistaPrevia(clave, nombre){
+  $('#pErr').textContent = '';
+  const { data: r, error } = await sb.rpc('ejecutar_programada', { p_accion: clave, p_fecha: null, p_enviar: false });
+  if(error){ $('#pErr').textContent = error.message; return; }
+  if(!r || !r.embed){ $('#pErr').textContent = `Esa tarea no generaría mensaje hoy (${(r&&r.motivo)||'sin datos'}).`; return; }
+  const cab = { tarea: nombre, generado: `Generado por ${nombreCompleto(yo)} · ${new Date().toLocaleString('es-CO')}` };
+  $('#tituloPrevia').textContent = 'Vista previa · ' + nombre;
+  $('#pvErr').textContent = '';
+  const caja = $('#previaLienzo'); caja.innerHTML = '<p class="muted" style="padding:14px">Generando…</p>';
+  $('#dlgPrevia').showModal();
+  await (document.fonts ? document.fonts.ready : Promise.resolve());
+  const cv = await dibujarEmbed(r.embed, cab);
+  cv.style.cssText = 'display:block;width:100%;height:auto';
+  caja.innerHTML = ''; caja.appendChild(cv);
+  const base = `${clave}-${hoyISO()}`;
+  $('#pvPng').onclick = () => cv.toBlob(b => descargar(b, base + '.png'), 'image/png');
+  $('#pvTxt').onclick = () => descargar(new Blob([textoEmbed(r.embed, cab)], { type:'text/plain;charset=utf-8' }), base + '.txt');
+  $('#pvCopiar').onclick = async () => { try{ await navigator.clipboard.writeText(textoEmbed(r.embed, cab)); toast('Texto copiado.'); }catch(e){ $('#pvErr').textContent = 'No se pudo copiar: '+e.message; } };
+  $('#pvEnviar').onclick = async () => {
+    const b = $('#pvEnviar'); b.disabled = true;
+    const { data: e2, error: er } = await sb.rpc('ejecutar_programada', { p_accion: clave, p_fecha: null, p_enviar: true }); b.disabled = false;
+    if(er){ $('#pvErr').textContent = er.message; return; }
+    $('#dlgPrevia').close();
+    toast(e2.enviado ? 'Enviado a Discord.' : e2.motivo==='sin_webhook' ? 'El canal no tiene webhook configurado.' : 'No se envió: '+(e2.motivo||''), !e2.enviado);
+  };
 }

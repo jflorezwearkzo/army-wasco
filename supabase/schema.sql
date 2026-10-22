@@ -715,6 +715,8 @@ create policy insignias_select on public.insignias for select using (coalesce(pu
 --   ejecutar_programada(accion, fecha) -> recordatorio_turnos | cierre_diario | resumen_semanal |
 --     ranking_semanal (parcial del mes en curso, NO otorga insignias) | ranking_mensual (mes anterior, otorga insignias);
 --     ambos rankings publican en el canal 'ranking'; audita programada_<accion>
+--     tercer parámetro p_enviar (default true): con false arma el embed y lo devuelve SIN publicar ni otorgar
+--     insignias ni auditar (motivo 'vista_previa'); es lo que usa el botón 👁 Vista previa del panel.
 --   programar(clave, activo, hora, minuto, dia) -> cron.schedule('pm_<clave>', ...) en UTC (hora Bogotá +5); guarda configuracion.programadas
 --     'dia' es día de la semana (0=domingo) en resumen_semanal y ranking_semanal; ranking_mensual siempre corre el día 1
 create extension if not exists pg_net with schema extensions;

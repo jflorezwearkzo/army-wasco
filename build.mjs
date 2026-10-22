@@ -30,7 +30,7 @@ for (const p of pages) {
 for (const f of readdirSync('js')) {
   if (f === 'config.js') continue;
   let code = readFileSync(`js/${f}`, 'utf8');
-  code = code.replace(/\.\/(auth|config|plantilla|resumen-export|respaldo)\.js(\?v=[0-9a-f]+)?/g, (m, name) => `./${name}.js?v=${ver[name + '.js']}`);
+  code = code.replace(/\.\/(auth|config|plantilla|resumen-export|embed-export|respaldo)\.js(\?v=[0-9a-f]+)?/g, (m, name) => `./${name}.js?v=${ver[name + '.js']}`);
   writeFileSync(`js/${f}`, code);
 }
 console.log('versiones', ver);
