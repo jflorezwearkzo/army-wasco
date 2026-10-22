@@ -709,7 +709,9 @@ alter table public.insignias enable row level security;
 create policy insignias_select on public.insignias for select using (coalesce(public.mi_perfil_activo(),false));
 -- RPCs: ranking_calc(mes) (interno) / ranking_mes(mes) (activos) / insignias_lista()
 -- Tareas programadas: todo en Postgres (pg_cron + pg_net), sin Edge Function ni secretos:
---   discord_enviar(canal, payload) -> net.http_post al webhook de discord_canales
+--   discord_enviar(canal, payload, origen_tabla, origen_id) -> net.http_post al webhook de discord_canales
+--     (los dos últimos con DEFAULT null; NO crear una variante de 2 parámetros: la sobrecarga vuelve ambigua la llamada
+--      y Postgres responde 'function public.discord_enviar(text, jsonb) is not unique'. Igual para discord_enviar_formulario.)
 --   ejecutar_programada(accion, fecha) -> recordatorio_turnos | cierre_diario | resumen_semanal | ranking_mensual (otorga insignias); audita programada_<accion>
 --   programar(clave, activo, hora, minuto, dia) -> cron.schedule('pm_<clave>', ...) en UTC (hora Bogotá +5); guarda configuracion.programadas
 create extension if not exists pg_net with schema extensions;
