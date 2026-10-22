@@ -712,8 +712,11 @@ create policy insignias_select on public.insignias for select using (coalesce(pu
 --   discord_enviar(canal, payload, origen_tabla, origen_id) -> net.http_post al webhook de discord_canales
 --     (los dos últimos con DEFAULT null; NO crear una variante de 2 parámetros: la sobrecarga vuelve ambigua la llamada
 --      y Postgres responde 'function public.discord_enviar(text, jsonb) is not unique'. Igual para discord_enviar_formulario.)
---   ejecutar_programada(accion, fecha) -> recordatorio_turnos | cierre_diario | resumen_semanal | ranking_mensual (otorga insignias); audita programada_<accion>
+--   ejecutar_programada(accion, fecha) -> recordatorio_turnos | cierre_diario | resumen_semanal |
+--     ranking_semanal (parcial del mes en curso, NO otorga insignias) | ranking_mensual (mes anterior, otorga insignias);
+--     ambos rankings publican en el canal 'ranking'; audita programada_<accion>
 --   programar(clave, activo, hora, minuto, dia) -> cron.schedule('pm_<clave>', ...) en UTC (hora Bogotá +5); guarda configuracion.programadas
+--     'dia' es día de la semana (0=domingo) en resumen_semanal y ranking_semanal; ranking_mensual siempre corre el día 1
 create extension if not exists pg_net with schema extensions;
 -- El rol Administrador tiene "turnos" y "anuncios".
 

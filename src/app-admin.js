@@ -893,6 +893,7 @@ var PROGRAMADAS = [
   ['recordatorio_turnos','Recordatorio de turnos de hoy','recordatorios','Lista los turnos del día y quién no ha enviado su reporte de patrullaje', 20, 0, null],
   ['cierre_diario','Cierre del día','resumen','Reportes aprobados del día por formulario y quiénes reportaron', 23, 55, null],
   ['resumen_semanal','Resumen semanal','resumen','KPIs de los últimos 7 días y los 5 más activos', 8, 0, 1],
+  ['ranking_semanal','Ranking parcial (semanal)','ranking','Cómo va el ranking del mes en curso; no otorga insignias', 19, 0, 0],
   ['ranking_mensual','Ranking mensual','ranking','Top 3 del mes anterior por categoría; otorga las insignias', 9, 0, null],
 ];
 async function cargarProgramadas(){
@@ -900,7 +901,7 @@ async function cargarProgramadas(){
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   $('#tbProg').innerHTML = PROGRAMADAS.map(([k, n, canal, desc, h, m, dia]) => { const c = cfg[k] || {}; return `<tr data-p="${k}"><td><b>${esc(n)}</b><br><span class="muted" style="font-size:12px">${esc(desc)}</span></td><td class="muted">${esc(canal)}</td>
     <td><input type="checkbox" data-pa ${c.activo?'checked':''}></td>
-    <td style="white-space:nowrap">${k==='resumen_semanal' ? `<select data-pd style="width:auto;display:inline-block;padding:4px 6px;margin-right:4px">${DIAS.map((d,i)=>`<option value="${i}" ${(c.dia??dia)==i?'selected':''}>${d}</option>`).join('')}</select>` : k==='ranking_mensual' ? '<span class="muted">día 1 · </span>' : ''}<input type="time" data-ph value="${String(c.hora??h).padStart(2,'0')}:${String(c.minuto??m).padStart(2,'0')}" style="width:auto;display:inline-block;padding:4px 6px"></td>
+    <td style="white-space:nowrap">${(k==='resumen_semanal'||k==='ranking_semanal') ? `<select data-pd style="width:auto;display:inline-block;padding:4px 6px;margin-right:4px">${DIAS.map((d,i)=>`<option value="${i}" ${(c.dia??dia)==i?'selected':''}>${d}</option>`).join('')}</select>` : k==='ranking_mensual' ? '<span class="muted">día 1 · </span>' : ''}<input type="time" data-ph value="${String(c.hora??h).padStart(2,'0')}:${String(c.minuto??m).padStart(2,'0')}" style="width:auto;display:inline-block;padding:4px 6px"></td>
     <td><button class="ghost sm" data-pg="${k}">Guardar</button></td><td><button class="ghost sm" data-px="${k}" title="Ejecuta la tarea ahora mismo con los datos de hoy">▶ Ejecutar ahora</button></td></tr>`; }).join('');
   document.querySelectorAll('[data-pg]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); const [hh, mm] = tr.querySelector('[data-ph]').value.split(':').map(Number); const dsel = tr.querySelector('[data-pd]');
     const { data: r, error } = await sb.rpc('programar', { p_clave: b.dataset.pg, p_activo: tr.querySelector('[data-pa]').checked, p_hora: hh, p_minuto: mm, p_dia: dsel ? +dsel.value : 1 });
