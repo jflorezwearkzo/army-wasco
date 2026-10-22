@@ -23,7 +23,7 @@ const MODELOS_RESPALDO = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.5
 
 const PISTAS: Record<string, string> = {
   bajas: "Reporte de bajas: `rows` lista las bajas (nombre, rango, motivo); solo cuentan las filas con nombre. El AUTOR debe ser quien actúa: sus macros de rol (/me, /do, '¡Fuego!', '¡Taser!', 'Amenaza confirmada') deben aparecer en el chat con SU nombre. Cada nombre declarado debe verse sobre un cuerpo abatido o en el kill feed.",
-  patrullaje: "Fin de día / patrullaje: `horaIni`/`horaFin`, `integrantes` (nombres), `novedadesN`, fotos de salida y regreso. Quien actúa en el chat puede ser el autor o cualquiera de los integrantes declarados. El autor debe escribir horaIni/horaFin tal como aparecen en el HUD (HORA DEL SERVIDOR): la captura de salida debe mostrar una hora cercana a horaIni y la de regreso a horaFin (tolerancia de unos 15 minutos).",
+  patrullaje: "Patrullaje: `horaIni`/`horaFin`, `integrantes` (nombres), `novedadesN`, fotos de salida y regreso. Quien actúa en el chat puede ser el autor o cualquiera de los integrantes declarados. El autor debe escribir horaIni/horaFin tal como aparecen en el HUD (HORA DEL SERVIDOR): la captura de salida debe mostrar una hora cercana a horaIni y la de regreso a horaFin (tolerancia de unos 15 minutos).",
   reclutamiento: "Reclutamiento: `nombre`/`rango` del reclutado y `ofNombre`/`ofRango` del oficial. La captura debe mostrar al reclutado (nombre en pantalla, uniforme, chat de aceptación) y el autor u oficial declarado debe aparecer como quien lo recluta.",
   "toma-territorio": "Toma de territorio: `integrantes`, `totalTomados` (AK tomados). Quien actúa puede ser el autor o cualquiera de los integrantes. La cantidad debe ser coherente con lo visible.",
 };

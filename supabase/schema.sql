@@ -453,9 +453,9 @@ create or replace view public.reportes_vista with (security_invoker = true) as
 --       where id = (select id from auth.users where email='admin@armywasco.local');
 -- =====================================================================
 
--- ---------- Reporte de Fin de Día · Patrullaje PM ----------
+-- ---------- Reporte de Patrullaje PM ----------
 insert into public.formularios (id, titulo, descripcion, ruta, icono, orden) values
-('patrullaje','Reporte de Fin de Día · Patrullaje PM','Cierre del día de patrullaje: una página por patrullaje con horario, integrantes, novedades, código de reporte y evidencia de salida y regreso.','reportes/patrullaje/','🚔',30)
+('patrullaje','Reporte de Patrullaje PM','Un reporte por patrullaje (puedes enviar varios a la vez): horario, integrantes, novedades, código de reporte y evidencia de salida y regreso.','reportes/patrullaje/','🚔',30)
 on conflict (id) do nothing;
 
 -- Visibilidad de usuarios en los desplegables de los formularios (los inactivos nunca aparecen)

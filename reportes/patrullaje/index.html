@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
-<title>Reporte de Fin de Día · Patrullaje PM — Policía Militar</title>
+<title>Reporte de Patrullaje PM — Policía Militar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../estilos.css">
@@ -67,13 +67,13 @@
   .tabs button.act{background:var(--gold);color:var(--gold-text)}
   .ok{color:#7fd38a}
 </style>
-<script src="../../js/tema.js?v=bf378df6"></script>
+<script src="../../js/tema.js?v=1862d50c"></script>
 </head>
 <body>
 <header>
   <a href="../../" style="color:var(--muted);text-decoration:none;font-size:13px">&larr; Volver a Reportes</a>
-  <h1>Reporte de Fin de Día · Patrullaje PM · Army de Wasco · Policía Militar</h1>
-  <p>Indica cuántos patrullajes hubo en el día: se genera una página (imagen) por cada patrullaje, cada una con su propio folio.</p>
+  <h1>Reporte de Patrullaje PM · Army de Wasco · Policía Militar</h1>
+  <p>Un reporte por patrullaje. Si vas a reportar varios de una vez, indica cuántos y llénalos en los formularios que aparecen abajo: se genera una página (imagen) y un folio por cada uno.</p>
   <p class="aviso-ia">🔎 <b>Cada reporte se valida con IA</b>, que lee las capturas y detecta fraude, duplicados y errores. La información falsa puede considerarse <b>falta grave</b> y la reincidencia puede llevar a una <b>sanción</b>. Indica siempre la <b>fecha y hora que muestra la captura del juego</b> (<i>HORA DEL SERVIDOR</i>), no la de tu reloj: la IA las compara.</p>
 </header>
 <main>
@@ -87,8 +87,9 @@
         <input id="nombre" type="text" maxlength="40" required>
         <label for="rango">Rango *</label>
         <input id="rango" type="text" maxlength="30" required>
-        <label for="nPat">Patrullajes realizados en el día * <small>(no aparece en el reporte; genera una página por patrullaje)</small></label>
+        <label for="nPat">¿Cuántos patrullajes vas a reportar? *</label>
         <select id="nPat"></select>
+        <p class="nota-foto" style="margin-top:6px">Déjalo en <b>1</b> si solo reportas un patrullaje. Si hiciste varios y quieres enviarlos juntos, elige la cantidad: abajo aparecerá <b>un formulario por cada patrullaje</b> (pestañas <i>Patrullaje 1, 2, 3…</i>) y debes llenarlos todos, cada uno con su horario, integrantes y evidencias. Cada patrullaje genera su propia imagen y su propio folio. Este campo no aparece en el reporte.</p>
       </fieldset>
 
       <fieldset>
@@ -140,6 +141,6 @@
     <textarea class="obs" maxlength="400" placeholder="Notas o acontecimientos relevantes del patrullaje"></textarea>
   </div>
 </template>
-<script type="module" src="../../js/form-patrullaje.js?v=106b2b7d"></script>
+<script type="module" src="../../js/form-patrullaje.js?v=76d84d4f"></script>
 </body>
 </html>

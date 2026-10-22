@@ -135,7 +135,7 @@ Admin → Automatización → "Copia de seguridad": genera en el navegador un ZI
 
 ## Turnos y agenda de patrullaje
 
-Permisos **Turnos: asignar y editar** (`turnos`) y **Turnos: solo ver la agenda** (`ver_turnos`, abre la pestaña sin botones de edición). Admin → **Turnos**: agenda con vistas **Día / Semana / Mes** (‹ › Hoy; en Mes, clic en el número del día abre ese día), "＋ Asignar turno" (integrante con **buscador** por nombre/usuario/rango, fecha con calendario, hora inicio/fin, notas, repetir N semanas), clic en un turno para editar o eliminar. Los turnos pasados muestran ✅ si ese día existe Reporte de Fin de Día del integrante o ⏳ si no. Cada integrante ve "Mis próximos turnos" (14 días) en el inicio. Tabla `turnos`, RPC `turnos_lista`.
+Permisos **Turnos: asignar y editar** (`turnos`) y **Turnos: solo ver la agenda** (`ver_turnos`, abre la pestaña sin botones de edición). Admin → **Turnos**: agenda con vistas **Día / Semana / Mes** (‹ › Hoy; en Mes, clic en el número del día abre ese día), "＋ Asignar turno" (integrante con **buscador** por nombre/usuario/rango, fecha con calendario, hora inicio/fin, notas, repetir N semanas), clic en un turno para editar o eliminar. Los turnos pasados muestran ✅ si ese día existe Reporte de reporte de patrullaje del integrante o ⏳ si no. Cada integrante ve "Mis próximos turnos" (14 días) en el inicio. Tabla `turnos`, RPC `turnos_lista`.
 
 ## Tablón de anuncios
 
@@ -239,7 +239,7 @@ Todos los formularios guardan automáticamente lo escrito en el navegador (`loca
 
 ## Resumen (estadísticas)
 
-Pestaña **Resumen** del panel (permiso ver historial): periodo configurable (30 días por defecto), KPIs (reportes, por día, usuarios activos, bajas reportadas, reclutamientos, patrullajes, AKs tomados), reportes por día, por formulario, actividad por usuario, patrullajes por integrante, bajas reportadas por persona y reclutamientos por persona (con los nombres reclutados) (nombres que aparecen en Fin de Día y Toma de Territorio). Se calcula en el navegador a partir de `reportes_vista` (máximo 3000 reportes por consulta).
+Pestaña **Resumen** del panel (permiso ver historial): periodo configurable (30 días por defecto), KPIs (reportes, por día, usuarios activos, bajas reportadas, reclutamientos, patrullajes, AKs tomados), reportes por día, por formulario, actividad por usuario, patrullajes por integrante, bajas reportadas por persona y reclutamientos por persona (con los nombres reclutados) (nombres que aparecen en Patrullaje y Toma de Territorio). Se calcula en el navegador a partir de `reportes_vista` (máximo 3000 reportes por consulta).
 
 ## Móvil
 

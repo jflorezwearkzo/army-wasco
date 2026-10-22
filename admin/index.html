@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=bf378df6"></script>
+<script src="../js/tema.js?v=1862d50c"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -358,7 +358,7 @@
     <div class="caja">
       <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Agenda de patrullaje <span class="muted" id="tSemana" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px"></span></span>
         <span style="display:flex;gap:6px;flex-wrap:wrap"><span style="display:inline-flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden"><button type="button" class="ghost sm" data-tv="dia" style="border:0;border-radius:0">Día</button><button type="button" class="ghost sm on" data-tv="semana" style="border:0;border-radius:0;border-left:1px solid var(--line2)">Semana</button><button type="button" class="ghost sm" data-tv="mes" style="border:0;border-radius:0;border-left:1px solid var(--line2)">Mes</button></span><button type="button" class="ghost sm" id="tPrev">‹</button><button type="button" class="ghost sm" id="tHoy">Hoy</button><button type="button" class="ghost sm" id="tNext">›</button><button type="button" class="primary sm btn-nuevo" id="tNuevo">＋ Asignar turno</button></span></h3>
-      <p class="muted" style="margin-top:0;font-size:13px">Cada integrante ve sus turnos en el inicio. ✅ = ya envió el Reporte de Fin de Día de esa fecha; ⏳ = turno pasado sin reporte. El recordatorio automático (Automatización) avisa en Discord a los que tienen turno hoy.</p>
+      <p class="muted" style="margin-top:0;font-size:13px">Cada integrante ve sus turnos en el inicio. ✅ = ya envió el reporte de patrullaje de esa fecha; ⏳ = turno pasado sin reporte. El recordatorio automático (Automatización) avisa en Discord a los que tienen turno hoy.</p>
       <div class="semana" id="tGrid"></div>
       <div class="err" id="tErr"></div>
     </div>
@@ -448,7 +448,7 @@
       </div>
       <div class="dos" style="grid-template-columns:1fr 1fr;margin-top:14px">
         <div><h4>Actividad por usuario</h4><table><thead><tr><th>Usuario</th><th>Reportes</th><th>Último</th></tr></thead><tbody id="rUsuarios"></tbody></table></div>
-        <div><h4>Patrullajes por integrante</h4><p class="muted" style="margin:0 0 6px;font-size:12px">Cuenta en cuántos patrullajes aparece cada nombre (Fin de Día y Toma de Territorio).</p><table><thead><tr><th>Integrante</th><th>Patrullajes</th></tr></thead><tbody id="rIntegrantes"></tbody></table></div>
+        <div><h4>Patrullajes por integrante</h4><p class="muted" style="margin:0 0 6px;font-size:12px">Cuenta en cuántos patrullajes aparece cada nombre (Patrullaje y Toma de Territorio).</p><table><thead><tr><th>Integrante</th><th>Patrullajes</th></tr></thead><tbody id="rIntegrantes"></tbody></table></div>
       </div>
       <div class="dos" style="grid-template-columns:1fr 1fr;margin-top:14px">
         <div><h4>Bajas reportadas por persona</h4><table><thead><tr><th>Quien reporta</th><th>Reportes</th><th>Bajas</th></tr></thead><tbody id="rBajas"></tbody></table></div>
@@ -487,6 +487,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=1145ac9a"></script>
+<script type="module" src="../js/app-admin.js?v=b0225cf3"></script>
 </body>
 </html>

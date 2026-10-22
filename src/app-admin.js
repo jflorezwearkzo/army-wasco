@@ -890,7 +890,7 @@ $('#fAnuncio').onsubmit = async e => {
 
 // ====================== TAREAS PROGRAMADAS ======================
 var PROGRAMADAS = [
-  ['recordatorio_turnos','Recordatorio de turnos de hoy','recordatorios','Lista los turnos del día y quién no ha enviado su Reporte de Fin de Día', 20, 0, null],
+  ['recordatorio_turnos','Recordatorio de turnos de hoy','recordatorios','Lista los turnos del día y quién no ha enviado su reporte de patrullaje', 20, 0, null],
   ['cierre_diario','Cierre del día','resumen','Reportes aprobados del día por formulario y quiénes reportaron', 23, 55, null],
   ['resumen_semanal','Resumen semanal','resumen','KPIs de los últimos 7 días y los 5 más activos', 8, 0, 1],
   ['ranking_mensual','Ranking mensual','ranking','Top 3 del mes anterior por categoría; otorga las insignias', 9, 0, null],

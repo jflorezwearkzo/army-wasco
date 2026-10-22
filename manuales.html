@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=bf378df6"></script>
+<script src="js/tema.js?v=1862d50c"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -60,7 +60,7 @@
   <h2 class="sec">Inicio y tablón de anuncios<small>Formularios arriba; anuncios y turnos al final de la página</small></h2>
   <div class="bloque"><h3>Qué hay en el inicio</h3>
     <ul><li><b>Tablón de anuncios</b>: comunicados del mando. Los que no has leído aparecen marcados como <b>NUEVO</b>; pulsa <i>Marcar como leído</i> cuando lo hayas visto (el mando ve cuántos lo leyeron).</li>
-      <li><b>Mis próximos turnos</b>: tus turnos de patrullaje de los próximos 14 días. ✅ significa que ese día ya enviaste tu Reporte de Fin de Día.</li>
+      <li><b>Mis próximos turnos</b>: tus turnos de patrullaje de los próximos 14 días. ✅ significa que ese día ya enviaste tu reporte de patrullaje.</li>
       <li><b>Tarjetas de formularios</b>: los reportes que tu rol puede enviar. Si falta alguno, pídelo al administrador.</li>
       <li><b>Reglamento</b>: procedimientos de PM, macros, normas y mapas.</li></ul></div>
   <div class="bloque"><h3>Barra superior</h3>
@@ -80,7 +80,7 @@
     <div class="tip">Cada reporte recibe un <b>folio único</b> (PM-000123) y un sello con tu usuario y la hora del servidor. No se puede editar después: si te equivocaste, avisa a un revisor o administrador.</div></div>
   <div class="bloque"><h3>Borradores</h3><p>Lo que escribes se guarda en tu navegador. Si cierras y vuelves, verás un aviso con <i>Continuar</i> o <i>Descartar</i>. Se borra al exportar o al pulsar <i>Limpiar</i>; caduca a los 7 días. Las fotos no se guardan en el borrador.</p></div>
   <div class="bloque"><h3>Pendiente de revisión</h3><p>Algunos formularios exigen que un revisor apruebe el reporte. En ese caso el mensaje final dice <i>Queda pendiente de revisión</i>: ya está guardado y publicado en Discord, pero no cuenta en el Resumen, el ranking ni las estadísticas hasta que lo aprueben. Lo ves en <span class="ruta">Mi cuenta → Mis reportes</span> con su estado; si lo rechazan, verás el motivo.</p></div>
-  <div class="bloque"><h3>Patrullaje de fin de día</h3><p>Indica cuántos patrullajes hiciste: se genera una imagen (y un folio) por cada uno. La hora va en formato militar (24 h). En <i>Código</i> puedes buscar el folio de otro reporte relacionado.</p></div>
+  <div class="bloque"><h3>Reporte de patrullaje</h3><p>Es un reporte por patrullaje. El campo <i>¿Cuántos patrullajes vas a reportar?</i> sirve solo cuando quieres enviar varios de una vez: al elegir 2 o más aparece un formulario por cada patrullaje (pestañas Patrullaje 1, 2, 3…) y hay que llenarlos todos; cada uno genera su imagen y su folio. La hora va en formato militar (24 h). En <i>Código</i> puedes buscar el folio de otro reporte relacionado.</p></div>
   <div class="bloque"><h3>Fechas, horas y validación con IA</h3>
     <p>Escribe siempre la <b>fecha y hora que muestra la captura del juego</b> (<i>HORA DEL SERVIDOR</i> en el HUD), <b>no la de tu reloj</b>: el servidor va en UTC y cada integrante está en una zona distinta, así que la única referencia común es la de la captura. La IA compara lo declarado con lo que lee en el HUD; una fecha distinta o, en patrullaje, horas que se alejan de las de salida/regreso cuentan como inconsistencia.</p>
     <div class="tip">🔎 <b>Cada reporte se valida con IA</b>, que lee las capturas y detecta fraude, duplicados y errores (quién actúa en el chat, nombres de los abatidos, horas del servidor, capturas reutilizadas). La información falsa puede considerarse <b>falta grave</b>; la reincidencia puede llevar a una <b>sanción</b> (ver Disciplina).</div></div>
@@ -167,7 +167,7 @@
 
 <section class="sec-panel" id="sec-turnos" data-titulo="Turnos" data-icono="🚔" data-grupo="Administración" data-permisos="turnos,ver_turnos" hidden>
   <h2 class="sec">Turnos de patrullaje<small>Agenda por día, semana o mes</small></h2>
-  <div class="bloque"><h3>Ver la agenda</h3><p>Botones <i>Día / Semana / Mes</i>, flechas ‹ › y <i>Hoy</i>. En Mes, clic en el número del día abre ese día. ✅ = ya envió su Reporte de Fin de Día; ⏳ = turno pasado sin reporte.</p></div>
+  <div class="bloque"><h3>Ver la agenda</h3><p>Botones <i>Día / Semana / Mes</i>, flechas ‹ › y <i>Hoy</i>. En Mes, clic en el número del día abre ese día. ✅ = ya envió su reporte de patrullaje; ⏳ = turno pasado sin reporte.</p></div>
   <div class="bloque" data-solo="turnos"><h3>Asignar un turno</h3>
     <ol><li><b>＋ Asignar turno</b> o el ＋ de cualquier día.</li><li>Busca al integrante por nombre, fecha (calendario), hora de inicio y fin, notas.</li><li><i>Repetir cada semana durante N semanas</i> crea la serie de una vez.</li><li>Clic en un turno para editarlo o eliminarlo.</li></ol>
     <div class="tip">El recordatorio automático (Automatización) publica cada día en Discord quién tiene turno y quién aún no reportó.</div></div>
@@ -206,7 +206,7 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=834d7358"></script>
+<script type="module" src="js/app-manuales.js?v=2b148bab"></script>
 </body>
 </html>  <div class="bloque"><h3>El mensaje en Discord</h3><p>Al guardar con <i>Publicar en Discord</i> el anuncio sale al canal de anuncios y la página recuerda ese mensaje. En el menú ⋯ del anuncio: <b>🔄 Actualizar en Discord</b> reescribe el mensaje con el texto actual (también ocurre al guardar cambios con la casilla marcada) y <b>🧹 Borrar de Discord</b> lo retira del canal sin tocar el tablón. Eliminar el anuncio borra también su mensaje.</p></div>
 
