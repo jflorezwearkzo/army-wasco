@@ -864,7 +864,7 @@ async function cargarAnuncios(){
     }); });
   if(editaA) document.querySelectorAll('#tbAnun tr[data-id]').forEach(tr => tr.onclick = e => { if(e.target.closest('button,a,input')) return; const a = ANUN.find(x => x.id==tr.dataset.id); if(a) editarAnuncio(a); });
 }
-const urlAnuncio = p => sb.storage.from('anuncios').getPublicUrl(p).data.publicUrl;
+const urlAnuncio = p => /^https?:\/\//.test(p) ? p : sb.storage.from('anuncios').getPublicUrl(p).data.publicUrl;
 const embedAnuncio = a => ({ title: `📣 ${a.titulo}`, description: a.cuerpo||'', ...(a.imagen_path ? { image: { url: urlAnuncio(a.imagen_path) } } : {}) });
 function anuncioImgPrev(src){ $('#nImgPrev').style.display = src ? '' : 'none'; if(src) $('#nImgPrevImg').src = src; }
 $('#nImagen').onchange = async e => { const f = e.target.files[0]; if(!f) return; try{ const img = await cargarFoto(f, 1600); const c = document.createElement('canvas'); c.width = img.naturalWidth||img.width; c.height = img.naturalHeight||img.height; c.getContext('2d').drawImage(img, 0, 0); let b = await new Promise(r => c.toBlob(r, 'image/webp', 0.9)); if(!b || b.type!=='image/webp') b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)); ANUN_IMG = b; ANUN_IMG_QUITAR = false; anuncioImgPrev(URL.createObjectURL(b)); }catch(x){ $('#nfErr').textContent='No se pudo leer la imagen.'; } };
