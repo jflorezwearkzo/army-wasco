@@ -42,9 +42,14 @@ export async function cargarYo(){
   if(!session) return null;
   const { data: p } = await sb.from('perfiles').select('id,usuario,nombre,rango,activo,rol_id,permisos_extra,permisos_negados,formularios_extra,avatar_path').eq('id', session.user.id).maybeSingle();
   if(!p) return null;
+  // El rol, el rango y el estado son propios de la organización en la que estoy trabajando
+  const { data: ses } = await sb.rpc('mi_sesion');
+  if(ses){ p.rol_id = ses.rol_id; p.rango = ses.rango; p.activo = ses.activo; }
   let rol = null;
   if(p.rol_id){ const { data: r } = await sb.from('roles').select('id,nombre,permisos,formularios,rango_pm,protegido').eq('id', p.rol_id).maybeSingle(); rol = r; }
-  return armarYo(p, rol, await permisosEfectivos(p.id));
+  const yo = armarYo(p, rol, await permisosEfectivos(p.id));
+  yo.org = (ses && ses.org) || null; yo.orgs = (ses && ses.orgs) || [];
+  return yo;
 }
 // Permisos efectivos = (rol ∪ extra del usuario) − negados; los calcula el servidor (permisos_efectivos)
 async function permisosEfectivos(id){ try{ const { data } = await sb.rpc('permisos_efectivos', { p_usuario: id }); return data || null; }catch(e){ return null; } }
@@ -57,6 +62,8 @@ function armarYo(p, rol, efectivos){
 export const tiene = (yo, permiso) => !!(yo && yo.rol && yo.rol.permisos && yo.rol.permisos[permiso]);
 export const puedeFormulario = (yo, id) => !!(yo && yo.rol && (yo.rol.formularios.includes('*') || yo.rol.formularios.includes(id)));
 export const esSuperadmin = yo => !!(yo && yo.rol && yo.rol.protegido);
+// Cambia la organización activa (se guarda en el servidor, así todo queda filtrado solo)
+export async function cambiarOrg(id){ const { data, error } = await sb.rpc('cambiar_org', { p_org: id }); if(error) throw new Error(error.message); return data; }
 export const esAdminDeAlgo = yo => ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios'].some(p => tiene(yo,p));
 
 // Exige sesión activa; opcionalmente un permiso o un formulario. Redirige a login si no cumple.
@@ -165,6 +172,8 @@ export function barraUsuario(yo){
 .barra a{color:var(--muted);text-decoration:none}
 .barra a.oro{color:var(--gold)}
 .barra .inicio{margin-right:auto}
+.barra:has(#selOrg) .inicio{margin-right:0}
+.barra #selOrg{flex:0 0 auto;width:auto;max-width:170px;background:var(--panel3);color:var(--gold);border:1px solid var(--avisoline);border-radius:7px;padding:4px 8px;font:inherit;font-weight:700;cursor:pointer;margin-right:auto;margin-left:-4px}
 .barra .menu{display:flex;gap:14px;align-items:center}
 .barra .yo{color:var(--muted)}.barra .yo b{color:var(--text)}
 .barra .btn{display:none;background:var(--panel3);border:1px solid var(--line2);color:var(--text);border-radius:7px;padding:6px 10px;font:inherit;cursor:pointer;align-items:center;gap:8px;max-width:60vw}
@@ -181,7 +190,12 @@ export function barraUsuario(yo){
     document.head.append(s);
   }
   const b = document.createElement('div'); b.className = 'barra';
-  b.innerHTML = `<a class="inicio" href="${RAIZ}">Inicio</a>
+  // Selector de organización: solo aparece si perteneces a más de una
+  const orgs = yo.orgs || [];
+  const selOrg = orgs.length > 1
+    ? `<select id="selOrg" title="Organización en la que estás trabajando" aria-label="Organización">${orgs.map(o => `<option value="${esc(o.id)}" ${yo.org && o.id===yo.org.id ? 'selected' : ''}>${esc(o.nombre_corto || o.nombre)}</option>`).join('')}</select>`
+    : '';
+  b.innerHTML = `<a class="inicio" href="${RAIZ}">Inicio</a>${selOrg}
     <button class="btn" type="button" aria-label="Menú" aria-expanded="false"><span>👤 ${esc(nombreCompleto(yo))}</span> ☰</button>
     <nav class="menu">
       <span class="yo">👤 <b>${esc(nombreCompleto(yo))}</b> · ${esc(yo.rol.nombre)}</span>
@@ -198,6 +212,8 @@ export function barraUsuario(yo){
   const btn = b.querySelector('.btn');
   btn.onclick = e => { e.stopPropagation(); const ab = b.classList.toggle('abierta'); btn.setAttribute('aria-expanded', ab); };
   document.addEventListener('click', e => { if(!b.contains(e.target)){ b.classList.remove('abierta'); btn.setAttribute('aria-expanded','false'); } });
+  const so = b.querySelector('#selOrg');
+  if(so) so.onchange = async () => { so.disabled = true; try{ await cambiarOrg(so.value); location.reload(); }catch(x){ so.disabled = false; alert('No se pudo cambiar de organización: ' + x.message); } };
   b.querySelector('#btnTema').onclick = e => { e.preventDefault(); if(window.pmTema) window.pmTema.alternar(); };
   b.querySelector('#btnSalir').onclick = e => { e.preventDefault(); try{ sessionStorage.removeItem(K_VC); }catch(x){} cerrarSesion(); };
   document.body.prepend(b);

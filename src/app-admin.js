@@ -22,12 +22,13 @@ const TABS = [
   ['anuncios',    'Anuncios',    ['anuncios','ver_anuncios'], 'Personal', '📣'],
   ['automatizacion','Automatización',['gestion_reportes'], 'Sistema', '⏰'],
   ['auditoria',   'Auditoría',   ['auditoria'], 'Sistema', '🔎'],
+  ['organizaciones','Organizaciones',['*superadmin'], 'Sistema', '🏛️'],
 ];
 let roles = [], formularios = [], rangosPM = [];
 let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
 
 // ---------- Pestañas según permisos ----------
-const tabs = TABS.filter(([,,ps]) => ps.some(p => tiene(yo,p))).map(([id]) => id);
+const tabs = TABS.filter(([,,ps]) => ps.some(p => p==='*superadmin' ? esSuperadmin(yo) : tiene(yo,p))).map(([id]) => id);
 if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
 $('#rPermisos').innerHTML = PERMS.filter(p => p!=='ver_como').map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('') + `<p class="muted" style="margin:6px 0 0;font-size:12px">👁 "Ver la página como otro usuario" es exclusivo del rol Administrador.</p>`;
 { let g = null; $('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre,,grupo,ic]) => (g!==grupo ? (g=grupo, `<div class="grp">${grupo}</div>`) : '') + `<button data-t="${id}"><span class="ic">${ic}</span><span class="tx">${nombre}</span></button>`).join('');
@@ -41,7 +42,7 @@ function abrir(t, sub=''){
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
   const def = TABS.find(x => x[0]===t); $('#tabsMovil').value = t; $('#migas').innerHTML = `Administración › <b>${def ? def[3] : ''}</b> › <b>${def ? def[1] : t}</b>`;
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
-  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios})[t]();
+  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios, organizaciones:cargarOrgs})[t]();
 }
 document.querySelectorAll('nav#tabs button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
 // Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
@@ -601,6 +602,78 @@ $('#rExportar').onclick=async()=>{
     if(fmt==='pdf') descargar(resumenPDF(pags), nombre+'.pdf'); else descargar(await resumenPNG(pags), nombre+'.png');
   }catch(x){ alert('No se pudo exportar: '+x.message); }
   btn.disabled=false; btn.textContent=txt;
+};
+
+// ====================== ORGANIZACIONES ======================
+let ORGS = [], ORG_SEL = null;
+async function cargarOrgs(){
+  $('#oErr').textContent = '';
+  const [{ data: o, error }, { data: ms }] = await Promise.all([
+    sb.from('organizaciones').select('*').order('orden'),
+    sb.from('membresias').select('org_id, usuario_id, activo')
+  ]);
+  if(error){ $('#oErr').textContent = error.message; return; }
+  ORGS = o || []; const cuenta = {}; (ms||[]).forEach(m => { cuenta[m.org_id] = (cuenta[m.org_id]||0) + (m.activo?1:0); });
+  $('#tbOrgs').innerHTML = ORGS.map(x => `<tr${ORG_SEL===x.id?' style="background:var(--avisobg)"':''}>
+    <td><b>${esc(x.nombre)}</b><br><span class="muted" style="font-size:12px">${esc(x.id)}</span></td>
+    <td>${esc(x.nombre_corto||'')}</td><td class="muted">${esc(x.prefijo)}-000001</td>
+    <td>${cuenta[x.id]||0}</td><td>${x.activa?'<span class="tag on">Sí</span>':'<span class="tag off">No</span>'}</td>
+    <td style="white-space:nowrap"><button class="ghost sm" data-om="${esc(x.id)}">👥 Miembros</button> <button class="ghost sm" data-oe="${esc(x.id)}">Editar</button></td></tr>`).join('')
+    || '<tr><td colspan=6 class="muted">Sin organizaciones</td></tr>';
+  document.querySelectorAll('[data-oe]').forEach(b => b.onclick = () => editarOrg(ORGS.find(x => x.id===b.dataset.oe)));
+  document.querySelectorAll('[data-om]').forEach(b => b.onclick = () => { ORG_SEL = b.dataset.om; cargarOrgs(); cargarMiembros(); });
+  if(ORG_SEL) cargarMiembros();
+}
+async function cargarMiembros(){
+  const org = ORGS.find(x => x.id===ORG_SEL); if(!org) return;
+  $('#cajaMiembros').hidden = false; $('#oNombre').textContent = org.nombre; $('#omErr').textContent = '';
+  const [{ data: ms }, { data: rs }, { data: ps }] = await Promise.all([
+    sb.from('membresias').select('usuario_id, rol_id, rango, activo').eq('org_id', ORG_SEL),
+    sb.from('roles').select('id, nombre, org_id'),
+    sb.from('perfiles').select('id, usuario, nombre').order('usuario')
+  ]);
+  const quien = {}; (ps||[]).forEach(p => quien[p.id] = p);
+  const rolesOrg = (rs||[]).filter(r => r.org_id === ORG_SEL);
+  const nomRol = {}; (rs||[]).forEach(r => nomRol[r.id] = r.nombre);
+  $('#tbMiembros').innerHTML = (ms||[]).map(m => { const p = quien[m.usuario_id] || {};
+    return `<tr><td><b>${esc(p.usuario||m.usuario_id)}</b> <span class="muted">${esc(p.nombre||'')}</span></td>
+      <td>${esc(nomRol[m.rol_id] || '—')}</td><td class="muted">${esc(m.rango||'—')}</td>
+      <td>${m.activo?'<span class="tag on">Sí</span>':'<span class="tag off">No</span>'}</td>
+      <td style="white-space:nowrap"><button class="ghost sm" data-mt="${esc(m.usuario_id)}" data-a="${m.activo?1:0}">${m.activo?'Desactivar':'Activar'}</button>
+        <button class="ghost sm" data-mq="${esc(m.usuario_id)}">Quitar</button></td></tr>`; }).join('')
+    || '<tr><td colspan=5 class="muted">Nadie todavía</td></tr>';
+  const yaSon = new Set((ms||[]).map(m => m.usuario_id));
+  $('#oPersona').innerHTML = (ps||[]).filter(p => !yaSon.has(p.id)).map(p => `<option value="${esc(p.id)}">${esc(p.usuario)} · ${esc(p.nombre||'')}</option>`).join('') || '<option value="">Ya están todos</option>';
+  $('#oRol').innerHTML = '<option value="">Sin rol</option>' + rolesOrg.map(r => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
+  document.querySelectorAll('[data-mt]').forEach(b => b.onclick = async () => {
+    const { error } = await sb.from('membresias').update({ activo: b.dataset.a!=='1' }).eq('org_id', ORG_SEL).eq('usuario_id', b.dataset.mt);
+    if(error){ $('#omErr').textContent = error.message; return; } cargarMiembros(); cargarOrgs(); });
+  document.querySelectorAll('[data-mq]').forEach(b => b.onclick = async () => {
+    if(!confirm('¿Quitar a esta persona de la organización? Sus reportes se quedan donde están.')) return;
+    const { error } = await sb.from('membresias').delete().eq('org_id', ORG_SEL).eq('usuario_id', b.dataset.mq);
+    if(error){ $('#omErr').textContent = error.message; return; } cargarMiembros(); cargarOrgs(); });
+}
+$('#oAgregar').onclick = async () => {
+  const u = $('#oPersona').value; if(!u) return;
+  const { error } = await sb.from('membresias').insert({ usuario_id: u, org_id: ORG_SEL, rol_id: $('#oRol').value || null, activo: true });
+  if(error){ $('#omErr').textContent = error.message; return; }
+  toast('Agregado a la organización.'); cargarMiembros(); cargarOrgs();
+};
+$('#oNueva').onclick = () => { $('#fOrg').reset(); $('#oId').value=''; $('#oSlug').disabled=false; $('#oActiva').checked=true;
+  $('#tituloOrg').textContent='Nueva organización'; $('#ofErr').textContent=''; $('#dlgOrg').showModal(); };
+function editarOrg(x){ if(!x) return; $('#fOrg').reset(); $('#oId').value=x.id; $('#oSlug').value=x.id; $('#oSlug').disabled=true;
+  $('#oNom').value=x.nombre; $('#oCorto').value=x.nombre_corto||''; $('#oPref').value=x.prefijo; $('#oEsc').value=x.escudo||'';
+  $('#oColor').value=x.color||''; $('#oActiva').checked=!!x.activa;
+  $('#tituloOrg').textContent='Editar organización'; $('#ofErr').textContent=''; $('#dlgOrg').showModal(); }
+$('#fOrg').onsubmit = async e => {
+  e.preventDefault();
+  const fila = { nombre: $('#oNom').value.trim(), nombre_corto: $('#oCorto').value.trim(), prefijo: $('#oPref').value.trim().toUpperCase(),
+                 escudo: $('#oEsc').value.trim() || null, color: $('#oColor').value.trim() || '#f0c24d', activa: $('#oActiva').checked };
+  const id = $('#oId').value;
+  const { error } = id ? await sb.from('organizaciones').update(fila).eq('id', id)
+                       : await sb.from('organizaciones').insert({ ...fila, id: $('#oSlug').value.trim().toLowerCase(), orden: (ORGS.length+1)*10 });
+  if(error){ $('#ofErr').textContent = error.message; return; }
+  $('#dlgOrg').close(); toast(id ? 'Organización actualizada.' : 'Organización creada.'); cargarOrgs();
 };
 
 // ====================== AUTOMATIZACIÓN: canales de Discord ======================

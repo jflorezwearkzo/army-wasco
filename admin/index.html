@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=38c8e871"></script>
+<script src="../js/tema.js?v=0a62b4e9"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -470,6 +470,43 @@
       <p class="muted" id="rNota" style="font-size:12px"></p>
     </div>
   </section>
+  <section id="t-organizaciones">
+    <div class="caja">
+      <h3>Organizaciones</h3>
+      <p class="muted" style="margin-top:0;font-size:13px">Cada organización tiene sus propios usuarios, roles, formularios, reportes, ranking, anuncios y canales de Discord. Nadie ve una organización a la que no pertenece. Esta sección solo la ves tú.</p>
+      <table><thead><tr><th>Organización</th><th>Corto</th><th>Folio</th><th>Miembros</th><th>Activa</th><th></th></tr></thead><tbody id="tbOrgs"></tbody></table>
+      <div class="fila" style="margin-top:12px"><button class="primary" id="oNueva">+ Nueva organización</button></div>
+      <div class="err" id="oErr"></div>
+    </div>
+    <div class="caja" style="margin-top:18px" id="cajaMiembros" hidden>
+      <h3>Miembros de <span id="oNombre"></span></h3>
+      <p class="muted" style="margin-top:0;font-size:13px">El rol y el rango son propios de esta organización: la misma persona puede ser Líder aquí y no tener nada en la otra.</p>
+      <table><thead><tr><th>Persona</th><th>Rol</th><th>Rango</th><th>Activo</th><th></th></tr></thead><tbody id="tbMiembros"></tbody></table>
+      <div class="fila" style="margin-top:12px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:1 1 220px"><label>Agregar a alguien</label><select id="oPersona"></select></div>
+        <div style="flex:0 1 180px"><label>Rol</label><select id="oRol"></select></div>
+        <button class="ghost" id="oAgregar">Agregar</button>
+      </div>
+      <div class="err" id="omErr"></div>
+    </div>
+    <dialog id="dlgOrg" class="dlg-edit"><div class="caja">
+      <div class="cab-dlg"><button type="button" class="ghost sm volver" data-close="dlgOrg">← Volver</button><h3 id="tituloOrg">Nueva organización</h3><button type="button" class="cerrar" data-close="dlgOrg" aria-label="Cerrar">✕</button></div>
+      <form id="fOrg">
+        <input type="hidden" id="oId">
+        <label>Identificador corto *</label><input id="oSlug" required maxlength="12" placeholder="eea" pattern="[a-z0-9-]+" title="Solo minúsculas, números y guiones">
+        <p class="muted" style="margin:-6px 0 10px;font-size:12px">No se puede cambiar después: es la llave interna de la organización.</p>
+        <label>Nombre *</label><input id="oNom" required maxlength="80">
+        <label>Nombre corto *</label><input id="oCorto" required maxlength="12" placeholder="EEA">
+        <label>Prefijo de folio *</label><input id="oPref" required maxlength="8" placeholder="EEA">
+        <label>Escudo (ruta de la imagen)</label><input id="oEsc" maxlength="200" placeholder="icons/eea-192.png">
+        <label>Color</label><input id="oColor" maxlength="9" placeholder="#f0c24d">
+        <label class="chips" style="margin-top:10px"><label><input type="checkbox" id="oActiva" checked> Activa</label></label>
+        <div class="fila" style="margin-top:14px"><button class="primary" id="oGuardar">Guardar</button><button type="button" class="ghost" data-close="dlgOrg">Cancelar</button></div>
+        <div class="err" id="ofErr"></div>
+      </form>
+    </div></dialog>
+  </section>
+
   <section id="t-auditoria">
     <div class="caja">
       <h3 style="display:flex;justify-content:space-between;align-items:center">Auditoría <button type="button" class="ghost sm" id="aCsv" title="Descarga lo que está filtrado (hazlo antes de que se borre a los 30 días)">⬇ Exportar CSV</button></h3>
@@ -500,6 +537,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=e401359a"></script>
+<script type="module" src="../js/app-admin.js?v=136e2f4b"></script>
 </body>
 </html>
