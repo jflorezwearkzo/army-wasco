@@ -698,13 +698,18 @@ $('#fOrg').onsubmit = async e => {
 
 // ====================== AUTOMATIZACIÓN: canales de Discord ======================
 async function cargarAutomatizacion(){
-  const { data, error } = await sb.from('discord_canales').select('*').order('clave');
+  // El servidor decide qué se manda: a quien solo puede mirar no le llega la URL, le llega tapada.
+  const { data: dc, error } = await sb.rpc('canales_discord');
   if(error){ $('#cErr').textContent = error.message; return; }
   $('#cErr').textContent='';
+  const EDITA = !!(dc && dc.puede_editar), data = (dc && dc.canales) || [];
+  const campoWh = (attr, clave, valor, tiene) => EDITA
+    ? `<input type="url" data-${attr}="${esc(clave)}" value="${esc(valor||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px">`
+    : `<span class="muted" title="No tienes permiso para ver los enlaces">${tiene ? '🔒 ••••••••••••••••••••  <span style="font-size:11px">(configurado)</span>' : '— sin webhook'}</span>`;
   $('#tbCanales').innerHTML = (data||[]).map(c => `<tr data-id="${esc(c.clave)}"><td><b>${esc(c.nombre)}</b><br><span class="muted" style="font-size:12px">${esc(c.clave)}</span></td>
-    <td><input type="url" data-wh="${esc(c.clave)}" value="${esc(c.webhook||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px"></td>
-    <td><input type="checkbox" data-on="${esc(c.clave)}" ${c.activo?'checked':''}></td>
-    <td style="white-space:nowrap"><button class="ghost sm" data-cg="${esc(c.clave)}">Guardar</button> <button class="ghost sm" data-cp="${esc(c.clave)}" title="Envía un mensaje de prueba al canal">Probar</button> <span class="muted" data-cm="${esc(c.clave)}" style="font-size:12px"></span></td></tr>`).join('');
+    <td>${campoWh('wh', c.clave, c.webhook, c.tiene_webhook)}</td>
+    <td><input type="checkbox" data-on="${esc(c.clave)}" ${c.activo?'checked':''} ${EDITA?'':'disabled'}></td>
+    <td style="white-space:nowrap">${EDITA ? `<button class="ghost sm" data-cg="${esc(c.clave)}">Guardar</button> <button class="ghost sm" data-cp="${esc(c.clave)}" title="Envía un mensaje de prueba al canal">Probar</button>` : ''} <span class="muted" data-cm="${esc(c.clave)}" style="font-size:12px"></span></td></tr>`).join('');
   const guardar = async clave => {
     const w = $(`[data-wh="${clave}"]`).value.trim(); const m = $(`[data-cm="${clave}"]`);
     if(w && !/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }
@@ -721,11 +726,11 @@ async function cargarAutomatizacion(){
   cargarConfigIA();
   $('#cajaRespaldo').hidden = !esSuperadmin(yo);
   // Canales por formulario (formularios_discord)
-  const { data: fd } = await sb.from('formularios_discord').select('formulario_id,webhook,activo'); const mapa = {}; (fd||[]).forEach(x => mapa[x.formulario_id] = x);
+  const mapa = {}; ((dc && dc.formularios) || []).forEach(x => mapa[x.formulario_id] = x);
   $('#tbCanalesForm').innerHTML = formularios.map(f => { const c = mapa[f.id] || {}; return `<tr><td><b>${esc(f.icono||'')} ${esc(f.titulo)}</b><br><span class="muted" style="font-size:12px">${esc(f.id)}${f.requiere_aprobacion?' · se publica al aprobar':''}</span></td>
-    <td><input type="url" data-fwh="${esc(f.id)}" value="${esc(c.webhook||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px"></td>
-    <td><input type="checkbox" data-fon="${esc(f.id)}" ${c.activo!==false?'checked':''}></td>
-    <td style="white-space:nowrap"><button class="ghost sm" data-fg="${esc(f.id)}">Guardar</button> <button class="ghost sm" data-fp="${esc(f.id)}">Probar</button> <span class="muted" data-fm="${esc(f.id)}" style="font-size:12px"></span></td></tr>`; }).join('');
+    <td>${campoWh('fwh', f.id, c.webhook, c.tiene_webhook)}</td>
+    <td><input type="checkbox" data-fon="${esc(f.id)}" ${c.activo!==false?'checked':''} ${EDITA?'':'disabled'}></td>
+    <td style="white-space:nowrap">${EDITA ? `<button class="ghost sm" data-fg="${esc(f.id)}">Guardar</button> <button class="ghost sm" data-fp="${esc(f.id)}">Probar</button>` : ''} <span class="muted" data-fm="${esc(f.id)}" style="font-size:12px"></span></td></tr>`; }).join('');
   const guardarF = async id => { const w = $(`[data-fwh="${id}"]`).value.trim(), m = $(`[data-fm="${id}"]`);
     if(!w){ await sb.from('formularios_discord').delete().eq('formulario_id', id); m.textContent='Sin webhook.'; return true; }
     if(!/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }

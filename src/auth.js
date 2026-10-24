@@ -85,7 +85,7 @@ export function blindarSoloLectura(yo){
   const rpc = sb.rpc.bind(sb);
   const LECTURAS = ['permisos_efectivos','mi_sesion','mis_orgs','tengo_permiso','ficha_usuario','expediente','ranking_mes',
     'ranking_calc','insignias_lista','listar_integrantes','buscar_folios','turnos_lista','datos_ascensos','actividad_usuarios',
-    'puedo_usar_formulario'];
+    'puedo_usar_formulario','canales_discord'];
   sb.rpc = (fn, args) => (LECTURAS.includes(fn) ? rpc(fn, args) : no());
   const inv = sb.functions.invoke.bind(sb.functions);
   sb.functions.invoke = (fn, opts) => (fn === 'auditar-reporte' ? no() : inv(fn, opts));
