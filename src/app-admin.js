@@ -6,9 +6,9 @@ import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord,
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','permisos_granulares','ver_como','organizaciones'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','permisos_granulares','ver_como','organizaciones','ver_todo'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', permisos_granulares:'Permisos granulares por usuario (ficha de usuario)', ver_como:'Ver la página como otro usuario (solo lectura)', organizaciones:'Control de TODAS las organizaciones' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', permisos_granulares:'Permisos granulares por usuario (ficha de usuario)', ver_como:'Ver la página como otro usuario (solo lectura)', organizaciones:'Control de TODAS las organizaciones', ver_todo:'Ver todo (solo lectura)' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password','permisos_granulares'], 'Identidad', '👤'],
   ['roles',       'Roles y permisos', ['crear_roles'], 'Identidad', '🛡️'],
@@ -29,7 +29,9 @@ const VER_ORGS = esSuperadmin(yo);   // la columna de organizaciones es solo par
 let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
 
 // ---------- Pestañas según permisos ----------
-const tabs = TABS.filter(([,,ps]) => ps.some(p => p==='*superadmin' ? esSuperadmin(yo) : tiene(yo,p))).map(([id]) => id);
+// "Ver todo" abre todas las secciones en modo lectura, menos la de organizaciones
+const tabs = TABS.filter(([id,,ps]) => ps.some(p => p==='*superadmin' ? esSuperadmin(yo) : tiene(yo,p))
+  || (tiene(yo,'ver_todo') && id!=='organizaciones')).map(([id]) => id);
 if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
 $('#rPermisos').innerHTML = PERMS.filter(p => p!=='ver_como' && p!=='organizaciones').map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('') + `<p class="muted" style="margin:6px 0 0;font-size:12px">👁 "Ver la página como otro usuario" y 🏛️ "Control de todas las organizaciones" son exclusivos del rol Administrador y se otorgan desde la ficha de cada usuario.</p>`;
 { let g = null; $('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre,,grupo,ic]) => (g!==grupo ? (g=grupo, `<div class="grp">${grupo}</div>`) : '') + `<button data-t="${id}"><span class="ic">${ic}</span><span class="tx">${nombre}</span></button>`).join('');
@@ -108,8 +110,10 @@ async function cargarUsuarios(){
   ]);
   ORGS_TODAS = orgs || []; MEMB = {};
   (mem||[]).forEach(m => { (MEMB[m.usuario_id] = MEMB[m.usuario_id] || []).push(m); });
+  // Si no se pueden leer las membresías, se muestra lo del perfil en vez de marcar a todos "sin acceso"
+  const sinMembresias = !mem || !mem.length;
   // El rol, el rango y el estado que se muestran son los de la organización en la que estoy
-  USUARIOS = (data || []).map(u => { const mias = MEMB[u.id] || []; const m = mias.find(x => x.org_id === orgActual);
+  USUARIOS = (data || []).map(u => { const mias = MEMB[u.id] || []; const m = sinMembresias ? u : mias.find(x => x.org_id === orgActual);
     return m ? { ...u, rol_id:m.rol_id, rango:m.rango, activo:m.activo, visible:m.visible,
                  permisos_extra:m.permisos_extra, permisos_negados:m.permisos_negados, formularios_extra:m.formularios_extra,
                  _orgs: mias.map(x => x.org_id) }

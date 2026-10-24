@@ -62,11 +62,40 @@ function armarYo(p, rol, efectivos){
   return { ...p, rol: { ...rol, permisos_rol: rol.permisos||{}, formularios_rol: rol.formularios||[], permisos, formularios } };
 }
 export const tiene = (yo, permiso) => !!(yo && yo.rol && yo.rol.permisos && yo.rol.permisos[permiso]);
+// Permisos que permiten cambiar algo. "ver_todo" y los "ver_*" no cuentan.
+const PERMISOS_ESCRITURA = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes',
+  'disenar_formularios','eliminar_historial','aprobar_reportes','sanciones','turnos','anuncios','permisos_granulares','organizaciones'];
+// Modo solo lectura: tiene "Ver todo" y ningún permiso que escriba
+export const soloLectura = yo => tiene(yo,'ver_todo') && !PERMISOS_ESCRITURA.some(p => tiene(yo,p));
+
+// Con el modo solo lectura activo, el cliente ni siquiera intenta escribir: la base ya lo impide,
+// esto evita además que la página muestre errores confusos o deje botones que no harán nada.
+let LECTURA = false;
+export function blindarSoloLectura(yo){
+  if(LECTURA || !soloLectura(yo)) return; LECTURA = true;
+  const no = () => Promise.resolve({ data: null, error: { message: 'Tu acceso es de solo lectura.' } });
+  const from = sb.from.bind(sb);
+  sb.from = tabla => { const q = from(tabla);
+    for(const m of ['insert','update','upsert','delete']) q[m] = no;
+    return q; };
+  const st = sb.storage.from.bind(sb.storage);
+  sb.storage.from = cubo => { const b = st(cubo);
+    for(const m of ['upload','remove','move','copy','createSignedUploadUrl']) b[m] = no;
+    return b; };
+  const rpc = sb.rpc.bind(sb);
+  const LECTURAS = ['permisos_efectivos','mi_sesion','mis_orgs','tengo_permiso','ficha_usuario','expediente','ranking_mes',
+    'ranking_calc','insignias_lista','listar_integrantes','buscar_folios','turnos_lista','datos_ascensos','actividad_usuarios',
+    'puedo_usar_formulario'];
+  sb.rpc = (fn, args) => (LECTURAS.includes(fn) ? rpc(fn, args) : no());
+  const inv = sb.functions.invoke.bind(sb.functions);
+  sb.functions.invoke = (fn, opts) => (fn === 'auditar-reporte' ? no() : inv(fn, opts));
+  document.documentElement.dataset.soloLectura = '1';
+}
 export const puedeFormulario = (yo, id) => !!(yo && yo.rol && (yo.rol.formularios.includes('*') || yo.rol.formularios.includes(id)));
 export const esSuperadmin = yo => !!(yo && yo.rol && yo.rol.protegido);
 // Cambia la organización activa (se guarda en el servidor, así todo queda filtrado solo)
 export async function cambiarOrg(id){ const { data, error } = await sb.rpc('cambiar_org', { p_org: id }); if(error) throw new Error(error.message); return data; }
-export const esAdminDeAlgo = yo => ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios'].some(p => tiene(yo,p));
+export const esAdminDeAlgo = yo => ['ver_todo','usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios'].some(p => tiene(yo,p));
 
 // Exige sesión activa; opcionalmente un permiso o un formulario. Redirige a login si no cumple.
 export async function requerir({ permiso=null, formulario=null } = {}){
@@ -181,7 +210,7 @@ export function marcaOrg(yo){
 }
 
 export function barraUsuario(yo){
-  marcaOrg(yo);
+  marcaOrg(yo); blindarSoloLectura(yo);
   if(!document.getElementById('barraCss')){
     const s = document.createElement('style'); s.id = 'barraCss';
     s.textContent = `
@@ -193,6 +222,10 @@ export function barraUsuario(yo){
 .barra #selOrg{flex:0 0 auto;width:auto;max-width:170px;background:var(--panel3);color:var(--gold);border:1px solid var(--avisoline);border-radius:7px;padding:4px 8px;font:inherit;font-weight:700;cursor:pointer;margin-right:auto;margin-left:-4px}
 .barra .menu{display:flex;gap:14px;align-items:center}
 .barra .yo{color:var(--muted)}.barra .yo b{color:var(--text)}
+.barra .slec{background:var(--avisobg);color:var(--gold);border:1px solid var(--avisoline);border-radius:8px;padding:1px 7px;font-size:11px;letter-spacing:1px;margin-left:6px}
+[data-solo-lectura] button.primary,[data-solo-lectura] button.peligro,[data-solo-lectura] [data-bulk],
+[data-solo-lectura] .menu-acc button.peligro{display:none !important}
+[data-solo-lectura] form input,[data-solo-lectura] form select,[data-solo-lectura] form textarea{pointer-events:none;opacity:.7}
 .barra .btn{display:none;background:var(--panel3);border:1px solid var(--line2);color:var(--text);border-radius:7px;padding:6px 10px;font:inherit;cursor:pointer;align-items:center;gap:8px;max-width:60vw}
 .barra .btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:720px){
@@ -215,7 +248,7 @@ export function barraUsuario(yo){
   b.innerHTML = `<a class="inicio" href="${RAIZ}">Inicio</a>${selOrg}
     <button class="btn" type="button" aria-label="Menú" aria-expanded="false"><span>👤 ${esc(nombreCompleto(yo))}</span> ☰</button>
     <nav class="menu">
-      <span class="yo">👤 <b>${esc(nombreCompleto(yo))}</b> · ${esc(yo.rol.nombre)}</span>
+      <span class="yo">👤 <b>${esc(nombreCompleto(yo))}</b> · ${esc(yo.rol.nombre)}${soloLectura(yo) ? ' <span class="slec" title="Puedes ver todo, pero no cambiar nada">👁 Solo lectura</span>' : ''}</span>
       ${esAdminDeAlgo(yo) ? `<a class="oro" href="${RAIZ}admin/">Administración</a>` : ''}
       <a href="${RAIZ}reglamento.html">Reglamento</a>
       <a href="${RAIZ}manuales.html">Manuales</a>
