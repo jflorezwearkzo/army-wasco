@@ -995,13 +995,14 @@ var PROGRAMADAS = [
   ['ranking_semanal','Ranking parcial (semanal)','ranking','Cómo va el ranking del mes en curso; no otorga insignias', 19, 0, 0],
   ['ranking_mensual','Ranking mensual','ranking','Top 3 del mes anterior por categoría; otorga las insignias', 9, 0, null],
 ];
+const PUEDE_TAREAS = tiene(yo,'gestion_reportes');
 async function cargarProgramadas(){
   const { data } = await sb.from('configuracion').select('valor').eq('clave','programadas').maybeSingle(); const cfg = (data && data.valor) || {};
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   $('#tbProg').innerHTML = PROGRAMADAS.map(([k, n, canal, desc, h, m, dia]) => { const c = cfg[k] || {}; return `<tr data-p="${k}"><td><b>${esc(n)}</b><br><span class="muted" style="font-size:12px">${esc(desc)}</span></td><td class="muted">${esc(canal)}</td>
-    <td><input type="checkbox" data-pa ${c.activo?'checked':''}></td>
-    <td style="white-space:nowrap">${(k==='resumen_semanal'||k==='ranking_semanal') ? `<select data-pd style="width:auto;display:inline-block;padding:4px 6px;margin-right:4px">${DIAS.map((d,i)=>`<option value="${i}" ${(c.dia??dia)==i?'selected':''}>${d}</option>`).join('')}</select>` : k==='ranking_mensual' ? '<span class="muted">día 1 · </span>' : ''}<input type="time" data-ph value="${String(c.hora??h).padStart(2,'0')}:${String(c.minuto??m).padStart(2,'0')}" style="width:auto;display:inline-block;padding:4px 6px"></td>
-    <td><button class="ghost sm" data-pg="${k}">Guardar</button></td><td><button class="ghost sm" data-pv="${k}" data-pn="${esc(n)}" title="Genera el mensaje con los datos de hoy sin enviarlo">👁 Vista previa</button></td><td><button class="ghost sm" data-px="${k}" title="Ejecuta la tarea ahora mismo con los datos de hoy">▶ Ejecutar ahora</button></td></tr>`; }).join('');
+    <td><input type="checkbox" data-pa ${c.activo?'checked':''} ${PUEDE_TAREAS?'':'disabled'}></td>
+    <td style="white-space:nowrap">${(k==='resumen_semanal'||k==='ranking_semanal') ? `<select data-pd style="width:auto;display:inline-block;padding:4px 6px;margin-right:4px" ${PUEDE_TAREAS?'':'disabled'}>${DIAS.map((d,i)=>`<option value="${i}" ${(c.dia??dia)==i?'selected':''}>${d}</option>`).join('')}</select>` : k==='ranking_mensual' ? '<span class="muted">día 1 · </span>' : ''}<input type="time" data-ph value="${String(c.hora??h).padStart(2,'0')}:${String(c.minuto??m).padStart(2,'0')}" style="width:auto;display:inline-block;padding:4px 6px" ${PUEDE_TAREAS?'':'disabled'}></td>
+    <td>${PUEDE_TAREAS ? `<button class="ghost sm" data-pg="${k}">Guardar</button>` : ''}</td><td>${PUEDE_TAREAS ? `<button class="ghost sm" data-pv="${k}" data-pn="${esc(n)}" title="Genera el mensaje con los datos de hoy sin enviarlo">👁 Vista previa</button>` : ''}</td><td>${PUEDE_TAREAS ? `<button class="ghost sm" data-px="${k}" title="Ejecuta la tarea ahora mismo con los datos de hoy">▶ Ejecutar ahora</button>` : ''}</td></tr>`; }).join('');
   document.querySelectorAll('[data-pg]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); const [hh, mm] = tr.querySelector('[data-ph]').value.split(':').map(Number); const dsel = tr.querySelector('[data-pd]');
     const { data: r, error } = await sb.rpc('programar', { p_clave: b.dataset.pg, p_activo: tr.querySelector('[data-pa]').checked, p_hora: hh, p_minuto: mm, p_dia: dsel ? +dsel.value : 1 });
     if(error){ $('#pErr').textContent = error.message; return; } $('#pErr').textContent=''; toast(r.activo ? `Programada (${r.cron} UTC).` : 'Tarea desactivada.'); });

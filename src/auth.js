@@ -62,11 +62,9 @@ function armarYo(p, rol, efectivos){
   return { ...p, rol: { ...rol, permisos_rol: rol.permisos||{}, formularios_rol: rol.formularios||[], permisos, formularios } };
 }
 export const tiene = (yo, permiso) => !!(yo && yo.rol && yo.rol.permisos && yo.rol.permisos[permiso]);
-// Permisos que permiten cambiar algo. "ver_todo" y los "ver_*" no cuentan.
-const PERMISOS_ESCRITURA = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes',
-  'disenar_formularios','eliminar_historial','aprobar_reportes','sanciones','turnos','anuncios','permisos_granulares','organizaciones'];
-// Modo solo lectura: tiene "Ver todo" y ningún permiso que escriba
-export const soloLectura = yo => tiene(yo,'ver_todo') && !PERMISOS_ESCRITURA.some(p => tiene(yo,p));
+// "Ver todo" es de solo lectura por definición: el servidor descarta cualquier permiso de escritura
+// que el rol tuviera marcado, así que basta con mirar si está presente.
+export const soloLectura = yo => tiene(yo,'ver_todo');
 
 // Con el modo solo lectura activo, el cliente ni siquiera intenta escribir: la base ya lo impide,
 // esto evita además que la página muestre errores confusos o deje botones que no harán nada.
@@ -87,8 +85,7 @@ export function blindarSoloLectura(yo){
     'ranking_calc','insignias_lista','listar_integrantes','buscar_folios','turnos_lista','datos_ascensos','actividad_usuarios',
     'puedo_usar_formulario','canales_discord'];
   sb.rpc = (fn, args) => (LECTURAS.includes(fn) ? rpc(fn, args) : no());
-  const inv = sb.functions.invoke.bind(sb.functions);
-  sb.functions.invoke = (fn, opts) => (fn === 'auditar-reporte' ? no() : inv(fn, opts));
+  sb.functions.invoke = () => no();   // todas escriben o publican en Discord
   document.documentElement.dataset.soloLectura = '1';
 }
 export const puedeFormulario = (yo, id) => !!(yo && yo.rol && (yo.rol.formularios.includes('*') || yo.rol.formularios.includes(id)));
