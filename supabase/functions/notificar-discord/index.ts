@@ -18,7 +18,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json(405, { error: "Método no permitido" });
   const auth = req.headers.get("Authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return json(401, { error: "Sin sesión" });
-  let body: { reporte_id?: number; formulario_id?: string; prueba?: boolean };
+  let body: { reporte_id?: number; formulario_id?: string; prueba?: boolean; reenviar?: boolean };
   try { body = await req.json(); } catch { return json(400, { error: "Cuerpo inválido" }); }
 
   const url = Deno.env.get("SUPABASE_URL")!, anon = Deno.env.get("SUPABASE_ANON_KEY")!, service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -46,8 +46,17 @@ Deno.serve(async (req: Request) => {
   if (!visible) return json(403, { error: "Reporte no accesible" });
   const { data: r } = await admin.from("reportes_vista").select("*").eq("id", id).maybeSingle();
   if (!r || !r.imagen_path) return json(400, { error: "El reporte aún no tiene imagen" });
+  // Reenvío manual: lo pide alguien con permiso de revisión o de gestión, y se salta el candado de "ya enviado".
+  let reenvio = false;
+  if (body.reenviar) {
+    const { data: a } = await caller.rpc("tengo_permiso", { p: "aprobar_reportes" });
+    const { data: g } = await caller.rpc("tengo_permiso", { p: "gestion_reportes" });
+    if (!a && !g) return json(403, { error: "Sin permiso para reenviar reportes" });
+    reenvio = true;
+  }
   const { data: raw } = await admin.from("reportes").select("discord_enviado_en").eq("id", id).maybeSingle();
-  if (raw?.discord_enviado_en) return json(200, { ok: true, repetido: true });
+  if (raw?.discord_enviado_en && !reenvio) return json(200, { ok: true, repetido: true });
+  // El webhook se lee AHORA, no el que se usó la vez pasada: si lo cambiaste, el reenvío va al nuevo.
   const { data: cfg } = await admin.from("formularios_discord").select("webhook, activo").eq("formulario_id", r.formulario_id).maybeSingle();
   if (!cfg || !cfg.activo) return json(200, { ok: false, motivo: "sin_webhook" });
 
@@ -56,8 +65,9 @@ Deno.serve(async (req: Request) => {
   if (e3 || !file) return json(500, { error: "No se pudo leer la imagen" });
   const quien = [r.usuario_rango, r.usuario_nombre || r.usuario].filter(Boolean).join(" ");
   const fecha = r.fecha ? String(r.fecha).split("-").reverse().join("-") : "";
+  const { data: org } = await admin.from("organizaciones").select("nombre").eq("id", r.org_id ?? "pm").maybeSingle();
   const payload = {
-    username: "Policía Militar · Reportes",
+    username: `${org?.nombre ?? "Policía Militar"} · Reportes`,
     embeds: [{ title: `${r.formulario} · ${r.folio}`, description: r.resumen || "", color: 0xf0c24d,
       fields: [{ name: "Fecha", value: fecha || "—", inline: true }, { name: "Reporta", value: quien || "—", inline: true }],
       image: { url: `attachment://${r.folio}.${ext}` }, footer: { text: r.estado === "pendiente" ? `⏳ Pendiente de revisión para el ranking · Sellado por el servidor · Army de Wasco` : `Sellado por el servidor · Army de Wasco` }, timestamp: new Date(r.creado_en).toISOString() }],
@@ -70,6 +80,6 @@ Deno.serve(async (req: Request) => {
   let mensajeId: string | null = null; try { mensajeId = (await resp.json())?.id ?? null; } catch { /* sin id */ }
   await admin.from("reportes").update({ discord_enviado_en: new Date().toISOString() }).eq("id", id);
   await admin.from("discord_mensajes").insert({ formulario_id: r.formulario_id, origen_tabla: "reportes", origen_id: String(id), mensaje_id: mensajeId, titulo: `${r.formulario} · ${r.folio}` }).then(() => {}, () => {});
-  await admin.rpc("auditar_evento", { p_usuario_id: r.usuario_id, p_accion: "discord_publicado", p_tabla: "reportes", p_registro: String(id), p_detalle: { folio: r.folio, formulario: r.formulario_id } }).then(() => {}, () => {});
-  return json(200, { ok: true });
+  await admin.rpc("auditar_evento", { p_usuario_id: reenvio ? me.user.id : r.usuario_id, p_accion: reenvio ? "discord_reenviado" : "discord_publicado", p_tabla: "reportes", p_registro: String(id), p_detalle: { folio: r.folio, formulario: r.formulario_id, ...(reenvio ? { reenvio: true } : {}) } }).then(() => {}, () => {});
+  return json(200, { ok: true, reenvio });
 });

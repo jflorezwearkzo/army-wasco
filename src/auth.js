@@ -320,6 +320,14 @@ export async function notificarDiscord(reporteId, estado='aprobado'){
     if(data && data.ok) return 'ok'; if(data && data.motivo==='sin_webhook') return 'sin_webhook'; return 'error: ' + ((data&&data.error)||'desconocido'); }
   catch(e){ return 'error: ' + e.message; }
 }
+// Vuelve a publicar un reporte ya enviado. El servidor lee el webhook del momento, no el de la vez pasada.
+export async function reenviarDiscord(reporteId){
+  try{ const { data, error } = await sb.functions.invoke('notificar-discord', { body:{ reporte_id: reporteId, reenviar: true } });
+    if(error) return 'error: ' + (error.message||'sin respuesta');
+    if(data && data.ok) return 'ok'; if(data && data.motivo==='sin_webhook') return 'sin_webhook';
+    return 'error: ' + ((data&&data.error)||'desconocido'); }
+  catch(e){ return 'error: ' + e.message; }
+}
 export const textoDiscord = (r, estado=null) => (r==='ok' ? ' Publicado en Discord.' : r && r.startsWith('error') ? ` (No se pudo publicar en Discord: ${r.slice(7)})` : '') + (estado==='pendiente' ? ' Queda pendiente de revisión: un revisor debe aprobarlo para que cuente en el ranking y las estadísticas.' : '');
 // Compatibilidad: flujo completo en una llamada (sin folio en la imagen)
 export async function guardarReporte({ yo, formularioId, fecha, resumen, datos, pngBlob }){

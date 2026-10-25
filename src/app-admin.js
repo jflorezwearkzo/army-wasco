@@ -1,7 +1,7 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
 import { dibujarEmbed, textoEmbed } from './embed-export.js';
 import { respaldoCompleto } from './respaldo.js';
-import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA, mensajesDiscord } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA, mensajesDiscord, reenviarDiscord } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
@@ -787,6 +787,7 @@ async function cargarRevision(){
           ${est!=='aprobado' ? `<button type="button" class="sm aprobar" data-rv="aprobado" data-id="${r.id}">✅ Aprobar</button>` : ''}
           ${est!=='rechazado' ? `<button type="button" class="sm rechazar" data-rv="rechazado" data-id="${r.id}">⛔ Rechazar</button>` : ''}
           ${est!=='pendiente' ? `<button type="button" class="ghost sm" data-rv="pendiente" data-id="${r.id}">↩ Volver a pendiente</button>` : ''}
+          ${r.imagen_path ? `<button type="button" class="ghost sm" data-redis="${r.id}" title="Vuelve a publicarlo en el canal de Discord que esté configurado ahora para este formulario">📨 Enviar de nuevo</button>` : ''}
         </div>
       </div></div>`).join('') || `<p class="muted">No hay reportes ${est==='pendiente'?'pendientes de revisión':est+'s'}.</p>`;
   document.querySelectorAll('[data-rvimg]').forEach(d => d.onclick = async () => { if(!d.dataset.rvimg) return;
@@ -797,6 +798,16 @@ async function cargarRevision(){
     const res = await auditarReporte(id, true); b.disabled = false;
     if(!res.ok){ m.textContent = 'No se pudo analizar: ' + res.error; return; }
     m.textContent = ''; toast(`Análisis listo: riesgo ${res.auditoria.riesgo}.`); cargarRevision();
+  });
+  document.querySelectorAll('[data-redis]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.redis, txt = b.textContent;
+    b.disabled = true; b.textContent = 'Enviando…';
+    const r = await reenviarDiscord(id);
+    b.disabled = false; b.textContent = txt;
+    toast(r==='ok' ? 'Reenviado al canal de Discord actual.'
+        : r==='sin_webhook' ? 'Ese formulario no tiene webhook activo (Automatización).'
+        : 'No se pudo reenviar: ' + r.replace('error: ',''), r!=='ok');
+    if(r==='ok') cargarRevision();
   });
   document.querySelectorAll('[data-rv]').forEach(b => b.onclick = async () => {
     const id = +b.dataset.id, est2 = b.dataset.rv, r = lista.find(x => x.id===id); let comentario = null;
