@@ -25,6 +25,28 @@ window.addEventListener('hashchange', () => mostrar(location.hash.slice(1)));
 mostrar(location.hash.slice(1));
 
 
+// ---- Rellenar las macros con el rango y el nombre de quien está mirando ----
+// Solo se tocan los marcadores que la página declara como "tuyos" (data-yo); los que se refieren
+// a otra persona (acompañante, entrevistado...) se quedan como están.
+{
+  const DATOS = { rango: (yo.rango || '').trim(), nombre: (yo.nombre || yo.usuario || '').trim() };
+  let puestos = 0;
+  for(const el of document.querySelectorAll('[data-yo]')){
+    const v = DATOS[el.dataset.yo];
+    if(!v) continue;                       // sin el dato, se deja el marcador para que lo llenen a mano
+    el.textContent = v; el.classList.add('puesto'); puestos++;
+  }
+  if(puestos){
+    for(const sec of document.querySelectorAll('.sec-panel')){
+      if(!sec.querySelector('[data-yo].puesto')) continue;
+      const nota = document.createElement('p');
+      nota.className = 'muted'; nota.style.cssText = 'margin:0 0 10px;font-size:12px';
+      nota.innerHTML = '✍️ Tu rango y tu nombre ya están puestos en las macros: cópialas y pégalas tal cual.';
+      sec.insertBefore(nota, sec.firstElementChild ? sec.firstElementChild.nextSibling : null);
+    }
+  }
+}
+
 // ---- Copiar cada macro con un botón ----
 async function alPortapapeles(texto){
   try{ await navigator.clipboard.writeText(texto); return true; }
