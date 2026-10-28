@@ -30,11 +30,26 @@ mostrar(location.hash.slice(1));
 // a otra persona (acompañante, entrevistado...) se quedan como están.
 {
   const DATOS = { rango: (yo.rango || '').trim(), nombre: (yo.nombre || yo.usuario || '').trim() };
+  // El dato se escribe como esté escrita la macro: TODO EN MAYÚSCULAS si la macro lo está,
+  // y con mayúsculas y minúsculas normales si la macro mezcla.
+  const soloLetras = t => t.replace(/[^\p{L}]/gu, '');
+  const enMayusculas = cont => {
+    if(!cont) return false;
+    const clon = cont.cloneNode(true);
+    clon.querySelectorAll('[data-yo]').forEach(x => x.remove());
+    const L = soloLetras(clon.textContent);
+    if(L.length < 6) return false;
+    const may = [...L].filter(c => c !== c.toLowerCase() && c === c.toUpperCase()).length;
+    return may / L.length >= 0.8;
+  };
   let puestos = 0;
   for(const el of document.querySelectorAll('[data-yo]')){
     const v = DATOS[el.dataset.yo];
     if(!v) continue;                       // sin el dato, se deja el marcador para que lo llenen a mano
-    el.textContent = v; el.classList.add('puesto'); puestos++;
+    const cont = el.closest('code') || el.closest('.plantilla') || el.parentElement;
+    const texto = enMayusculas(cont) ? v.toUpperCase() : v;
+    el.textContent = '[' + texto + ']';    // se conservan los corchetes, como en el resto de las macros
+    el.classList.add('puesto'); puestos++;
   }
   if(puestos){
     for(const sec of document.querySelectorAll('.sec-panel')){
