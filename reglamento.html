@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Reglamento · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=196af185"></script>
+<script src="js/tema.js?v=4688e1c8"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -71,6 +71,13 @@
   .macros{display:grid;grid-template-columns:1fr;gap:6px}
   .macros code{display:block;background:#0d161b;border:1px solid #1f2d33;border-radius:6px;padding:8px 10px;font-size:13px;color:#d7dde0;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace}
   .macros code b{color:var(--gold);font-weight:700}
+  .macros code{position:relative;padding-right:46px}
+  .macros code .copiar{position:absolute;top:5px;right:5px;display:flex;align-items:center;justify-content:center;
+    width:34px;height:28px;background:var(--panel3);color:var(--muted);border:1px solid var(--line2);border-radius:6px;
+    font:inherit;font-size:14px;line-height:1;cursor:pointer;padding:0;transition:background .15s,color .15s}
+  .macros code .copiar:hover{background:var(--hover2);color:var(--gold);border-color:var(--avisoline)}
+  .macros code .copiar.listo{background:var(--okbg,#12301f);color:#5fd38d;border-color:#2c6b47}
+  @media(max-width:600px){ .macros code{padding-right:44px} }
   .rangos{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
   .rangos div{background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:12px 14px}
   .rangos div b{display:block;color:var(--gold);margin-bottom:4px}
@@ -412,6 +419,6 @@ Tiempo: [HORAS, DÍAS O SEMANAS QUE SOLICITA]</div></div>
 </div>
   </div>
 </main>
-<script type="module" src="js/app-reglamento.js?v=ac5af258"></script>
+<script type="module" src="js/app-reglamento.js?v=c0bedbf6"></script>
 </body>
 </html>
