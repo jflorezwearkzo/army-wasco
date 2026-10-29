@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var FUNCION = 'https://rvwvnrqwlaudjgzvrzgf.supabase.co/functions/v1/solicitud-acceso';
-  var SITE_KEY = '0x4AAAAAAFYv4mcBFXtubNo9';
+  var SITE_KEY = '0x4AAAAAAFrNEt5xSSbtHKaV';   // widget propio de este formulario (no el del login)
   var UNIDADES = { pm: 'Army de Wasco · Policía Militar', eea: 'Army de Wasco · Escuadrón Tormenta' };
 
   var u = (new URLSearchParams(location.search).get('u') || 'pm').toLowerCase();
