@@ -1,4 +1,4 @@
-  import { requerir, barraUsuario, puedeFormulario, sb, esc } from './auth.js';
+  import { requerir, barraUsuario, puedeFormulario, sb, esc, avisoDiscord, nombreCompleto } from './auth.js';
   const yo = await requerir(); barraUsuario(yo);
   const fmt = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; };
   const el = document.getElementById('lista');
@@ -6,7 +6,8 @@
   if(error){ el.innerHTML = `<p class="empty">No se pudo cargar la lista de reportes: ${esc(error.message)}</p>`; }
   else {
     const visibles = (formularios||[]).filter(f => puedeFormulario(yo, f.id));
-    if(!visibles.length) el.innerHTML = '<p class="empty">No tienes formularios asignados. Pide acceso al administrador.</p>';
+    if(!visibles.length) el.innerHTML = `<p class="empty">No tienes formularios asignados todavía.<br>
+      <button type="button" id="pedirAcceso" class="primary" style="margin-top:12px;padding:8px 16px;font-size:14px">✋ Pedir acceso al liderazgo</button></p>`;
     else {
       // Lo que cada quien más usa va primero, y de cada formulario se recuerda su último reporte
       const mios = {}, ultimo = {};
@@ -28,6 +29,41 @@
       }).join('');
     }
   }
+  // Avisar al liderazgo, sin tener que buscar a nadie por fuera
+  const bp = document.getElementById('pedirAcceso');
+  if(bp) bp.onclick = async () => {
+    bp.disabled = true; const antes = bp.textContent; bp.textContent = 'Enviando…';
+    const r = await avisoDiscord('avisos', { texto: `✋ **${nombreCompleto(yo)}** (usuario \`${yo.usuario}\`) pide acceso a los formularios de reporte.`, origen: { tabla:'perfiles', id: yo.id } });
+    bp.textContent = r === 'ok' ? '✅ Aviso enviado al liderazgo' : antes;
+    if(r !== 'ok'){ bp.disabled = false; alert('No se pudo avisar automáticamente. Escríbele a un Líder, Co-Líder o Auxiliar por Discord.'); }
+  };
+
+// ---- Cómo van mis reportes y mi turno de hoy ----
+(async()=>{
+  const caja = document.getElementById('avisos'); if(!caja) return;
+  const hoy = new Date(); const hoyISO = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+  const avisos = [];
+  try{
+    const { data } = await sb.from('reportes_vista').select('id,folio,estado,formulario_id')
+      .eq('usuario_id', yo.id).in('estado', ['pendiente','devuelto','rechazado']).order('id', { ascending:false }).limit(100);
+    const n = e => (data||[]).filter(r => r.estado===e).length;
+    const dev = n('devuelto'), pen = n('pendiente'), rec = n('rechazado');
+    if(dev) avisos.push({ ojo:true, html:`✏️ Tienes <b>${dev}</b> reporte(s) <b>devuelto(s) para corregir</b>. Arréglalos y reenvíalos para que cuenten. <a href="cuenta.html#mis">Ver cuáles</a>` });
+    if(rec) avisos.push({ html:`⛔ <b>${rec}</b> reporte(s) rechazado(s). <a href="cuenta.html#mis">Ver el motivo</a>` });
+    if(pen) avisos.push({ html:`⏳ <b>${pen}</b> reporte(s) esperando revisión. <span class="sep">Cuentan para el ranking cuando los aprueben</span>` });
+  }catch(e){}
+  try{
+    const { data: tu } = await sb.rpc('turnos_lista', { p_desde: hoyISO, p_hasta: hoyISO });
+    const mio = (tu||[]).filter(t => t.usuario_id === yo.id);
+    for(const t of mio){
+      const h = String(t.hora_inicio||'').slice(0,5) + (t.hora_fin ? '–' + String(t.hora_fin).slice(0,5) : '');
+      avisos.push({ ojo:!t.reporte, html: t.reporte
+        ? `✅ Tu turno de hoy (<b>${h}</b>) ya tiene su reporte de patrullaje.`
+        : `🚔 <b>Hoy tienes turno</b> a las <b>${h}</b>${t.notas ? ' · ' + esc(t.notas) : ''}. Recuerda enviar el reporte de patrullaje al terminar.` });
+    }
+  }catch(e){}
+  if(avisos.length) caja.innerHTML = avisos.map(a => `<div class="av${a.ojo ? ' ojo' : ''}">${a.html}</div>`).join('');
+})();
 
 // ---- Tablón de anuncios y turnos ----
 // La imagen puede estar en el bucket 'anuncios' o ser una URL absoluta (p. ej. una pieza publicada en el propio sitio).
