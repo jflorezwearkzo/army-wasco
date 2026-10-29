@@ -763,7 +763,7 @@ $('#bRespaldo').onclick = async () => {
 };
 
 // ====================== REVISIÓN DE REPORTES ======================
-const etiquetaEstado = r => { const e = r.estado || 'aprobado'; const t = e==='pendiente' ? '<span class="tag pend">Pendiente</span>' : e==='rechazado' ? '<span class="tag off">Rechazado</span>' : (r.requiere_aprobacion ? '<span class="tag on">Aprobado</span>' : '<span class="tag on" title="Formulario sin revisión">Aprobado</span>');
+const etiquetaEstado = r => { const e = r.estado || 'aprobado'; const t = e==='pendiente' ? '<span class="tag pend">Pendiente</span>' : e==='devuelto' ? '<span class="tag" style="background:var(--avisobg);color:var(--gold)">Devuelto para corregir</span>' : e==='rechazado' ? '<span class="tag off">Rechazado</span>' : (r.requiere_aprobacion ? '<span class="tag on">Aprobado</span>' : '<span class="tag on" title="Formulario sin revisión">Aprobado</span>');
   return t + (r.comentario_revision ? `<br><span class="muted" style="font-size:11px" title="${esc(r.comentario_revision)}">${esc(r.revisor||'')}: ${esc(r.comentario_revision.slice(0,60))}${r.comentario_revision.length>60?'…':''}</span>` : (r.revisor ? `<br><span class="muted" style="font-size:11px">${esc(r.revisor)}</span>` : '')); };
 async function cargarRevision(){
   $('#rvEstado').onchange = cargarRevision;
@@ -785,6 +785,7 @@ async function cargarRevision(){
         ${detalleIA(r.auditoria_ia)}
         <div class="acciones">
           ${est!=='aprobado' ? `<button type="button" class="sm aprobar" data-rv="aprobado" data-id="${r.id}">✅ Aprobar</button>` : ''}
+          ${est!=='devuelto' ? `<button type="button" class="sm devolver" data-rv="devuelto" data-id="${r.id}" title="Vuelve al autor para que lo corrija y lo reenvíe; el folio se conserva">✏️ Devolver para corregir</button>` : ''}
           ${est!=='rechazado' ? `<button type="button" class="sm rechazar" data-rv="rechazado" data-id="${r.id}">⛔ Rechazar</button>` : ''}
           ${est!=='pendiente' ? `<button type="button" class="ghost sm" data-rv="pendiente" data-id="${r.id}">↩ Volver a pendiente</button>` : ''}
           ${r.imagen_path ? `<button type="button" class="ghost sm" data-redis="${r.id}" title="Vuelve a publicarlo en el canal de Discord que esté configurado ahora para este formulario">📨 Enviar de nuevo</button>` : ''}
@@ -812,6 +813,7 @@ async function cargarRevision(){
   document.querySelectorAll('[data-rv]').forEach(b => b.onclick = async () => {
     const id = +b.dataset.id, est2 = b.dataset.rv, r = lista.find(x => x.id===id); let comentario = null;
     if(est2==='rechazado'){ comentario = prompt(`Motivo del rechazo de ${r.folio||id} (lo verá el autor):`); if(comentario===null) return; if(!comentario.trim()){ alert('Indica el motivo.'); return; } }
+    else if(est2==='devuelto'){ comentario = prompt(`¿Qué debe corregir en ${r.folio||id}? (lo verá el autor y podrá reenviarlo)`); if(comentario===null) return; if(!comentario.trim()){ alert('Indica qué debe corregir.'); return; } }
     else if(est2==='aprobado'){ comentario = prompt(`Aprobar ${r.folio||id}. Comentario opcional para el autor:`, ''); if(comentario===null) return; }
     else if(!confirm(`¿Devolver ${r.folio||id} a pendiente?`)) return;
     b.disabled = true;
@@ -819,7 +821,7 @@ async function cargarRevision(){
     if(error){ alert(error.message); b.disabled=false; return; }
     let extra = '';
     if(est2==='aprobado'){ const dc = await notificarDiscord(id, 'aprobado'); if(dc==='ok') extra = ' Publicado en Discord.'; else if(dc && dc.startsWith('error')) extra = ' (No se pudo publicar en Discord: '+dc.slice(7)+')'; }  // normalmente ya se publicó al enviarse; esto solo cubre el caso en que falló
-    toast(`${r.folio||id}: ${est2}.${extra}`, false);
+    toast(est2==='devuelto' ? `${r.folio||id}: devuelto a ${res && res.autor ? res.autor : 'su autor'} para corregir.` : `${r.folio||id}: ${est2}.${extra}`, false);
     cargarRevision(); contarPendientes();
   });
 }

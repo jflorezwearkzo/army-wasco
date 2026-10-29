@@ -208,6 +208,8 @@ export function marcaOrg(yo){
 
 export function barraUsuario(yo){
   marcaOrg(yo); blindarSoloLectura(yo);
+  // Después de que el formulario termine de armarse
+  if(location.search.includes('corregir=')) setTimeout(() => modoCorreccion(yo).catch(() => {}), 0);
   if(!document.getElementById('barraCss')){
     const s = document.createElement('style'); s.id = 'barraCss';
     s.textContent = `
@@ -267,7 +269,57 @@ export function barraUsuario(yo){
 }
 
 // Paso 1: registra el reporte (el servidor sella identidad, rango y Rango PM y asigna el folio).
+// ---- Corrección de un reporte devuelto ----
+// Toda la mecánica vive aquí: los formularios no cambian. Si la página se abre con ?corregir=<id>,
+// se precargan los datos, y al exportar se reemplaza ese reporte en vez de crear uno nuevo.
+let CORRIGIENDO = null;
+export const corrigiendo = () => CORRIGIENDO;
+
+export async function modoCorreccion(yo){
+  const id = new URLSearchParams(location.search).get('corregir');
+  if(!id || CORRIGIENDO) return null;
+  const form = document.querySelector('form'); if(!form) return null;
+  const { data: r } = await sb.from('reportes_vista')
+    .select('id,folio,estado,datos,comentario_revision,revisor,formulario_id').eq('id', id).maybeSingle();
+  if(!r) return null;
+  if(r.estado !== 'devuelto'){
+    avisoCorreccion(form, `Ese reporte ya no está devuelto para corrección (está <b>${esc(r.estado)}</b>).`, true);
+    return null;
+  }
+  CORRIGIENDO = { id: r.id, folio: r.folio };
+  // Se precargan los campos sencillos; las listas y las fotos hay que rehacerlas
+  let puestos = 0;
+  for(const [k, v] of Object.entries(r.datos || {})){
+    if(v == null || typeof v === 'object') continue;
+    const el = form.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(k) : k));
+    if(!el || el.type === 'file') continue;
+    if(el.type === 'checkbox') el.checked = !!v; else el.value = v;
+    el.dispatchEvent(new Event('change', { bubbles:true })); el.dispatchEvent(new Event('input', { bubbles:true }));
+    puestos++;
+  }
+  avisoCorreccion(form,
+    `✏️ Estás corrigiendo el reporte <b>${esc(r.folio)}</b>.` +
+    (r.comentario_revision ? `<br><span style="color:var(--muted)">Motivo (${esc(r.revisor||'revisor')}): ${esc(r.comentario_revision)}</span>` : '') +
+    `<br><span style="color:var(--muted)">${puestos ? 'Recuperamos lo que se pudo; r' : 'R'}evisa todo, vuelve a adjuntar las fotos y expórtalo: al terminar reemplaza el reporte y vuelve a revisión.</span>`);
+  return CORRIGIENDO;
+}
+function avisoCorreccion(form, html, error=false){
+  const b = document.createElement('div');
+  b.style.cssText = `background:var(--${error?'errbg':'avisobg'});border:1px solid var(--${error?'err2':'avisoline'});border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:14px;color:var(--text);line-height:1.5`;
+  b.innerHTML = html;
+  form.parentNode.insertBefore(b, form);
+}
+
 export async function crearReporte({ formularioId, fecha, resumen, datos }){
+  if(CORRIGIENDO){
+    const { data, error } = await sb.from('reportes')
+      .update({ fecha: fecha || null, resumen, datos }).eq('id', CORRIGIENDO.id)
+      .select('id, folio_v2, datos, estado').single();
+    if(error) throw new Error('No se pudo guardar la corrección: ' + error.message);
+    const f = Array.isArray(data) ? data[0] : data;
+    if(!f) throw new Error('No se pudo guardar la corrección: el reporte ya no está disponible.');
+    return { id: f.id, folio: f.folio_v2, datos: f.datos, estado: f.estado, correccion: true };
+  }
   const { data, error } = await sb.from('reportes')
     .insert({ formulario_id: formularioId, usuario_id: (await sb.auth.getUser()).data.user.id, fecha: fecha || null, resumen, datos })
     .select('id, folio_v2, datos, estado').single();
@@ -305,10 +357,16 @@ export async function blobParaHistorial(pngBlob){
 export async function adjuntarImagen({ yo, id, formularioId, pngBlob }){
   const { blob, ext } = await blobParaHistorial(pngBlob);
   const path = `${yo.id}/${formularioId}-${id}.${ext}`;
-  const { error: e1 } = await sb.storage.from('reportes').upload(path, blob, { contentType:'image/'+ext, upsert:false });
+  const corr = CORRIGIENDO && String(CORRIGIENDO.id) === String(id);
+  const { error: e1 } = await sb.storage.from('reportes').upload(path, blob, { contentType:'image/'+ext, upsert: !!corr });
   if(e1) throw new Error('No se pudo subir la imagen: ' + e1.message);
   const { error: e2 } = await sb.from('reportes').update({ imagen_path: path }).eq('id', id);
   if(e2) throw new Error('No se pudo adjuntar la imagen: ' + e2.message);
+  if(corr){
+    const { error: e3 } = await sb.rpc('reenviar_a_revision', { p_id: id });
+    if(e3) throw new Error('La imagen quedó guardada, pero no se pudo reenviar a revisión: ' + e3.message);
+    CORRIGIENDO = null;
+  }
   return path;
 }
 // Publica el reporte en Discord si el formulario tiene webhook (lo hace el servidor; nunca falla el exportado por esto).
