@@ -1,6 +1,32 @@
   import { requerir, barraUsuario, puedeFormulario, sb, esc, avisoDiscord, nombreCompleto, rutaVisible } from './auth.js';
+  import { pendientes } from './ruta-pasos.js';
   const yo = await requerir(); barraUsuario(yo);
   { const er = document.getElementById('enlaceRuta'); if(er) er.hidden = !rutaVisible(yo); }
+
+  // ---- Aviso de ruta de aprendizaje sin terminar ----
+  // Sale una vez por sesión, no en cada clic: entrar a la app es abrirla, no volver al inicio.
+  (async () => {
+    if(!(yo.ruta && yo.ruta.activa)) return;                       // apagada para esta persona
+    const VISTO = 'pm_ruta_avisada';
+    try{ if(sessionStorage.getItem(VISTO)) return; }catch(e){}
+    const dlg = document.getElementById('dlgRuta'); if(!dlg || !dlg.showModal) return;
+    const { data, error } = await sb.rpc('mi_ruta', {});
+    if(error || !data || !data.activa) return;
+    const p = pendientes(data);
+    if(!p) return;                                                  // ya la terminó
+    try{ sessionStorage.setItem(VISTO, '1'); }catch(e){}
+    const faltan = p.faltan.map(x => `<li>${esc(x.texto)}</li>`).join('')
+      + (p.firmaPendiente ? '<li>Que el liderazgo firme esta etapa</li>' : '');
+    document.getElementById('rutaCuerpo').innerHTML =
+      `<p class="rprog">Llevas <b>${p.listos} de ${p.total}</b> pasos.</p>
+       <p class="retapa">${esc(p.etapa.icono)} Etapa ${p.etapa.n} · ${esc(p.etapa.titulo)}</p>
+       <ul>${faltan || '<li>Nada pendiente en esta etapa.</li>'}</ul>
+       <p class="rpie">No es obligatorio ni tiene plazo: es una guía para que no se te escape nada al empezar.</p>`;
+    dlg.showModal();
+    const cerrar = () => dlg.close();
+    document.getElementById('rutaCerrar').onclick = cerrar;
+    document.getElementById('rutaLuego').onclick = cerrar;
+  })().catch(() => {});
   const fmt = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; };
   const el = document.getElementById('lista');
   const { data: formularios, error } = await sb.from('formularios').select('*').eq('activo', true).order('orden');

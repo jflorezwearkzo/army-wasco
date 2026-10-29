@@ -18,6 +18,21 @@
 <link rel="stylesheet" href="estilos.css">
 <style>
   *{box-sizing:border-box}
+  /* Aviso de ruta de aprendizaje sin terminar */
+  #dlgRuta{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);
+    max-width:460px;width:calc(100% - 32px);padding:18px;font-family:"Roboto Condensed",Arial,sans-serif}
+  #dlgRuta::backdrop{background:rgba(0,0,0,.6)}
+  #dlgRuta .cab-dlg{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+  #dlgRuta .cab-dlg h3{margin:0;flex:1;color:var(--gold);font-size:19px}
+  #dlgRuta .cerrar{background:transparent;border:1px solid transparent;color:var(--muted);font-size:20px;
+    line-height:1;padding:4px 8px;border-radius:6px;cursor:pointer}
+  #dlgRuta .cerrar:hover{border-color:var(--line2);color:var(--gold)}
+  #dlgRuta .rprog{color:var(--muted);font-size:13px;margin:0 0 10px}
+  #dlgRuta .retapa{color:var(--gold);text-transform:uppercase;letter-spacing:1px;font-size:13px;margin:0 0 6px}
+  #dlgRuta ul{margin:0;padding-left:20px}
+  #dlgRuta li{padding:3px 0;font-size:14px}
+  #dlgRuta .rpie{color:var(--muted);font-size:12.5px;margin:12px 0 0;line-height:1.5}
+  #dlgRuta .acc-dlg{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:16px}
   body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column}
   header{padding:36px 20px 24px;text-align:center;border-bottom:2px solid var(--line);
     background:linear-gradient(180deg,#132228 0%,var(--bg) 100%)}
@@ -83,7 +98,7 @@
   .enlaces a{text-decoration:none}
   footer{text-align:center;padding:18px;color:#5a6a71;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-top:1px solid var(--line3)}
 </style>
-<script src="js/tema.js?v=d3057160"></script>
+<script src="js/tema.js?v=d940578c"></script>
 </head>
 <body>
 <header>
@@ -104,8 +119,19 @@
     <div class="caja"><h3>🚔 Mis próximos turnos</h3><div id="turnos"></div></div>
   </div>
 </main>
+
+<dialog id="dlgRuta">
+  <div class="cab-dlg"><h3>🧭 Te falta terminar tu ruta</h3>
+    <button type="button" class="cerrar" id="rutaCerrar" aria-label="Cerrar">✕</button></div>
+  <div id="rutaCuerpo"></div>
+  <div class="acc-dlg">
+    <button type="button" class="ghost" id="rutaLuego">Ahora no</button>
+    <a class="primary" id="rutaIr" href="ruta.html" style="text-decoration:none;display:inline-block;padding:9px 16px;border-radius:8px">Ver mi ruta</a>
+  </div>
+</dialog>
+
 <footer>Un equipo · Una misión · Un solo Army</footer>
 
-<script type="module" src="js/app-index.js?v=6f551cbb"></script>
+<script type="module" src="js/app-index.js?v=682f2273"></script>
 </body>
 </html>

@@ -317,6 +317,8 @@ Cuatro etapas (`ruta.html` + `src/app-ruta.js`), iguales para todas las unidades
 - `mi_ruta(usuario)` — datos crudos (reportes, aprobados, turnos cumplidos, participaciones, MFA, marcas, firma) más `activa`, `puedo_firmar`, `puedo_reiniciar` y `mi_nivel`. La página decide qué paso está hecho.
 - `firmar_ruta(usuario, nota)` y `reiniciar_ruta(usuario)` — con sus candados; auditan `ruta_firmada` y `ruta_reiniciada`.
 
+**Aviso al entrar.** `src/ruta-pasos.js` tiene la definición de las etapas y los ayudantes, compartidos por `app-ruta.js` y por `app-index.js`. El inicio llama a `mi_ruta()` solo si la sesión dice que la ruta está encendida para esa persona, y si `pendientes()` devuelve algo abre un `<dialog>` con la etapa en curso y lo que falta. Se muestra **una vez por sesión** (`sessionStorage`), no en cada visita al inicio.
+
 **Jerarquía de firma.** `roles.nivel_firma` (0 sin firma, 1 Auxiliar, 2 Co-Líder, 3 Líder) es explícita por rol y se edita en el panel: no se deduce del nombre del rol ni del `rango_pm`, porque cada unidad los llama distinto. `puedo_firmar_ruta()` permite firmar a quien tenga nivel **igual o menor** al propio, y solo el nivel 3 puede firmarse a sí mismo.
 
 **Interruptor general.** `ajustes_globales` (clave `ruta_aprendizaje`) con RLS: lectura para cualquier perfil activo, escritura solo para el superadmin. Nace apagado. Mientras lo esté, `rutaVisible()` esconde el enlace del menú y del inicio, y la página solo la ve quien puede encenderla. `mi_sesion()` devuelve el estado para no consultar en cada página.
