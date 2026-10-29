@@ -4,17 +4,14 @@
   { const er = document.getElementById('enlaceRuta'); if(er) er.hidden = !rutaVisible(yo); }
 
   // ---- Aviso de ruta de aprendizaje sin terminar ----
-  // Sale una vez por sesión, no en cada clic: entrar a la app es abrirla, no volver al inicio.
+  // Insiste cada vez que se entra al inicio, hasta que la termine.
   (async () => {
     if(!(yo.ruta && yo.ruta.activa)) return;                       // apagada para esta persona
-    const VISTO = 'pm_ruta_avisada';
-    try{ if(sessionStorage.getItem(VISTO)) return; }catch(e){}
     const dlg = document.getElementById('dlgRuta'); if(!dlg || !dlg.showModal) return;
     const { data, error } = await sb.rpc('mi_ruta', {});
     if(error || !data || !data.activa) return;
     const p = pendientes(data);
     if(!p) return;                                                  // ya la terminó
-    try{ sessionStorage.setItem(VISTO, '1'); }catch(e){}
     const faltan = p.faltan.map(x => `<li>${esc(x.texto)}</li>`).join('')
       + (p.firmaPendiente ? '<li>Que el liderazgo firme esta etapa</li>' : '');
     document.getElementById('rutaCuerpo').innerHTML =
