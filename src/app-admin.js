@@ -77,7 +77,8 @@ async function contarPendientes(){ if(!tiene(yo,'aprobar_reportes')) return; con
 contarPendientes(); setInterval(contarPendientes, 120000);
 
 async function cargarCatalogos(){
-  roles = (await sb.from('roles').select('*').order('nombre')).data || [];
+  // Los roles son propios de cada organización: los de una no se ofrecen ni se ven en la otra
+  roles = ((await sb.from('roles').select('*').order('nombre')).data || []).filter(r => !yo.org || !r.org_id || r.org_id === yo.org.id);
   formularios = (await sb.from('formularios').select('*').order('orden')).data || [];
   rangosPM = (await sb.from('rangos_pm').select('*').order('orden')).data || [];
 }
@@ -114,10 +115,10 @@ async function cargarUsuarios(){
   const sinMembresias = !mem || !mem.length;
   // El rol, el rango y el estado que se muestran son los de la organización en la que estoy
   USUARIOS = (data || []).map(u => { const mias = MEMB[u.id] || []; const m = sinMembresias ? u : mias.find(x => x.org_id === orgActual);
-    return m ? { ...u, rol_id:m.rol_id, rango:m.rango, activo:m.activo, visible:m.visible,
+    return m ? { ...u, rol_id:m.rol_id, activo:m.activo, visible:m.visible,
                  permisos_extra:m.permisos_extra, permisos_negados:m.permisos_negados, formularios_extra:m.formularios_extra,
                  _orgs: mias.map(x => x.org_id) }
-             : { ...u, rol_id:null, rango:null, activo:false, visible:true, _orgs: mias.map(x => x.org_id), _fuera:true }; });
+             : { ...u, rol_id:null, activo:false, visible:true, _orgs: mias.map(x => x.org_id), _fuera:true }; });
   SEL = new Set([...SEL].filter(id => USUARIOS.some(u => u.id===id)));
   document.querySelectorAll('th.colorgs').forEach(th => th.hidden = !VER_ORGS);
   sb.rpc('actividad_usuarios').then(({data}) => { ACTIV={}; (data||[]).forEach(a => ACTIV[a.usuario_id]=a); pintarUsuarios(); });
@@ -224,9 +225,19 @@ async function accionUsuario(op, u){
     else if(op==='desactivar'){ if(!confirm(`¿Desactivar la cuenta de "${u.usuario}"? No podrá iniciar sesión ni aparecerá en los formularios.`)) return; await actualizarPerfiles([u], { activo:false }); }
   }catch(x){ alert(x.message||String(x)); }
 }
+// Estado, visibilidad y rol son de la organización en la que estamos; el nombre y el rango son generales.
+// Por eso todo pasa por guardar_miembro y no por un update directo a perfiles.
 async function actualizarPerfiles(lista, cambios){
   const errores = [];
-  for(const u of lista){ const { error } = await sb.from('perfiles').update(cambios).eq('id', u.id); if(error) errores.push(`${u.usuario}: ${error.message}`); }
+  const args = { p_org: (yo.org && yo.org.id) || null,
+    p_nombre: 'nombre' in cambios ? cambios.nombre : null,
+    p_rango:  'rango'  in cambios ? (cambios.rango || null) : null,
+    p_activo: 'activo' in cambios ? cambios.activo : null,
+    p_visible:'visible' in cambios ? cambios.visible : null };
+  for(const u of lista){
+    const rol = 'rol_id' in cambios ? cambios.rol_id : (u.rol_id || null);
+    const { error } = await sb.rpc('guardar_miembro', { ...args, p_usuario: u.id, p_rol_id: rol });
+    if(error) errores.push(`${u.usuario}: ${error.message}`); }
   await cargarUsuarios();
   if(errores.length) throw new Error('Algunos cambios no se aplicaron:\n' + errores.join('\n'));
 }
@@ -271,8 +282,12 @@ $('#fUsuario').onsubmit = async e => {
   const id=$('#uId').value, usuario=$('#uUsuario').value.trim().toLowerCase(), nombre=$('#uNombre').value.trim(), rango=$('#uRango').value||null, rol=$('#uRol').value, activo=$('#uActivo').checked, visible=$('#uVisible').checked;
   try{
     if(id){
-      const cambios = {}; if(tiene(yo,'usuarios')) Object.assign(cambios, { nombre, rango, activo, visible }); if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
-      const { error } = await sb.from('perfiles').update(cambios).eq('id', id); if(error) throw error;
+      const prev = (USUARIOS.find(u => u.id === id) || {});
+      const args = { p_usuario: id, p_org: (yo.org && yo.org.id) || null, p_rol_id: prev.rol_id || null,
+                     p_nombre: null, p_rango: null, p_activo: null, p_visible: null };
+      if(tiene(yo,'usuarios')) Object.assign(args, { p_nombre: nombre, p_rango: rango, p_activo: activo, p_visible: visible });
+      if(tiene(yo,'asignar_roles')) args.p_rol_id = rol || null;
+      const { error } = await sb.rpc('guardar_miembro', args); if(error) throw error;
           } else {
       if(!tiene(yo,'usuarios')) throw new Error('No tienes permiso para crear usuarios.');
       const pass=$('#uPass').value; { const v=validarPassword(pass); if(v) throw new Error('Contraseña inicial: '+v); }
@@ -282,10 +297,13 @@ $('#fUsuario').onsubmit = async e => {
       if(!data || !data.id) throw new Error((data && data.error) || 'No se pudo crear el usuario.');
       data.user = { id: data.id };
       // El trigger creó el perfil inactivo con rol "usuario"; ahora lo ajustamos
-      const cambios = { nombre, rango, activo, visible }; if(tiene(yo,'asignar_roles')) cambios.rol_id = rol || null;
-      // pequeño reintento: el trigger puede tardar unos ms
-      let ok=false; for(let i=0;i<5 && !ok;i++){ const r = await sb.from('perfiles').update(cambios).eq('id', data.user.id).select('id'); ok = !r.error && r.data && r.data.length; if(!ok) await new Promise(r=>setTimeout(r,400)); }
-      if(!ok) throw new Error('El usuario se creó pero no se pudo activar; edítalo desde la lista.');
+      // La membresía se da de alta en la organización en la que está el administrador (p_crear)
+      const args = { p_usuario: data.user.id, p_org: (yo.org && yo.org.id) || null, p_crear: true,
+                     p_nombre: nombre, p_rango: rango, p_activo: activo, p_visible: visible,
+                     p_rol_id: tiene(yo,'asignar_roles') ? (rol || null) : null };
+      // pequeño reintento: el trigger que crea el perfil puede tardar unos ms
+      let ok=false, ultimo=''; for(let i=0;i<5 && !ok;i++){ const r = await sb.rpc('guardar_miembro', args); ok = !r.error; if(!ok){ ultimo = r.error.message; await new Promise(r=>setTimeout(r,400)); } }
+      if(!ok) throw new Error('El usuario se creó pero no se pudo activar' + (ultimo ? ' ('+ultimo+')' : '') + '; edítalo desde la lista.');
       RESALTAR = data.user.id; $('#dlgUsuario').close(); limpiarUsuario(); toast(`Usuario "${usuario}" creado.`); cargarUsuarios(); return;
     }
     RESALTAR = id; $('#dlgUsuario').close(); limpiarUsuario(); toast('Usuario actualizado.'); cargarUsuarios();

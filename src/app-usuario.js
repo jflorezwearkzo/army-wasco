@@ -16,7 +16,8 @@ const PUEDE_GRAN = tiene(yo,'permisos_granulares') && !enVerComo(yo);
 
 async function cargar(){
   const [{ data, error }, { data: forms }, { data: rolesL }] = await Promise.all([sb.rpc('ficha_usuario', { p_usuario: ID }), sb.from('formularios').select('id,titulo,icono,activo').order('orden'), sb.from('roles').select('*').order('nombre')]);
-  ROLES = rolesL || [];
+  // Los roles son de cada organización: nunca se ofrecen los de otra
+  ROLES = (rolesL || []).filter(r => !yo.org || !r.org_id || r.org_id === yo.org.id);
   if(error){ $('#cab').innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
   F = data; FORMS = forms || []; const p = F.perfil, rol = F.rol || {}; const propio = p.id === yo.id; const protegido = !!rol.protegido;
   document.title = `${nombreCompleto(p)} · Administración`; $('#migaNombre').textContent = p.usuario;
@@ -94,9 +95,15 @@ function abrirEditar(p, rol){
 }
 $('#fEditar').onsubmit = async e => {
   e.preventDefault(); $('#eErr').textContent=''; $('#eOk').disabled = true;
-  const cambios = {}; if(tiene(yo,'usuarios')) Object.assign(cambios, { nombre: $('#eNombre').value.trim(), rango: $('#eRango').value || null, activo: $('#eActivo').checked, visible: $('#eVisible').checked }); if(tiene(yo,'asignar_roles')) cambios.rol_id = $('#eRol').value || null;
-  if(ID === yo.id && cambios.activo === false){ $('#eErr').textContent = 'No puedes desactivar tu propia cuenta.'; $('#eOk').disabled = false; return; }
-  const { error } = await sb.from('perfiles').update(cambios).eq('id', ID); $('#eOk').disabled = false;
+  // El rol, el estado y la visibilidad son de ESTA organización; el nombre y el rango son generales.
+  // Por eso se guarda con guardar_miembro y no escribiendo directo en perfiles.
+  const args = { p_usuario: ID, p_org: (yo.org && yo.org.id) || null, p_rol_id: (F.perfil && F.perfil.rol_id) || null,
+                 p_activo: null, p_visible: null, p_nombre: null, p_rango: null };
+  if(tiene(yo,'usuarios')) Object.assign(args, { p_nombre: $('#eNombre').value.trim(), p_rango: $('#eRango').value || null,
+                                                 p_activo: $('#eActivo').checked, p_visible: $('#eVisible').checked });
+  if(tiene(yo,'asignar_roles')) args.p_rol_id = $('#eRol').value || null;
+  if(ID === yo.id && args.p_activo === false){ $('#eErr').textContent = 'No puedes desactivar tu propia cuenta.'; $('#eOk').disabled = false; return; }
+  const { error } = await sb.rpc('guardar_miembro', args); $('#eOk').disabled = false;
   if(error){ $('#eErr').textContent = error.message; return; }
   $('#dlgEditar').close(); toast('Usuario actualizado.'); cargar();
 };
