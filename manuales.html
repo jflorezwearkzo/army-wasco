@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=33a3d179"></script>
+<script src="js/tema.js?v=6bb6dc16"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -62,9 +62,14 @@
     <ul><li><b>Tablón de anuncios</b>: comunicados del mando. Los que no has leído aparecen marcados como <b>NUEVO</b>; pulsa <i>Marcar como leído</i> cuando lo hayas visto (el mando ve cuántos lo leyeron).</li>
       <li><b>Mis próximos turnos</b>: tus turnos de patrullaje de los próximos 14 días. ✅ significa que ese día ya enviaste tu reporte de patrullaje.</li>
       <li><b>Tarjetas de formularios</b>: los reportes que tu rol puede enviar. Si falta alguno, pídelo al administrador.</li>
-      <li><b>Reglamento</b>: procedimientos de PM, macros, normas y mapas.</li></ul></div>
+      <li><b>Reglamento</b>: procedimientos de la unidad, macros, normas y mapas.</li></ul></div>
+  <div class="bloque"><h3>Avisos para ti</h3>
+    <p>Arriba del todo, cuando hay algo que te toca, aparece un recuadro con lo tuyo: reportes <b>devueltos para corregir</b>, reportes <b>pendientes</b> de revisión, reportes <b>rechazados</b>, si tienes <b>turno hoy</b> y en qué puesto vas en el ranking del mes. Si no hay nada pendiente, el recuadro no sale.</p></div>
+  <div class="bloque"><h3>En el celular</h3>
+    <p>Los formularios se ven como una lista compacta en vez de tarjetas grandes, para que veas de una todas tus opciones sin bajar. Van ordenados por los que más usas, y cada uno trae un <b>↻ Repetir</b> que abre el formulario con los datos de tu último reporte ya puestos: solo cambias lo que toque y adjuntas las fotos nuevas.</p></div>
   <div class="bloque"><h3>Barra superior</h3>
-    <p><span class="ruta">Mi cuenta</span> contraseña, verificación en dos pasos, instalar la app y <b>Mis reportes</b>. <span class="ruta">Mi expediente</span> tu hoja de vida en el Army. <span class="ruta">Ranking</span> tablero del mes. <span class="ruta">🌗 Tema</span> cambia entre oscuro y claro. <span class="ruta">Salir</span> cierra tu sesión en este dispositivo.</p>
+    <p><span class="ruta">Mi cuenta</span> contraseña, verificación en dos pasos, instalar la app y <b>Mis reportes</b>. <span class="ruta">Mi expediente</span> tu hoja de vida en el Army. <span class="ruta">Ranking</span> tablero del mes. <span class="ruta">Eventos del día</span> horarios del servidor. <span class="ruta">Reglamento</span> normas y macros. <span class="ruta">🌗 Tema</span> cambia entre oscuro y claro. <span class="ruta">Salir</span> cierra tu sesión en este dispositivo.</p>
+    <p><b>¿Perteneces a más de una unidad?</b> A la izquierda de la barra aparece un selector con tus unidades. Al cambiar, toda la página cambia con él: formularios, reportes, ranking, anuncios y turnos son los de esa unidad. Si solo estás en una, el selector no aparece.</p>
     <div class="tip">La sesión se cierra sola tras 2 horas sin actividad. En el celular, la barra se pliega en el botón con tu nombre.</div></div>
 </section>
 
@@ -79,6 +84,10 @@
       <li>Pulsa <b>📤 Enviar reporte</b>. La pantalla se bloquea mientras se registra en el servidor, se genera la imagen, se guarda en el historial y se publica en Discord (si el formulario lo tiene configurado, la imagen también se descarga a tu dispositivo). Al terminar sale "✅ Reporte enviado" con el folio y el formulario se limpia solo.</li></ol>
     <div class="tip">Cada reporte recibe un <b>folio único</b> (PM-000123) y un sello con tu usuario y la hora del servidor. No se puede editar después: si te equivocaste, avisa a un revisor o administrador.</div></div>
   <div class="bloque"><h3>Borradores</h3><p>Lo que escribes se guarda en tu navegador. Si cierras y vuelves, verás un aviso con <i>Continuar</i> o <i>Descartar</i>. Se borra al exportar o al pulsar <i>Limpiar</i>; caduca a los 7 días. Las fotos no se guardan en el borrador.</p></div>
+  <div class="bloque"><h3>Si te lo devuelven para corregir</h3>
+    <p>Un revisor puede <b>devolverte</b> el reporte en vez de rechazarlo, cuando solo hay algo por mejorar. Entonces te sale en los avisos del inicio y en <span class="ruta">Mi cuenta → Mis reportes</span> con el botón <b>✏️ Corregir y reenviar</b>. Se abre el formulario con todo lo que ya habías puesto, arreglas lo que te pidieron, vuelves a adjuntar las fotos y lo mandas: es el <b>mismo reporte</b>, conserva su folio y vuelve a la cola de revisión. No crees uno nuevo.</p></div>
+  <div class="bloque"><h3>Repetir un reporte</h3>
+    <p>El enlace <b>↻ Repetir</b> (en la lista del inicio) abre el formulario con los datos de tu último reporte de ese tipo. Sirve para lo que cambia poco entre un día y otro. Ojo: las fotos nunca se reutilizan, siempre tienes que adjuntar las de hoy.</p></div>
   <div class="bloque"><h3>Pendiente de revisión</h3><p>Algunos formularios exigen que un revisor apruebe el reporte. En ese caso el mensaje final dice <i>Queda pendiente de revisión</i>: ya está guardado y publicado en Discord, pero no cuenta en el Resumen, el ranking ni las estadísticas hasta que lo aprueben. Lo ves en <span class="ruta">Mi cuenta → Mis reportes</span> con su estado; si lo rechazan, verás el motivo.</p></div>
   <div class="bloque"><h3>Reporte de patrullaje</h3><p>Es un reporte por patrullaje. El campo <i>¿Cuántos patrullajes vas a reportar?</i> sirve solo cuando quieres enviar varios de una vez: al elegir 2 o más aparece un formulario por cada patrullaje (pestañas Patrullaje 1, 2, 3…) y hay que llenarlos todos; cada uno genera su imagen y su folio. La hora va en formato militar (24 h). En <i>Código</i> puedes buscar el folio de otro reporte relacionado.</p></div>
   <div class="bloque"><h3>Fechas, horas y validación con IA</h3>
@@ -86,9 +95,24 @@
     <div class="tip">🔎 <b>Cada reporte se valida con IA</b>, que lee las capturas y detecta fraude, duplicados y errores (quién actúa en el chat, nombres de los abatidos, horas del servidor, capturas reutilizadas). La información falsa puede considerarse <b>falta grave</b>; la reincidencia puede llevar a una <b>sanción</b> (ver Disciplina).</div></div>
 </section>
 
+<section class="sec-panel" id="sec-calendario" data-titulo="Eventos del día" data-icono="🗓️" data-grupo="Para todos" data-permisos="*" hidden>
+  <h2 class="sec">Eventos del día<small>Horarios fijos del servidor</small></h2>
+  <div class="bloque"><h3>Para qué sirve</h3>
+    <p><span class="ruta">Eventos del día</span> (en el menú y junto al tablón) muestra las actividades que se repiten todos los días a la misma hora: entrega aérea e incursión al arsenal, con su calidad cuando la tienen.</p></div>
+  <div class="bloque"><h3>Dos horas a la vez</h3>
+    <p>Cada horario sale con <b>tu hora</b> arriba, en grande, y debajo la <b>hora del servidor (UTC)</b>. Así nadie tiene que hacer cuentas: el servidor va en UTC 0 y tú ves directamente a qué hora es para ti. Lo que ya pasó se ve apagado, el siguiente queda resaltado y arriba corre la cuenta atrás.</p>
+    <div class="tip">En los reportes, la hora que se guarda y se sella es siempre la del servidor, aunque en la lista la veas también en la tuya. Es lo que permite comparar reportes de gente en husos distintos.</div></div>
+  <div class="bloque"><h3>Es el mismo para todas las unidades</h3>
+    <p>El calendario es del juego, no de una unidad: Policía Militar y Escuadrón Tormenta ven los mismos eventos.</p></div>
+</section>
+
 <section class="sec-panel" id="sec-cuenta" data-titulo="Mi cuenta y seguridad" data-icono="🔐" data-grupo="Para todos" data-permisos="*" hidden>
   <h2 class="sec">Mi cuenta y seguridad<small>Contraseña, verificación en dos pasos, app</small></h2>
-  <div class="bloque"><h3>Cambiar la contraseña</h3><p>Escribe la actual y la nueva dos veces. Mínimo 8 caracteres con mayúscula, minúscula, número y símbolo. Si la olvidaste, pide a un administrador que la restablezca.</p></div>
+  <div class="bloque"><h3>Cambiar la contraseña</h3><p>Escribe la actual y la nueva dos veces. Mínimo 8 caracteres con mayúscula, minúscula, número y símbolo.</p></div>
+  <div class="bloque"><h3>Si olvidaste la contraseña</h3>
+    <p>En la pantalla de inicio de sesión, el enlace <b>"¿Olvidaste tu contraseña?"</b> abre un formulario corto: tu usuario, tu nombre dentro del juego y tu unidad. El aviso le llega al liderazgo al momento. Escribirles por Discord sigue valiendo igual; usa lo que te quede más cómodo.</p>
+    <p>Ese formulario <b>no cambia la contraseña solo</b>: primero confirman por Discord que eres tú y después te entregan una nueva. Es a propósito, para que nadie pueda quedarse con tu cuenta sabiendo solo tu nombre de usuario.</p>
+    <div class="tip">Se admite una solicitud cada dos horas desde la misma conexión. Si ya enviaste una, espera o escribe por Discord.</div></div>
   <div class="bloque"><h3>Verificación en dos pasos (opcional, recomendada para administradores)</h3>
     <ol><li>Instala una app de autenticación (Google Authenticator, Authy, Microsoft Authenticator).</li><li>En Mi cuenta pulsa <b>Activar verificación en dos pasos</b> y escanea el código QR (o escribe la clave manual).</li><li>Escribe el código de 6 dígitos que muestra la app y confirma.</li></ol>
     <p>Desde entonces, al iniciar sesión te pedirá el código después de la contraseña. Para desactivarla, Mi cuenta → <i>Desactivar</i> (pide el código).</p>
@@ -101,14 +125,31 @@
   <h2 class="sec">Mi expediente y ranking<small>Tu historial en el Army</small></h2>
   <div class="bloque"><h3>Expediente</h3><p>Muestra tu rango y desde cuándo, reportes aprobados, bajas, reclutamientos, patrullajes, AKs, participaciones como integrante en reportes de otros, advertencias activas, sanciones, ascensos y tus últimos reportes.</p>
     <p><b>Foto del personaje</b>: pulsa el círculo para subir una imagen de <b>tu personaje dentro del juego</b> (uniforme, vehículo, captura del RP). <b>Nunca una foto real</b> tuya ni de nadie: el administrador retirará las que incumplan esto.</p></div>
-  <div class="bloque"><h3>Ranking</h3><p>Podio del mes por categoría (reportes, bajas, patrullajes, reclutamientos, AKs, participaciones) y tabla completa. Solo cuentan reportes aprobados. El día 1 de cada mes se publican los ganadores en Discord y reciben una <b>insignia</b> que queda en el Salón de insignias.</p></div>
+  <div class="bloque"><h3>Ranking</h3><p>Podio del mes por categoría (reportes, bajas, patrullajes, reclutamientos, AKs, participaciones) y tabla completa. Solo cuentan reportes aprobados. El día 1 de cada mes se publican los ganadores en Discord y reciben una <b>insignia</b> que queda en el Salón de insignias.</p>
+    <p>Arriba de todo tienes el panel <b>Así vas tú</b>: tu puesto en cada categoría, tu cifra y cuánto te falta para subir un puesto. Durante el mes también puede publicarse un <b>avance semanal</b> en Discord, para que nadie llegue al día 1 sin saber cómo iba.</p></div>
 </section>
 
 <!-- ======================= ADMINISTRACIÓN ======================= -->
+<section class="sec-panel" id="sec-reglamento" data-titulo="Reglamento y macros" data-icono="📖" data-grupo="Para todos" data-permisos="*" hidden>
+  <h2 class="sec">Reglamento y macros<small>Normas, procedimientos y textos listos para pegar</small></h2>
+  <div class="bloque"><h3>Qué encuentras</h3>
+    <p>Normas generales del juego, procedimientos de tu unidad, mapas y las macros oficiales. Lo que es propio de una unidad solo se ve estando en ella; lo general lo ve todo el mundo.</p></div>
+  <div class="bloque"><h3>Macros listas para pegar</h3>
+    <p>Cada macro tiene su botón <b>Copiar</b>: un clic y la tienes en el portapapeles. Además, donde la macro dice el rango y el nombre, la página pone <b>los tuyos</b> automáticamente, respetando los corchetes y las mayúsculas del original. O sea que copias y pegas sin tener que editar nada.</p>
+    <div class="tip">Si te cambian el rango, las macros se actualizan solas la próxima vez que entres. No hay que volver a copiarlas a mano a ningún lado.</div></div>
+</section>
+
 <section class="sec-panel" id="sec-usuarios" data-titulo="Usuarios" data-icono="👤" data-grupo="Administración" data-permisos="usuarios,asignar_roles,reset_password" hidden>
   <h2 class="sec">Usuarios<small>Crear, editar, activar, roles y contraseñas</small></h2>
   <div class="bloque"><h3>Crear un usuario</h3>
     <ol><li><span class="ruta">Administración → Usuarios → ＋ Nuevo usuario</span>.</li><li>Usuario para ingresar (minúsculas, sin espacios), nombre completo, rango, contraseña inicial y rol.</li><li>Entrégale el usuario y la contraseña por privado; él la cambia en Mi cuenta.</li></ol></div>
+  <div class="bloque"><h3>El rango es general, el rol es de cada unidad</h3>
+    <p>Dos cosas que se parecen pero no lo son:</p>
+    <ul><li>El <b>rango</b> (Capitán, Mayor…) es el mismo en todas las unidades. Lo cambias una vez y vale en todas.</li>
+      <li>El <b>rol</b> (lo que la persona puede hacer en la página) es de la unidad en la que estás. Alguien puede ser Administrador en una y simple usuario en otra, y el desplegable solo te ofrece los roles de la unidad en la que estás parado.</li></ul>
+    <p>Lo mismo pasa con <i>activo</i> y <i>visible en formularios</i>: son de cada unidad. Si editas a alguien que no pertenece a la unidad actual, la lista lo marca como <b>Sin acceso</b> y hay que darle entrada primero desde Organizaciones.</p></div>
+  <div class="bloque" data-solo="superadmin"><h3>Columna de unidades (solo Administrador)</h3>
+    <p>La tabla muestra una columna extra con las unidades a las que pertenece cada persona. Solo la ve el Administrador general.</p></div>
   <div class="bloque"><h3>Buscar, filtrar y editar</h3><p>Buscador por usuario, nombre, rango o rol; filtros <i>Activos / Inactivos / Ocultos / Sin rol</i> y por rol. Las columnas se ordenan con clic en la cabecera. Clic en una fila abre la <b>ficha del usuario</b> (subpágina con cuenta, último acceso, 2FA, permisos efectivos, formularios, notas e historial de cambios); el botón <b>⋯</b> tiene las acciones: Editar, Ver la página como este usuario, Expediente, Ver sus reportes, Restablecer contraseña, Mostrar/Ocultar en formularios, Activar/Desactivar.</p>
     <ul><li><b>Inactivo</b>: no puede entrar y no aparece en los formularios (los intentos de acceso quedan en Auditoría).</li><li><b>Oculto en formularios</b>: sigue entrando, pero no aparece en los desplegables de integrantes.</li><li><b>Último reporte</b>: fecha y cantidad de reportes aprobados.</li></ul></div>
   <div class="bloque"><h3>Acciones en bloque</h3><p>Marca las casillas (o la de la cabecera para todos los visibles) y abajo aparece la barra: Activar, Desactivar, Mostrar, Ocultar, Asignar rol. Pide confirmación con la lista de nombres. Nunca toca roles fuera de tus permisos ni tu propia cuenta.</p></div>
@@ -118,12 +159,29 @@
   <div class="bloque" data-solo="superadmin"><h3>Quitar verificación en dos pasos (solo Administrador)</h3><p>Si alguien perdió el celular con su app de autenticación: ⋯ → <b>Quitar verificación en dos pasos</b> (o el botón 🔓 en su expediente). Confirma y el usuario vuelve a entrar solo con su contraseña; después puede configurarla de nuevo en Mi cuenta. Queda en Auditoría.</p></div>
 </section>
 
+<section class="sec-panel" id="sec-organizaciones" data-titulo="Organizaciones" data-icono="🏛️" data-grupo="Administración" data-permisos="organizaciones" hidden>
+  <h2 class="sec">Organizaciones<small>Varias unidades en la misma página</small></h2>
+  <div class="bloque"><h3>Cómo funciona</h3>
+    <p>La página puede alojar varias unidades (Policía Militar, Escuadrón Tormenta…) sin que se mezclen. Cada una tiene lo suyo: formularios, reportes, roles, ranking, turnos, anuncios, canales de Discord y prefijo de folio. Quien no pertenece a una unidad no ve que existe.</p>
+    <p>Una misma persona puede estar en varias con la misma cuenta: cambia con el selector de la barra superior.</p></div>
+  <div class="bloque"><h3>Dar entrada a alguien</h3>
+    <ol><li><span class="ruta">Administración → Organizaciones</span> → <b>👥 Miembros</b> en la unidad que quieras.</li>
+      <li>Elige a la persona, dale un rol <b>de esa unidad</b> y añádela.</li>
+      <li>Desde ahí mismo puedes activarla, desactivarla o quitarle la entrada.</li></ol>
+    <div class="ojo">Quitar la entrada no borra la cuenta ni sus reportes: solo deja de ver esa unidad.</div></div>
+  <div class="bloque"><h3>Folios</h3>
+    <p>Cada unidad tiene su prefijo: los reportes de la Policía Militar salen como <code>PM-000123</code> y los del Escuadrón Tormenta como <code>EEA-000124</code>. La numeración es corrida y compartida; lo único que cambia es el prefijo.</p></div>
+</section>
+
 <section class="sec-panel" id="sec-roles" data-titulo="Roles y permisos" data-icono="🛡️" data-grupo="Administración" data-permisos="crear_roles" hidden>
   <h2 class="sec">Roles y permisos<small>Qué puede hacer cada rol</small></h2>
   <div class="bloque"><h3>Crear o editar un rol</h3><p>Clic en un rol abre su <b>ficha</b> (datos, permisos, formularios, miembros e historial), donde se edita todo. <span class="ruta">Administración → Roles → ＋ Nuevo rol</span>: identificador, nombre, descripción, <b>Rango PM</b> (lo heredan sus usuarios en los reportes), permisos y formularios a los que accede. Solo puedes otorgar permisos que tú tienes.</p></div>
   <div class="bloque"><h3>Permisos</h3>
-    <ul><li><b>Gestión de usuarios</b>: crear/editar/activar usuarios, cambiar rangos, requisitos de ascenso.</li><li><b>Asignación de roles</b> y <b>Restablecer contraseñas</b>.</li><li><b>Creación de roles</b>: esta pestaña.</li><li><b>Creación de reportes</b> / <b>Gestión de reportes</b>: catálogo de formularios, webhooks de Discord, canales y tareas de Automatización.</li><li><b>Creación de formularios (diseñador)</b>: plantillas personalizadas.</li><li><b>Ver historial</b> / <b>Eliminar historial</b>: pestañas Historial y Resumen; ver expedientes ajenos.</li><li><b>Revisar y aprobar reportes</b>: pestaña Revisión.</li><li><b>Sanciones y advertencias</b>: pestaña Disciplina y registrar sanciones desde el expediente.</li><li><b>Turnos: asignar y editar</b> / <b>Turnos: solo ver</b>.</li><li><b>Anuncios: publicar y editar</b> / <b>Anuncios: solo ver</b>.</li><li><b>Ver auditoría</b>.</li><li><b>Ver como</b>: exclusivo del rol Administrador.</li></ul></div>
-  <div class="bloque"><h3>Rangos PM</h3><p>Lista de rangos de la Policía Militar (Auxiliar, Co-líder, Líder…). Si renombras uno, los roles que lo usan se actualizan.</p></div>
+    <ul><li><b>Gestión de usuarios</b>: crear/editar/activar usuarios, cambiar rangos, requisitos de ascenso.</li><li><b>Asignación de roles</b> y <b>Restablecer contraseñas</b>.</li><li><b>Creación de roles</b>: esta pestaña.</li><li><b>Creación de reportes</b> / <b>Gestión de reportes</b>: catálogo de formularios, webhooks de Discord, canales y tareas de Automatización.</li><li><b>Creación de formularios (diseñador)</b>: plantillas personalizadas.</li><li><b>Ver historial</b> / <b>Eliminar historial</b>: pestañas Historial y Resumen; ver expedientes ajenos.</li><li><b>Revisar y aprobar reportes</b>: pestaña Revisión.</li><li><b>Sanciones y advertencias</b>: pestaña Disciplina y registrar sanciones desde el expediente.</li><li><b>Turnos: asignar y editar</b> / <b>Turnos: solo ver</b>.</li><li><b>Anuncios: publicar y editar</b> / <b>Anuncios: solo ver</b>.</li><li><b>Ver auditoría</b>.</li><li><b>Ver como</b>: exclusivo del rol Administrador.</li>
+      <li><b>Ver todo (solo lectura)</b>: abre todas las secciones de la página sin poder cambiar nada. Útil para auditores o para alguien de confianza que necesita mirar. Anula cualquier otro permiso de escritura que tenga el rol: aunque le marques más, el servidor se los quita. Los enlaces de los webhooks le salen tapados y los botones de <i>Probar</i> no hacen nada.</li>
+      <li><b>Control de TODAS las organizaciones</b>: ver y administrar todas las unidades, no solo la propia. Exclusivo del Administrador.</li></ul>
+    <div class="tip">Los roles son de cada unidad. Un rol creado en la Policía Militar no existe ni se puede asignar en el Escuadrón Tormenta, ni al revés.</div></div>
+  <div class="bloque"><h3>Rangos PM</h3><p>Lista de rangos internos de la unidad (Auxiliar, Co-líder, Líder…). Si renombras uno, los roles que lo usan se actualizan.</p></div>
 </section>
 
 <section class="sec-panel" id="sec-formularios" data-titulo="Formularios" data-icono="📋" data-grupo="Administración" data-permisos="crear_reportes,gestion_reportes,disenar_formularios" hidden>
@@ -140,9 +198,13 @@
 <section class="sec-panel" id="sec-revision" data-titulo="Revisión de reportes" data-icono="✅" data-grupo="Administración" data-permisos="aprobar_reportes" hidden>
   <h2 class="sec">Revisión de reportes<small>Aprobar o rechazar</small></h2>
   <div class="bloque"><h3>Cómo revisar</h3>
-    <ol><li><span class="ruta">Administración → Revisión</span>. La pestaña muestra cuántos hay pendientes.</li><li>Cada tarjeta trae autor, fecha y resumen; pulsa la imagen para verla en grande.</li><li><b>Aprobar</b> (comentario opcional): el reporte cuenta en el Resumen y, si el formulario tiene webhook, se publica en Discord.</li><li><b>Rechazar</b> (motivo obligatorio): no cuenta; el autor ve el motivo en Mis reportes.</li><li><i>Volver a pendiente</i> deshace una decisión.</li></ol>
-    <p>Al aprobar o rechazar, en el canal de Discord del formulario aparece un aviso de texto (sin imagen): <i>Reporte PM-000045 fue revisado y aprobado por Líder PM</i>, con tu Rango PM y el motivo si lo escribiste.</p>
+    <ol><li><span class="ruta">Administración → Revisión</span>. La pestaña muestra cuántos hay pendientes.</li><li>Cada tarjeta trae autor, fecha y resumen; pulsa la imagen para verla en grande.</li><li><b>Aprobar</b> (comentario opcional): el reporte cuenta en el Resumen y, si el formulario tiene webhook, se publica en Discord.</li><li><b>✏️ Devolver para corregir</b> (motivo obligatorio): cuando el reporte está bien encaminado pero le falta algo. Le vuelve al autor, que lo arregla y lo reenvía con <b>el mismo folio</b>; no hay que crear uno nuevo. Esta es la opción por defecto cuando el problema tiene arreglo.</li><li><b>Rechazar</b> (motivo obligatorio): el reporte no sirve. No cuenta y el autor ve el motivo en Mis reportes.</li><li><i>Volver a pendiente</i> deshace una decisión.</li></ol>
+    <p>Al aprobar, devolver o rechazar, en el canal de Discord del formulario aparece un aviso de texto (sin imagen) con el folio y con <b>el rango y el nombre de quien reportó</b>, además de quién revisó y el motivo si lo escribiste.</p>
     <div class="tip">No puedes revisar tus propios reportes (salvo el Administrador). Todo queda en Auditoría.</div></div>
+  <div class="bloque"><h3>Revisar en bloque</h3>
+    <p>Marca las casillas de varias tarjetas y usa la barra de abajo para aprobarlas o devolverlas de una. Antes de aprobar en bloque, la página avisa si entre las marcadas hay alguna con <b>riesgo alto</b> de la IA, para que la mires una por una.</p></div>
+  <div class="bloque"><h3>Enviar de nuevo a Discord</h3>
+    <p>Cada reporte tiene <b>📨 Enviar de nuevo</b>, que lo vuelve a publicar en el canal. Sirve cuando el mensaje se borró o cuando cambiaste el canal de ese formulario: siempre usa el webhook <b>que está configurado ahora</b>, nunca el de la vez pasada.</p></div>
   <div class="bloque"><h3>Semáforo de la IA</h3>
     <p>Cuando un reporte recibe su imagen, el servidor la analiza con una IA (Gemini): lee el texto de las capturas del juego (nombres, cifras, horas, chat), lo compara con lo que escribió el autor y busca indicios de montaje o de capturas reutilizadas de reportes anteriores.</p>
     <ul><li><b>🟢 Riesgo bajo</b>: la evidencia respalda lo declarado.</li><li><b>🟡 Riesgo medio</b>: hay dudas o algo no se pudo verificar (captura borrosa, cifra que no aparece…). Mira la imagen con calma.</li><li><b>🔴 Riesgo alto</b>: indicios claros de falsedad. Revísalo a fondo antes de decidir.</li><li><b>— Sin análisis / ⏳ Analizando</b>: aún no hay resultado; el botón <i>🔎 Analizar</i> lo pide de nuevo.</li></ul>
@@ -182,7 +244,7 @@
 
 <section class="sec-panel" id="sec-historial" data-titulo="Historial y Resumen" data-icono="📊" data-grupo="Administración" data-permisos="historial,eliminar_historial" hidden>
   <h2 class="sec">Historial y Resumen<small>Buscar reportes y ver las cifras</small></h2>
-  <div class="bloque"><h3>Historial</h3><p>Filtra por formulario, usuario, fechas y estado. <b>Buscar en el contenido</b> encuentra nombres, integrantes y observaciones dentro del reporte (pulsa Enter); un folio como <code>PM-000012</code> se busca directo. <i>Ver</i> abre la imagen; <i>🖼 Galería</i> muestra las imágenes en mosaico; <i>⬇ Exportar CSV</i> descarga lo filtrado.</p>
+  <div class="bloque"><h3>Historial</h3><p>Filtra por formulario, usuario, fechas y estado. <b>Buscar en el contenido</b> encuentra nombres, integrantes y observaciones dentro del reporte (pulsa Enter); un folio como <code>PM-000012</code> o <code>EEA-000007</code> se busca directo. <i>Ver</i> abre la imagen; <i>🖼 Galería</i> muestra las imágenes en mosaico; <i>⬇ Exportar CSV</i> descarga lo filtrado.</p>
     <div class="ojo" data-solo="eliminar_historial">Eliminar un reporte es definitivo (imagen incluida) y queda en Auditoría.</div></div>
   <div class="bloque"><h3>Resumen</h3><p>KPIs del periodo (reportes, por día, usuarios activos, bajas, reclutamientos, patrullajes, AKs) y tablas por día, formulario, usuario, integrantes, bajas y reclutamientos por persona. Solo cuenta reportes aprobados. <b>⬇ Exportar resumen</b> en PDF o imagen para compartirlo.</p></div>
 </section>
@@ -190,9 +252,24 @@
 <section class="sec-panel" id="sec-automatizacion" data-titulo="Automatización" data-icono="⏰" data-grupo="Administración" data-permisos="gestion_reportes" hidden>
   <h2 class="sec">Automatización<small>Discord, tareas programadas y copia de seguridad</small></h2>
   <div class="bloque"><h3>Canales de Discord</h3>
-    <ol><li>En Discord: ajustes del canal → Integraciones → Webhooks → Nuevo webhook → Copiar URL.</li><li>En <span class="ruta">Automatización → Canales</span> pega la URL en el canal que corresponda (avisos, anuncios, ranking, resumen, recordatorios) o en el formulario, Guardar y <b>Probar</b>.</li></ol>
-    <p>Sin webhook la página funciona igual; simplemente no publica.</p></div>
-  <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b> y <b>Ranking mensual</b> (otorga las insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato para probar.</p></div>
+    <ol><li>En Discord: ajustes del canal → Integraciones → Webhooks → Nuevo webhook → Copiar URL.</li><li>En <span class="ruta">Automatización → Canales</span> pega la URL en el canal que corresponda (avisos, anuncios, ranking, resumen, recordatorios, solicitudes de acceso, recuperación de contraseña) o en el formulario, Guardar y <b>Probar</b>.</li></ol>
+    <p>Sin webhook la página funciona igual; simplemente no publica.</p>
+    <p><b>Cada unidad tiene sus propios canales.</b> Lo que configures estando en la Policía Militar no afecta al Escuadrón Tormenta: cambia de unidad con el selector y configura los suyos.</p></div>
+  <div class="bloque"><h3>Publicar dentro de un hilo</h3>
+    <p>Al lado del webhook hay una casilla <b>Hilo</b>. Déjala vacía y se publica en el canal; pon el id de un hilo y se publica dentro de ese hilo. Para sacar el id: en Discord, Ajustes → Avanzado → <i>Modo desarrollador</i>, luego clic derecho sobre el hilo → <b>Copiar ID</b>.</p>
+    <div class="ojo">El hilo tiene que estar en el mismo canal del webhook y no puede estar archivado. Si se archiva por inactividad, los envíos fallan hasta que alguien lo reabra.</div>
+    <div class="tip">Si pegas el enlace con el <code>?thread_id=</code> ya dentro, la página lo separa sola y lo pone en su casilla. El hilo va aparte a propósito: así editar y borrar anuncios desde el panel sigue funcionando.</div></div>
+  <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b>, <b>Ranking mensual</b> (otorga las insignias) y <b>Avance semanal del ranking</b> (cómo va la cosa a mitad de mes, sin repartir insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato.</p>
+    <p><b>👁 Vista previa</b> te muestra el mensaje exacto que se enviaría, con los datos reales de hoy, sin publicarlo. Desde ahí puedes <b>descargarlo como imagen</b> o copiar el texto, por si quieres mandarlo a mano o guardarlo.</p></div>
+  <div class="bloque"><h3>Formularios públicos (sin cuenta)</h3>
+    <p>Dos páginas abiertas, pensadas para quien todavía no puede entrar:</p>
+    <ul><li><b>Solicitar acceso</b> — nombre, rango y unidad. Para quien no tiene usuario.</li>
+      <li><b>Olvidé mi contraseña</b> — usuario, nombre en el juego y unidad. Para quien lo perdió.</li></ul>
+    <p>Las dos salen enlazadas desde la pantalla de inicio de sesión, y cada una publica en su canal: <i>Solicitudes de acceso</i> y <i>Recuperación de contraseña</i>. En la lista de canales, al lado de cada uno, tienes el <b>enlace público</b> listo para repartir.</p>
+    <ul><li>No guardan nada: leen los tres campos, los mandan a Discord y los olvidan.</li>
+      <li>Llevan captcha y tope de envíos: uno al día para las solicitudes de acceso, uno cada dos horas para las de contraseña.</li>
+      <li>El de contraseña <b>no restablece nada solo</b>: confirma por Discord que es esa persona antes de darle una nueva.</li></ul>
+    <div class="ojo">Lo que llega por ahí lo escribió cualquiera, sin verificar. Trátalo como una pista, no como un dato de confianza.</div></div>
   <div class="bloque"><h3>Auditoría con IA</h3><p>Interruptor del análisis automático de cada reporte nuevo y modelo a usar (Gemini, nivel gratuito). Muestra cuántos reportes se analizaron en los últimos 30 días y su reparto por riesgo. La clave de Google vive en el servidor; nadie la ve desde la página.</p></div>
   <div class="bloque" data-solo="superadmin"><h3>Copia de seguridad (solo Administrador)</h3><p>Descarga un ZIP con todas las tablas (JSON y CSV) y las imágenes del historial. Hazla periódicamente y guárdala fuera de la página. No incluye contraseñas ni webhooks.</p></div>
 </section>
@@ -206,7 +283,7 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=33fe0109"></script>
+<script type="module" src="js/app-manuales.js?v=d1c0edcc"></script>
 </body>
 </html>  <div class="bloque"><h3>El mensaje en Discord</h3><p>Al guardar con <i>Publicar en Discord</i> el anuncio sale al canal de anuncios y la página recuerda ese mensaje. En el menú ⋯ del anuncio: <b>🔄 Actualizar en Discord</b> reescribe el mensaje con el texto actual (también ocurre al guardar cambios con la casilla marcada) y <b>🧹 Borrar de Discord</b> lo retira del canal sin tocar el tablón. Eliminar el anuncio borra también su mensaje.</p></div>
 

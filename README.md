@@ -12,6 +12,11 @@ login.html            Ingreso con usuario y contraseña
 cuenta.html           Mi cuenta: mis reportes (propios, con descarga), cambiar contraseña
 privacidad.html       Aviso de privacidad y uso (enlazado desde el login y la barra)
 reglamento.html       Reglamento (reglas, sanciones, rangos, ascensos, permisos, macros) + manual en docs/
+calendario.html       Eventos diarios del servidor (hora UTC y hora local, cuenta atrás)
+acceso.html           PÚBLICA, sin sesión: solicitar acceso (?u=pm | ?u=eea)
+recuperar.html        PÚBLICA, sin sesión: olvidé mi contraseña (?u=pm | ?u=eea)
+manuales.html         Manuales de uso dentro de la app (secciones filtradas por permiso)
+anuncios/             Imágenes de los comunicados publicados en el tablón
 manifest.webmanifest  PWA (nombre, iconos en icons/, atajos); sw.js service worker (versión inyectada por build.mjs); sin-conexion.html
 admin/index.html      Panel de administración (pestañas según permisos)
 src/                  Código JavaScript legible (auth.js, config.js y el script de cada página)
@@ -20,7 +25,8 @@ build.mjs             Construcción: npm install && npm run build  (regenera js/
 estilos.css           Estilos compartidos
 reportes/<id>/        Cada formulario (index.html + plantilla.png)
 supabase/schema.sql   Esquema de la base de datos (idempotente)
-supabase/functions/   Edge Functions (reset-password, crear-usuario)
+supabase/functions/   Edge Functions (crear-usuario, reset-password, reset-mfa,
+                      notificar-discord, notificar-general, auditar-reporte, solicitud-acceso)
 ```
 
 ## Roles y permisos
@@ -39,8 +45,12 @@ Un rol es un conjunto de permisos más la lista de formularios a los que da acce
 | Eliminar historial | Eliminar reportes del historial (incluida su imagen) |
 | Ver auditoría | Consultar el registro de auditoría |
 | Acceso a formularios | "Todos" o una selección; sin acceso, el formulario no aparece ni se puede abrir |
+| Ver todo (solo lectura) | Abre todas las secciones sin poder cambiar nada. `permisos_efectivos` le retira en el servidor cualquier permiso de escritura, así que no basta con quitarle botones: aunque el rol tenga más marcados, el servidor devuelve solo `{ver_todo, historial, auditoria, ver_turnos, ver_anuncios}`. Los webhooks le llegan censurados y `sb.functions.invoke` está bloqueado en el cliente |
+| Control de TODAS las organizaciones | Ver y administrar cualquier unidad, no solo la propia (`soy_global()`). Exclusivo del Administrador |
 
 Roles iniciales: **Administrador** (todo) y **Usuario** (solo llena reportes). Se pueden crear los que hagan falta desde el panel.
+
+**Los roles son por organización.** Cada fila de `roles` lleva su `org_id`; un rol de la PM no existe ni se puede asignar en EEA. El **rango** en cambio es general: vive en `perfiles.rango` y se refleja en todas las membresías.
 
 Las reglas se aplican en la base de datos (RLS), no solo en la interfaz.
 
@@ -59,6 +69,8 @@ Cada alta, cambio o baja en usuarios, roles, Rangos PM, formularios y reportes, 
 3. En `src/config.js` pon la Site Key en `TURNSTILE_SITE_KEY` y ejecuta `npm run build`.
 El alta de usuarios desde el panel usa la Edge Function `crear-usuario` (clave de servicio), por lo que no requiere captcha.
 
+**Los formularios públicos usan un widget aparte.** Site Key en `src/publico.js`, Secret Key en el secreto de Edge Functions `TURNSTILE_SECRET_ACCESO`. Van separados del login para poder rotar una llave sin tumbar la otra, subirle la dificultad solo a la parte pública y mirar sus estadísticas por aparte. Con un solo widget también funcionaría, porque cada formulario valida su propia `action`.
+
 ## Protección del lado del cliente
 
 - **CSP** (Content-Security-Policy en cada página): solo se ejecutan scripts del propio sitio y de cdn.jsdelivr.net, y solo se conecta a Supabase; bloquea scripts inyectados (XSS) y scripts incrustados.
@@ -70,7 +82,26 @@ El alta de usuarios desde el panel usa la Edge Function `crear-usuario` (clave d
 1. El admin crea usuarios desde el panel (usuario, nombre, contraseña inicial, rol). No hay registro libre.
 2. Cada usuario entra en `login.html`, ve solo sus formularios y cambia su contraseña en "Mi cuenta".
 3. En los formularios, la fecha arranca en hoy (editable con calendario); nombre, rango y Rango PM se toman del perfil y del rol y no son editables.
-4. Al exportar, primero se registra el reporte en el servidor, que **sella** usuario, nombre, rango y Rango PM desde el perfil (ignora lo que envíe el navegador) y asigna un **folio** (`PM-000012`); luego la imagen se genera con el folio estampado y se adjunta al registro, una sola vez. Un reporte sellado no se puede modificar. Para verificar una imagen, se compara su folio con el historial.
+4. Al exportar, primero se registra el reporte en el servidor, que **sella** usuario, nombre, rango y Rango PM desde el perfil (ignora lo que envíe el navegador) y asigna un **folio** con el prefijo de su organización (`PM-000012`, `EEA-000013`; la numeración es única y compartida, solo cambia el prefijo); luego la imagen se genera con el folio estampado y se adjunta al registro, una sola vez. Un reporte sellado no se puede modificar. Para verificar una imagen, se compara su folio con el historial.
+
+5. El revisor tiene tres salidas: **aprobar**, **devolver para corregir** (`devuelto`) o **rechazar**. Un reporte devuelto se reabre para su autor con `reenviar_a_revision()`: conserva su id, su folio y su fila; se actualiza en vez de insertarse y vuelve a `pendiente`. Toda la maquinaria vive en `auth.js` (`modoCorreccion`, `precargarCampos`, `crearReporte`), así que ningún formulario tuvo que cambiar.
+
+## Organizaciones (multi-unidad)
+
+La página aloja varias unidades sin que se mezclen. La pieza central es la **organización activa**, que vive en el servidor (`perfiles.org_activa`) y se lee con `mi_org()`: todas las políticas RLS filtran por ella, así que las consultas que ya existían quedaron aisladas sin tocar una sola llamada.
+
+```
+organizaciones   id, nombre, nombre_corto, prefijo, escudo, color, activa, orden
+membresias       usuario_id, org_id, rol_id, activo, visible,
+                 permisos_extra, permisos_negados, formularios_extra, notas_admin
+perfiles         id, usuario, nombre, rango (GENERAL), org_principal, org_activa
+```
+
+Funciones clave: `mi_org()`, `mis_orgs()`, `cambiar_org()`, `es_global()`, `soy_global()`, `soy_superadmin()`, `permisos_efectivos(usuario[, org])`, `tengo_permiso(permiso[, org])`, `comparto_org()`, `puedo_sobre()`, `mi_sesion()`.
+
+**Qué va dónde.** El rango, el nombre y la cuenta son generales (`perfiles`). El rol, si está activo, si es visible en formularios y los permisos granulares son de cada unidad (`membresias`). El panel guarda todo con `guardar_miembro(usuario, org, nombre, rango, rol_id, activo, visible, crear)`, que valida que el rol sea de esa organización y mantiene los candados de siempre (rol protegido, no asignar permisos que uno no tiene). **No escribas rol ni estado directo en `perfiles`**: ahí el servidor ya no los lee.
+
+Cada organización tiene además sus propios formularios, canales de Discord, roles, ranking, turnos, anuncios y prefijo de folio.
 
 ## Agregar un formulario nuevo
 
@@ -107,6 +138,8 @@ El formulario queda en `reportes/plantilla/?id=<id>` y se comporta como los dem�
 ## Discord
 
 Panel › Formularios › Editar › **Webhook de Discord** (requiere gestión de reportes). Al sellar un reporte de ese formulario, el navegador llama a la Edge Function `notificar-discord`, que verifica que quien llama puede ver el reporte, lee el webhook con la clave de servicio (nunca viaja al navegador), descarga la imagen del bucket y la publica en el canal con folio, fecha, quién reporta y resumen. Marca `reportes.discord_enviado_en` para no repetir y deja rastro en auditoría (`discord_publicado`). "Enviar prueba" manda un mensaje de verificación al canal. Si Discord falla, el reporte igual queda sellado y en el historial; el mensaje de éxito indica el motivo.
+
+**Enviar de nuevo.** En Revisión cada reporte tiene `📨 Enviar de nuevo` → `notificar-discord` con `{reporte_id, reenviar:true}`. Exige permiso de revisión o de gestión, se salta el candado de `discord_enviado_en` y **relee el webhook en ese momento**: si cambiaste el canal del formulario, el reenvío va al nuevo, nunca al viejo.
 
 ## Exportar el Resumen (PDF o PNG)
 
@@ -174,6 +207,9 @@ Cada formulario tiene la casilla **Descargar la imagen al enviar** (`formularios
 - Se activa **por formulario**: Admin → Formularios → Editar → "Requiere aprobación de un revisor" (badge *Con revisión* en la lista). Mientras no se active, todo funciona como antes (los reportes nacen aprobados).
 - Con la opción activa, cada reporte nuevo queda **pendiente** (`reportes.estado`): se guarda y **se publica en Discord igual** (la publicación es inmediata para todos los reportes), pero no cuenta en el Resumen, el ranking ni las estadísticas hasta que alguien con el permiso **Revisar y aprobar reportes** (`aprobar_reportes`) lo apruebe. El autor lo ve en Mi cuenta → Mis reportes con la etiqueta y, si lo rechazan, con el motivo.
 - Pestaña **Revisión** del panel: tarjetas con imagen, autor y resumen; Aprobar (comentario opcional; si la publicación en Discord hubiera fallado al enviar, la reintenta) / al aprobar o rechazar, el servidor publica en el canal del formulario un aviso de solo texto: "✅ Reporte PM-000045 fue revisado y aprobado por Líder PM" (Rango PM del revisor, con el motivo citado si lo hay) / Rechazar (motivo obligatorio) / Volver a pendiente. La pestaña muestra el número de pendientes. Historial tiene filtro y columna de estado; el CSV incluye estado, revisor y comentario.
+- **Tres salidas, no dos.** Además de aprobar y rechazar está **devolver para corregir** (`estado = 'devuelto'`), para el reporte que solo necesita un arreglo. El autor lo ve en los avisos del inicio y en Mis reportes con "✏️ Corregir y reenviar", que abre el formulario precargado; al reenviar se **actualiza la misma fila** (mismo id, mismo folio) y `reenviar_a_revision()` la devuelve a `pendiente`.
+- El aviso que se publica en Discord al revisar lleva el folio **y el rango y nombre de quien reportó**, además de quién revisó.
+- **Revisión en bloque**: casillas por tarjeta y barra inferior para aprobar o devolver varias. Se procesan en serie y, antes de aprobar en bloque, se avisa si alguna trae riesgo alto de la IA.
 - Servidor: trigger `reportes_estado_inicial`, RPC `revisar_reporte(id, estado, comentario)` (no permite revisar los propios salvo Administrador; audita `revision_aprobado/rechazado/pendiente`) y el trigger de inmutabilidad solo deja cambiar la revisión a través de ese RPC.
 
 ## Auditoría con IA de los reportes (gratis, Gemini)
@@ -194,7 +230,30 @@ Cada mensaje que la página envía a Discord se guarda con su identificador en `
 
 ## Canales de Discord y automatización
 
-Admin → **Automatización** → Canales de Discord: webhooks por propósito y, debajo, los **canales por formulario** (`formularios_discord`, lo mismo que el campo del editor de Formularios, centralizado aquí con botón Probar); también (`discord_canales`: avisos, anuncios, ranking, resumen, recordatorios) con botón Probar. La Edge Function `notificar-general` (`{canal, texto, embed, prueba}`) publica en ellos; exige sesión con alguno de los permisos que generan avisos y audita como `discord_aviso`. En el cliente: `avisoDiscord(canal, {texto, embed})`.
+Admin → **Automatización** → Canales de Discord: webhooks por propósito y, debajo, los **canales por formulario** (`formularios_discord`, lo mismo que el campo del editor de Formularios, centralizado aquí con botón Probar); también (`discord_canales`: avisos, anuncios, ranking, resumen, recordatorios, solicitudes, recuperacion) con botón Probar. La Edge Function `notificar-general` (`{canal, texto, embed, prueba}`) publica en ellos; exige sesión con alguno de los permisos que generan avisos y audita como `discord_aviso`. En el cliente: `avisoDiscord(canal, {texto, embed})`.
+
+**Un canal por organización.** La clave de `discord_canales` es `(org_id, clave)`, no solo `clave`: PM y EEA tienen cada una su propio `anuncios`, su propio `solicitudes`, etc. `notificar-general` resuelve la organización de quien llama con `mi_org()` y `discord_enviar(canal, payload, tabla, id, org)` acepta la organización como quinto argumento (por defecto `mi_org()` y, sin sesión —cron—, `'pm'`).
+
+**Hilos.** Cada canal y cada formulario tienen una columna `hilo` con el id del hilo de Discord, aparte del webhook. Va separado a propósito: publicar admite `?thread_id=` al final, pero **editar y borrar** usan `/messages/<id>` y con el parámetro pegado al enlace la dirección queda malformada. Las funciones arman la URL con `URL()` (`urlEnviar` / `urlMensaje`), lo que de paso arregla cualquier webhook que ya trajera parámetros. El panel separa solo un `?thread_id=` pegado en el campo del webhook.
+
+## Formularios públicos (sin sesión)
+
+`acceso.html` y `recuperar.html` son páginas **aisladas**: no importan `auth.js`, ni `config.js`, ni la librería de Supabase; no hay sesión y no tocan ninguna tabla. Comparten `src/publico.js` y se distinguen con `<body data-tipo="acceso|password">`. CSP cerrada (`default-src 'none'`), `noindex`, sin referrer. El destino sale de `?u=<org>`.
+
+Las dos postean a la Edge Function **`solicitud-acceso`** (desplegada con `verify_jwt:false`), que:
+
+1. Exige `TURNSTILE_SECRET_ACCESO` (o, si no existe, `TURNSTILE_SECRET_KEY`). Sin secreto responde 503: falla cerrado.
+2. Valida el token contra Cloudflare **y exige que la acción coincida** (`solicitud-acceso` / `recuperar-password`) y que el hostname sea el del sitio. Por eso un token resuelto en el login o en el otro formulario no sirve aquí, aunque el widget sea el mismo.
+3. Llama a `solicitud_permitida(org, ip, tipo)`, que comprueba el canal, aplica el tope (24 h para acceso, 2 h para contraseña) y devuelve el webhook. **La IP no se guarda en claro**: se convierte en un HMAC-SHA256 con un pepper aleatorio generado en `secretos_internos` y la tabla `solicitudes_limite` solo guarda ese hash, el tipo y la hora del último envío. Se limpia sola a las 48 h.
+4. Limpia el texto (sin enlaces, sin menciones, sin formato, sin caracteres invisibles, con tope de largo), publica con `allowed_mentions: {parse: []}` y **no guarda la solicitud en ninguna parte**.
+
+`solicitudes_limite` y `secretos_internos` tienen RLS activo y **ninguna política**: solo se llegan con la clave de servicio. `solicitud_permitida` solo tiene `execute` para `service_role`. La comprobación del canal va **antes** que la del tope, para que un canal sin configurar no le queme el turno a nadie.
+
+## Calendario de actividades
+
+`actividades` (nombre, icono, descripción, `org_id` NULL = todas, orden) y `actividades_horarios` (`hora_utc`, etiqueta). Las horas se guardan **siempre en UTC**; `calendario.html` las muestra en la hora local de quien mira y en la del servidor, marca lo que ya pasó y lleva la cuenta atrás del siguiente.
+
+En los formularios, una opción de lista que empiece por `HH:MM UTC` se muestra con la hora local añadida (`conHoraLocal` en `plantilla.js`), pero el `<option value>` conserva la cadena UTC: **lo que se guarda y se sella es siempre la hora del servidor**.
 
 ## Panel de administración: navegación lateral y fichas
 
@@ -248,3 +307,9 @@ En pantallas angostas los formularios muestran una barra fija abajo con **Vista 
 ## PWA (instalar como app)
 
 `manifest.webmanifest` + `sw.js` + iconos en `icons/` (generados desde `favicon.svg`). En **Mi cuenta › Instalar como app** aparece el botón de instalación (Android/Chrome/Edge) o las instrucciones para iPhone (Compartir → Añadir a pantalla de inicio). El service worker guarda el cascarón (páginas, estilos, scripts, plantillas, iconos): las páginas y scripts van **red primero** con caché de respaldo (los cambios llegan de inmediato; `build.mjs` cambia la versión del SW con cada build), las imágenes van **caché primero**; las llamadas a Supabase nunca se cachean. Sin conexión: las páginas ya visitadas abren; lo no visitado muestra `sin-conexion.html`. Iniciar sesión, exportar y ver historial requieren conexión.
+
+## Deuda conocida
+
+- `supabase/schema.sql` quedó desactualizado frente al modelo multi-organización: sirve como referencia histórica, no para recrear la base desde cero. La fuente de verdad son las migraciones aplicadas en Supabase.
+- Quedan funciones SQL pensadas para una sola organización (`expediente`, `ranking_calc`, `turnos_lista`, `ejecutar_programada`, insignias): funcionan porque hoy solo la PM las usa en serio, pero habrá que pasarlas por `mi_org()`.
+- Las versiones de dos argumentos de `discord_enviar`, `discord_enviar_formulario` y `ejecutar_programada` quedaron renombradas a `*_obsoleta` para resolver una ambigüedad de sobrecarga; se pueden borrar cuando nadie las llame.
