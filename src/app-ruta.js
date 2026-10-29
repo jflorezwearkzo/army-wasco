@@ -78,12 +78,27 @@ function pintar(){
   const d = D, act = etapaActual(d);
   // El interruptor general lo mueve solo el administrador; mientras esté apagado, la ruta es un
   // borrador que únicamente ve quien puede encenderla.
-  $('#switch').innerHTML = d.puedo_activar
-    ? `<label class="sw"><input type="checkbox" id="chkActiva" ${d.activa?'checked':''}>
-         <span>Ruta de aprendizaje <b>${d.activa?'activada':'desactivada'}</b> para toda la página</span></label>
+  const general = d.puedo_activar && !AJENA
+    ? `<label class="sw"><input type="checkbox" id="chkActiva" ${d.activa_general?'checked':''}>
+         <span>Ruta de aprendizaje <b>${d.activa_general?'activada':'desactivada'}</b> para toda la página</span></label>
        <small>Mientras esté desactivada, solo tú la ves. Nadie más la tiene en el menú ni puede firmar.</small>`
     : '';
-  if(!d.activa && !d.puedo_activar){
+  // Excepción para una persona concreta, por encima del ajuste general
+  const exc = d.excepcion === null || d.excepcion === undefined ? '' : (d.excepcion ? 'si' : 'no');
+  const porUsuario = AJENA && d.puedo_reiniciar
+    ? `<label class="sw" for="selExc"><span>Ruta para esta persona</span></label>
+       <select id="selExc" style="width:auto;margin-top:6px">
+         <option value=""${exc===''?' selected':''}>Según el ajuste general (${d.activa_general?'activada':'desactivada'})</option>
+         <option value="si"${exc==='si'?' selected':''}>Activada siempre</option>
+         <option value="no"${exc==='no'?' selected':''}>Desactivada para esta persona</option>
+       </select>
+       <small>Sirve para quitársela a quien ya es veterano, o para encendérsela a alguien mientras la general sigue apagada.</small>`
+    : '';
+  $('#switch').innerHTML = general + porUsuario;
+  // Quien administra sigue viendo la ruta de alguien aunque esté apagada para esa persona
+  const avisoApagada = !d.activa
+    ? `<p class="muted" style="margin:0 0 8px">⚠️ La ruta está <b>desactivada</b> ${AJENA ? 'para esta persona: no la ve en su menú' : 'y solo la ves tú'}.</p>` : '';
+  if(!d.activa && !d.puedo_activar && !(AJENA && d.puedo_reiniciar)){
     $('#cab').innerHTML = '';
     $('#etapas').innerHTML = '<section class="etapa"><h2><span class="ico">🚧</span> Todavía no está disponible</h2><p class="intro">La ruta de aprendizaje está en preparación. Cuando el liderazgo la active, la verás aquí.</p></section>';
     return;
@@ -92,6 +107,7 @@ function pintar(){
   const listos = ETAPAS.reduce((a,e) => a + e.pasos.filter(p => !p.opcional && hechoPaso(p,d)).length, 0);
 
   $('#cab').innerHTML = `
+    ${avisoApagada}
     <p class="muted" style="margin:0 0 6px">${AJENA ? `Ruta de <b>${esc(PERFIL ? nombreCompleto(PERFIL) : 'este integrante')}</b>` : 'Tu avance como integrante del Army'}</p>
     <div class="prog"><div class="progbar"><span style="width:${Math.round(listos/total*100)}%"></span></div>
       <b>${listos} de ${total}</b> pasos${act > ETAPAS.length ? ' · ruta terminada 🎖️' : ` · vas en la etapa ${act}`}</div>`;
@@ -125,6 +141,7 @@ function pintar(){
   document.querySelectorAll('[data-paso]').forEach(b => b.onclick = () => alternar(b.dataset.paso));
   const bf = $('#btnFirmar'); if(bf) bf.onclick = firmar;
   const ch = $('#chkActiva'); if(ch) ch.onchange = () => activar(ch.checked);
+  const se = $('#selExc'); if(se) se.onchange = () => excepcion(se.value);
   $('#pie').innerHTML = d.puedo_reiniciar && AJENA
     ? `<button class="ghost sm" id="btnReiniciar">↺ Reiniciar esta ruta</button>` : '';
   const br = $('#btnReiniciar'); if(br) br.onclick = reiniciar;
@@ -153,6 +170,14 @@ async function firmar(){
 async function reiniciar(){
   if(!confirm('¿Reiniciar la ruta de esta persona?\n\nSe borran los pasos que marcó a mano y la firma. Lo que se comprueba solo (reportes, turnos, dos pasos) se vuelve a marcar enseguida.')) return;
   const { error } = await sb.rpc('reiniciar_ruta', { p_usuario: OTRO });
+  if(error){ $('#err').textContent = error.message; return; }
+  await cargar();
+}
+
+// '' = sin excepción (sigue el ajuste general) · 'si' / 'no' = encendida o apagada para esa persona
+async function excepcion(valor){
+  const activa = valor === '' ? null : valor === 'si';
+  const { error } = await sb.rpc('ruta_para_usuario', { p_usuario: OTRO, p_activa: activa });
   if(error){ $('#err').textContent = error.message; return; }
   await cargar();
 }

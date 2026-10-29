@@ -321,6 +321,8 @@ Cuatro etapas (`ruta.html` + `src/app-ruta.js`), iguales para todas las unidades
 
 **Interruptor general.** `ajustes_globales` (clave `ruta_aprendizaje`) con RLS: lectura para cualquier perfil activo, escritura solo para el superadmin. Nace apagado. Mientras lo esté, `rutaVisible()` esconde el enlace del menú y del inicio, y la página solo la ve quien puede encenderla. `mi_sesion()` devuelve el estado para no consultar en cada página.
 
+**Excepción por persona.** `ruta_usuario(usuario_id, activa, motivo, cambiado_por)`: sin fila se sigue el ajuste general, con fila manda la fila en los dos sentidos. `ruta_activa_para(usuario)` resuelve el estado efectivo y es lo que miran `mi_sesion`, `mi_ruta` y `firmar_ruta`. Se cambia con `ruta_para_usuario(usuario, activa, motivo)` — `activa = null` quita la excepción — que exige `puedo_gestionar_ruta()` (permiso de usuarios, misma organización y rol dentro de los permisos propios) y audita `ruta_usuario`.
+
 ## Deuda conocida
 
 - `supabase/schema.sql` quedó desactualizado frente al modelo multi-organización: sirve como referencia histórica, no para recrear la base desde cero. La fuente de verdad son las migraciones aplicadas en Supabase.
