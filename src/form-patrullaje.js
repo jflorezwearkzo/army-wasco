@@ -107,7 +107,7 @@ function validate(d){
     if(p.integrantes.length<2) e.push(`• ${t}debe haber mínimo 2 integrantes (tú y al menos uno más).`);
     { const vistos=new Set(); for(const n of p.integrantes){ const k=n.toLowerCase(); if(vistos.has(k)){ e.push(`• ${t}"${n}" está repetido en los integrantes.`); break; } vistos.add(k); } }
     if(p.novedades==='SÍ'&&p.novedadesN<1) e.push(`• ${t}indica la cantidad de novedades/bajas.`);
-    if(p.codigo&&!/^PM-\d{6}$/.test(p.codigo)) e.push(`• ${t}el código de reporte debe ser un folio existente (PM-000000).`);
+    if(p.codigo&&!/^[A-Z]{2,6}-\d{6}$/.test(p.codigo)) e.push(`• ${t}el código de reporte debe ser un folio existente (PM-000000).`);
     if(!pg.fotos.sal) e.push(`• ${t}falta la foto de salida de patrulla.`);
     if(!pg.fotos.reg) e.push(`• ${t}falta la foto de regreso de patrulla.`);
   });
