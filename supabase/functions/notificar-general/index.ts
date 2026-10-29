@@ -36,7 +36,10 @@ Deno.serve(async (req: Request) => {
   else { for (const p of PERMISOS) { const { data } = await caller.rpc("tengo_permiso", { p }); if (data) { permitido = true; break; } } }
   if (!permitido) return json(403, { error: "Sin permiso para publicar avisos" });
 
-  const { data: cfg } = await admin.from("discord_canales").select("nombre, webhook, activo").eq("clave", canal).maybeSingle();
+  // La clave del canal se repite entre organizaciones: siempre el de la organización de quien llama
+  const { data: miOrg } = await caller.rpc("mi_org");
+  const org = String(miOrg ?? "pm");
+  const { data: cfg } = await admin.from("discord_canales").select("nombre, webhook, activo").eq("clave", canal).eq("org_id", org).maybeSingle();
   if (!cfg) return json(404, { error: "Canal desconocido" });
   if (!cfg.webhook || (!cfg.activo && !body.prueba)) return json(200, { ok: false, motivo: "sin_webhook" });
 
@@ -64,8 +67,10 @@ Deno.serve(async (req: Request) => {
     return json(200, { ok: true });
   }
 
-  const payload: Record<string, unknown> = { username: "Policía Militar · Army de Wasco" };
-  if (body.prueba) payload.content = `✅ Prueba de conexión: el canal **${cfg.nombre}** quedó enlazado con la página de Policía Militar.`;
+  const { data: orgRow } = await admin.from("organizaciones").select("nombre").eq("id", org).maybeSingle();
+  const nombreOrg = orgRow?.nombre ?? "Policía Militar";
+  const payload: Record<string, unknown> = { username: `${nombreOrg} · Army de Wasco` };
+  if (body.prueba) payload.content = `✅ Prueba de conexión: el canal **${cfg.nombre}** quedó enlazado con la página de ${nombreOrg}.`;
   else {
     if (body.texto) payload.content = String(body.texto).slice(0, 1900);
     if (body.embed && typeof body.embed === "object") payload.embeds = [{ color: 0xf0c24d, ...body.embed }];

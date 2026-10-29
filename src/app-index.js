@@ -33,7 +33,7 @@
   const bp = document.getElementById('pedirAcceso');
   if(bp) bp.onclick = async () => {
     bp.disabled = true; const antes = bp.textContent; bp.textContent = 'Enviando…';
-    const r = await avisoDiscord('avisos', { texto: `✋ **${nombreCompleto(yo)}** (usuario \`${yo.usuario}\`) pide acceso a los formularios de reporte.`, origen: { tabla:'perfiles', id: yo.id } });
+    const r = await avisoDiscord('solicitudes', { texto: `✋ **${nombreCompleto(yo)}** (usuario \`${yo.usuario}\`) pide acceso a los formularios de reporte.`, origen: { tabla:'perfiles', id: yo.id } });
     bp.textContent = r === 'ok' ? '✅ Aviso enviado al liderazgo' : antes;
     if(r !== 'ok'){ bp.disabled = false; alert('No se pudo avisar automáticamente. Escríbele a un Líder, Co-Líder o Auxiliar por Discord.'); }
   };

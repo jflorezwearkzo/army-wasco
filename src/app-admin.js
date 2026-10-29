@@ -1,7 +1,7 @@
 import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
 import { dibujarEmbed, textoEmbed } from './embed-export.js';
 import { respaldoCompleto } from './respaldo.js';
-import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA, mensajesDiscord, reenviarDiscord } from './auth.js';
+import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA, mensajesDiscord, reenviarDiscord, RAIZ } from './auth.js';
 
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
@@ -724,14 +724,18 @@ async function cargarAutomatizacion(){
   const campoWh = (attr, clave, valor, tiene) => EDITA
     ? `<input type="url" data-${attr}="${esc(clave)}" value="${esc(valor||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px">`
     : `<span class="muted" title="No tienes permiso para ver los enlaces">${tiene ? '🔒 ••••••••••••••••••••  <span style="font-size:11px">(configurado)</span>' : '— sin webhook'}</span>`;
-  $('#tbCanales').innerHTML = (data||[]).map(c => `<tr data-id="${esc(c.clave)}"><td><b>${esc(c.nombre)}</b><br><span class="muted" style="font-size:12px">${esc(c.clave)}</span></td>
+  // El canal de solicitudes lleva además el enlace público que se le pasa a quien no tiene cuenta
+  const ORG_ID = (yo.org && yo.org.id) || 'pm';
+  const enlacePublico = c => c.clave !== 'solicitudes' ? ''
+    : `<br><span class="muted" style="font-size:12px">Enlace público: <a href="${esc(RAIZ)}acceso.html?u=${esc(ORG_ID)}" target="_blank" rel="noopener">${esc(RAIZ)}acceso.html?u=${esc(ORG_ID)}</a></span>`;
+  $('#tbCanales').innerHTML = (data||[]).map(c => `<tr data-id="${esc(c.clave)}"><td><b>${esc(c.nombre)}</b><br><span class="muted" style="font-size:12px">${esc(c.clave)}</span>${enlacePublico(c)}</td>
     <td>${campoWh('wh', c.clave, c.webhook, c.tiene_webhook)}</td>
     <td><input type="checkbox" data-on="${esc(c.clave)}" ${c.activo?'checked':''} ${EDITA?'':'disabled'}></td>
     <td style="white-space:nowrap">${EDITA ? `<button class="ghost sm" data-cg="${esc(c.clave)}">Guardar</button> <button class="ghost sm" data-cp="${esc(c.clave)}" title="Envía un mensaje de prueba al canal">Probar</button>` : ''} <span class="muted" data-cm="${esc(c.clave)}" style="font-size:12px"></span></td></tr>`).join('');
   const guardar = async clave => {
     const w = $(`[data-wh="${clave}"]`).value.trim(); const m = $(`[data-cm="${clave}"]`);
     if(w && !/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }
-    const { error } = await sb.from('discord_canales').update({ webhook: w || null, activo: $(`[data-on="${clave}"]`).checked, actualizado_en: new Date().toISOString() }).eq('clave', clave);
+    const { error } = await sb.from('discord_canales').update({ webhook: w || null, activo: $(`[data-on="${clave}"]`).checked, actualizado_en: new Date().toISOString() }).eq('clave', clave).eq('org_id', ORG_ID);
     m.textContent = error ? 'Error: '+error.message : 'Guardado.'; return !error;
   };
   document.querySelectorAll('[data-cg]').forEach(b => b.onclick = () => guardar(b.dataset.cg));
