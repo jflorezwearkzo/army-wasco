@@ -100,7 +100,8 @@ Deno.serve(async (req: Request) => {
     if (p?.motivo === "limite") return json(origin, 429, { error: tipo === "password"
       ? "Ya enviaste una solicitud hace poco. Espera un par de horas o escríbele al liderazgo por Discord."
       : "Ya enviaste una solicitud hoy. Si fue un error, escríbele al liderazgo por Discord." });
-    return json(origin, 404, { error: "Esa unidad no está recibiendo solicitudes ahora mismo." });
+    if (p?.motivo === "sin_webhook") return json(origin, 503, { error: "Este formulario todavía no está conectado con Discord. Avísale al liderazgo; no es culpa tuya." });
+    return json(origin, 404, { error: "No encontramos esa unidad. Revisa el enlace que te pasaron." });
   }
 
   const payload = {
