@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://static.cloudflareinsights.com; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net https://cloudflareinsights.com; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
+<title>Ruta de aprendizaje · Army de Wasco</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="js/tema.js?v=56ccd7cc"></script>
+<link rel="stylesheet" href="estilos.css">
+<style>
+  main{max-width:880px;margin:24px auto;padding:0 20px}
+  h1{color:var(--gold);margin:0 0 4px;font-size:28px}
+  .prog{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+  .prog b{color:var(--text)}
+  .progbar{flex:1 1 220px;height:8px;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;overflow:hidden}
+  .progbar span{display:block;height:100%;background:var(--gold)}
+  .etapa{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0}
+  .etapa.actual{border-color:var(--gold)}
+  .etapa.completa{opacity:.82}
+  .etapa h2{margin:0;font-size:17px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .etapa h2 small{text-transform:none;letter-spacing:0;color:var(--muted);font-weight:400;font-size:13px}
+  .etapa h2 .ico{font-size:20px}
+  .sello{margin-left:auto;background:var(--avisobg);color:#5fd38d;border-radius:20px;padding:2px 10px;font-size:11px;letter-spacing:1px}
+  .intro{color:var(--muted);font-size:14px;margin:8px 0 12px}
+  .pasos{list-style:none;margin:0;padding:0}
+  .pasos li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line3)}
+  .pasos li:first-child{border-top:0}
+  .pasos li.ok .txt{color:var(--muted);text-decoration:line-through}
+  .chk{background:none;border:0;font-size:19px;line-height:1;cursor:pointer;padding:0;min-width:24px}
+  .chk.est{cursor:default}
+  .txt{font-size:15px}
+  .opc{color:var(--muted);font-size:12px;font-style:italic}
+  .cnt{display:block;color:var(--gold);font-size:12px;margin-top:2px}
+  .ayu{display:block;color:var(--muted);font-size:12px;margin-top:2px;line-height:1.45}
+  .firmada{background:var(--avisobg);border:1px solid var(--avisoline);border-radius:8px;padding:8px 12px;font-size:13px;margin:12px 0 0}
+  .nota-guia{color:var(--muted);font-size:13px;margin:18px 0 0;line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+  <p class="unidad">Army de Wasco · <span data-org-nombre>Policía Militar</span></p>
+  <h1>🧭 Ruta de aprendizaje</h1>
+  <div id="cab"></div>
+  <div id="etapas"></div>
+  <p class="nota-guia">Esta ruta es una <b>guía</b>, no un requisito: no da ni quita permisos, y nadie pierde acceso a nada por ir despacio.
+    Las tres primeras etapas se marcan solas con lo que ya haces; la última la firma el liderazgo.</p>
+  <div class="err" id="err"></div>
+</main>
+<script type="module" src="js/app-ruta.js?v=4e01ca36"></script>
+</body>
+</html>

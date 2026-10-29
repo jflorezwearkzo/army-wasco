@@ -190,6 +190,7 @@ function abrirMenuUsuario(btn, u){
   if(ok && (tiene(yo,'usuarios')||tiene(yo,'asignar_roles'))) ops.push(['editar','✏️ Editar']);
   if(tiene(yo,'ver_como') && !enVerComo(yo) && u.id!==yo.id) ops.push(['vercomo','👁 Ver la página como este usuario']);
   ops.push(['expediente','📁 Expediente (sanciones, ascensos, reportes)']);
+  ops.push(['ruta','🧭 Ruta de aprendizaje']);
   if(tiene(yo,'historial')) ops.push(['reportes','📋 Ver sus reportes']);
   if(ok && tiene(yo,'reset_password') && u.id!==yo.id) ops.push(['password','🔑 Restablecer contraseña']);
   if(esSuperadmin(yo) && u.id!==yo.id) ops.push(['mfa','🔓 Quitar verificación en dos pasos']);
@@ -216,6 +217,7 @@ async function accionUsuario(op, u){
     if(op==='editar') editarUsuario(u);
     else if(op==='ficha') location.href = 'usuario.html?id=' + encodeURIComponent(u.id);
     else if(op==='expediente') location.href = '../expediente.html?id=' + encodeURIComponent(u.id);
+    else if(op==='ruta') location.href = '../ruta.html?u=' + encodeURIComponent(u.id);
     else if(op==='vercomo'){ if(!confirm(`Vas a ver la página como "${nombreCompleto(u)}" (solo lectura). Verás una franja amarilla arriba para salir del modo. Esta acción queda en la auditoría.\n\n¿Continuar?`)) return; await entrarVerComo(u.id); }
     else if(op==='reportes'){ abrir('historial'); $('#hUsuario').value = u.usuario; $('#hForm').value=''; $('#hDesde').value=''; $('#hHasta').value=''; buscarHist(); window.scrollTo({top:0,behavior:'smooth'}); }
     else if(op==='password') resetearPassword(u.id, u.usuario);
