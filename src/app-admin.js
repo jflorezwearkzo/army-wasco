@@ -739,8 +739,10 @@ async function cargarAutomatizacion(){
   };
   // El canal de solicitudes lleva además el enlace público que se le pasa a quien no tiene cuenta
   const ORG_ID = (yo.org && yo.org.id) || 'pm';
-  const enlacePublico = c => c.clave !== 'solicitudes' ? ''
-    : `<br><span class="muted" style="font-size:12px">Enlace público: <a href="${esc(RAIZ)}acceso.html?u=${esc(ORG_ID)}" target="_blank" rel="noopener">${esc(RAIZ)}acceso.html?u=${esc(ORG_ID)}</a></span>`;
+  const PAGINA_PUBLICA = { solicitudes:'acceso.html', recuperacion:'recuperar.html' };
+  const enlacePublico = c => { const pg = PAGINA_PUBLICA[c.clave]; if(!pg) return '';
+    const url = `${RAIZ}${pg}?u=${ORG_ID}`;
+    return `<br><span class="muted" style="font-size:12px">Enlace público: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a></span>`; };
   $('#tbCanales').innerHTML = (data||[]).map(c => `<tr data-id="${esc(c.clave)}"><td><b>${esc(c.nombre)}</b><br><span class="muted" style="font-size:12px">${esc(c.clave)}</span>${enlacePublico(c)}</td>
     <td>${campoWh('wh', c.clave, c.webhook, c.tiene_webhook)}</td>
     <td>${campoHilo('hilo', c.clave, c.hilo)}</td>

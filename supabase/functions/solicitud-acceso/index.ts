@@ -1,14 +1,14 @@
-// Formulario PÚBLICO de solicitud de acceso (acceso.html). Único punto de entrada sin sesión.
+// Formularios PÚBLICOS: solicitar acceso (acceso.html) y recuperar contraseña (recuperar.html).
+// Único punto de entrada sin sesión.
 //
 // Reglas que esta función no rompe nunca:
 //   · No guarda la solicitud en ninguna parte: lee los tres campos, los manda a Discord y los olvida.
 //   · No toca ninguna tabla del entorno interno. Solo llama a solicitud_permitida(), que decide si
-//     esa IP ya gastó su envío del día y devuelve el webhook del canal.
+//     esa IP ya gastó su turno (24 h para acceso, 2 h para contraseña) y devuelve el webhook.
 //   · El webhook jamás sale al navegador.
 //   · Sin Turnstile verificado contra Cloudflare no se envía nada. Si falta el secreto, no envía nada.
 //
-// Cuerpo: { org, nombre, rango, unidad, token }
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// Cuerpo: { org, tipo: "acceso" | "password", nombre, rango, unidad, token }
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ORIGENES = ["https://pmwasco.zylarion.io"];
@@ -54,6 +54,17 @@ Deno.serve(async (req: Request) => {
   try { body = JSON.parse(crudo); } catch { return json(origin, 400, { error: "Solicitud inválida." }); }
 
   const org = String(body.org ?? "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 20);
+  const tipo = body.tipo === "password" ? "password" : "acceso";
+  // Cada formulario tiene su propia marca de Turnstile: un token de uno no sirve en el otro.
+  const FORMULARIOS = {
+    acceso:   { accion: "solicitud-acceso",   titulo: "✋ Solicitud de acceso a la plataforma",
+                nota: "Llegó desde el formulario público. Nadie verificó estos datos: confírmalos antes de crear la cuenta.",
+                etiquetas: ["Nombre", "Rango", "Unidad"] },
+    password: { accion: "recuperar-password", titulo: "🔑 Olvidó la contraseña",
+                nota: "Llegó desde el formulario público. Confirma por Discord que es esa persona ANTES de restablecer nada.",
+                etiquetas: ["Usuario", "Nombre", "Unidad"] },
+  } as const;
+  const F = FORMULARIOS[tipo];
   const nombre = limpiar(body.nombre, 60);
   const rango = limpiar(body.rango, 40);
   const unidad = limpiar(body.unidad, 60);
@@ -76,17 +87,19 @@ Deno.serve(async (req: Request) => {
   try {
     const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form });
     const v = r.ok ? await r.json() : null;
-    ok = !!v?.success && v.action === "solicitud-acceso" && ORIGENES.includes("https://" + String(v.hostname ?? ""));
+    ok = !!v?.success && v.action === F.accion && ORIGENES.includes("https://" + String(v.hostname ?? ""));
   } catch { ok = false; }
   if (!ok) return json(origin, 403, { error: "No pudimos comprobar que eres una persona. Vuelve a intentarlo." });
 
   // ---- Un envío por día y por IP; el webhook sale de aquí y no se expone ----
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-  const { data: permiso, error } = await admin.rpc("solicitud_permitida", { p_org: org, p_ip: ip || "sin-ip" });
+  const { data: permiso, error } = await admin.rpc("solicitud_permitida", { p_org: org, p_ip: ip || "sin-ip", p_tipo: tipo });
   if (error) return json(origin, 500, { error: "No se pudo procesar la solicitud." });
   const p = permiso as { ok?: boolean; motivo?: string; webhook?: string; hilo?: string | null; org_nombre?: string };
   if (!p?.ok) {
-    if (p?.motivo === "limite") return json(origin, 429, { error: "Ya enviaste una solicitud hoy. Si fue un error, escríbele al liderazgo por Discord." });
+    if (p?.motivo === "limite") return json(origin, 429, { error: tipo === "password"
+      ? "Ya enviaste una solicitud hace poco. Espera un par de horas o escríbele al liderazgo por Discord."
+      : "Ya enviaste una solicitud hoy. Si fue un error, escríbele al liderazgo por Discord." });
     return json(origin, 404, { error: "Esa unidad no está recibiendo solicitudes ahora mismo." });
   }
 
@@ -94,13 +107,13 @@ Deno.serve(async (req: Request) => {
     username: `${p.org_nombre} · Solicitudes`,
     allowed_mentions: { parse: [] },                       // ningún @everyone, ninguna mención
     embeds: [{
-      title: "✋ Solicitud de acceso a la plataforma",
-      description: "Llegó desde el formulario público. Nadie verificó estos datos: confírmalos antes de crear la cuenta.",
+      title: F.titulo,
+      description: F.nota,
       color: 0xf0c24d,
       fields: [
-        { name: "Nombre", value: nombre, inline: false },
-        { name: "Rango", value: rango, inline: true },
-        { name: "Unidad", value: unidad, inline: true },
+        { name: F.etiquetas[0], value: nombre, inline: false },
+        { name: F.etiquetas[1], value: rango, inline: true },
+        { name: F.etiquetas[2], value: unidad, inline: true },
       ],
       footer: { text: "Formulario público · no se guardó ningún dato" },
       timestamp: new Date().toISOString(),

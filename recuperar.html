@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Página PÚBLICA y aislada: no carga la librería de Supabase, ni config.js, ni ningún script de la app.
+     No hay sesión, no lee ni escribe tablas y no guarda nada. Solo manda tres campos a una función. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src https://rvwvnrqwlaudjgzvrzgf.supabase.co https://challenges.cloudflare.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="theme-color" content="#0b1216">
+<title>Olvidé mi contraseña · Army de Wasco</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0b1216; --panel:#121b20; --line:#2b3a40; --line3:#1d2a30; --text:#f3f3f3; --muted:#9aa7ad; --gold:#f0c24d; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px "Roboto Condensed",Arial,sans-serif;
+       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .caja{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px 24px}
+  .unidad{color:var(--gold);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:0 0 2px;text-align:center}
+  h1{font-size:26px;margin:0 0 4px;text-align:center}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 20px;text-align:center}
+  label{display:block;font-size:13px;color:var(--muted);margin:14px 0 4px}
+  input{width:100%;padding:10px 12px;background:#0b1216;color:var(--text);border:1px solid var(--line);
+        border-radius:8px;font:16px "Roboto Condensed",Arial,sans-serif}
+  input:focus{outline:none;border-color:var(--gold)}
+  button{width:100%;margin-top:20px;padding:11px;background:var(--gold);color:#101b20;border:0;border-radius:8px;
+         font:700 16px "Roboto Condensed",Arial,sans-serif;cursor:pointer}
+  button[disabled]{opacity:.55;cursor:default}
+  #cf{margin-top:18px;display:flex;justify-content:center;min-height:65px}
+  .msg{margin-top:16px;font-size:14px;text-align:center}
+  .err{color:#ff8a8a}
+  .ok{color:#5fd38d}
+  .pie{margin:18px 0 0;color:var(--muted);font-size:12px;text-align:center;line-height:1.5}
+  .pie a{color:var(--gold)}
+</style>
+</head>
+<body data-tipo="password">
+<main class="caja">
+  <p class="unidad" id="unidad">Army de Wasco</p>
+  <h1>Olvidé mi contraseña</h1>
+  <p class="sub">Déjanos tus datos y el liderazgo confirmará que eres tú antes de darte una contraseña nueva.</p>
+  <form id="f" autocomplete="off" novalidate>
+    <label for="nombre">Tu usuario (con el que entras)</label>
+    <input id="nombre" name="nombre" maxlength="60" required>
+    <label for="rango">Nombre dentro del juego</label>
+    <input id="rango" name="rango" maxlength="40" required>
+    <label for="unidad_txt">Unidad</label>
+    <input id="unidad_txt" name="unidad" maxlength="60" required>
+    <div id="cf"></div>
+    <button id="b" type="submit">Enviar solicitud</button>
+  </form>
+  <p class="msg" id="msg"></p>
+  <p class="pie">Esto no cambia tu contraseña ni guarda tus datos: solo avisa al liderazgo, que te escribirá por Discord.<br>
+    <a href="login.html">Volver a entrar</a></p>
+</main>
+<script src="js/publico.js?v=c017b6cc"></script>
+</body>
+</html>
