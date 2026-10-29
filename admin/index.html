@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=e6c99b38"></script>
+<script src="../js/tema.js?v=238c5f79"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -109,7 +109,14 @@
   @media(max-width:520px){.semana:not(.v-mes){grid-template-columns:1fr}.dia{min-height:auto}.semana.v-mes .cab-dia{font-size:9px}}
   /* --- Revisión --- */
   .rv-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
-  .rv{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+  .rv-bulk[hidden]{display:none}
+  .rv-bulk{position:sticky;top:56px;z-index:30;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px;
+    background:var(--avisobg);border:1px solid var(--avisoline);border-radius:9px;padding:9px 12px;font-size:13px}
+  .rv.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+  .rv .pick{position:absolute;top:8px;left:8px;z-index:2;background:var(--panel);border:1px solid var(--line2);
+    border-radius:6px;padding:4px 6px;display:flex;align-items:center;margin:0}
+  .rv .pick input{width:auto;margin:0;cursor:pointer}
+  .rv{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;position:relative}
   .rv .img{aspect-ratio:4/3;background:#000;display:flex;align-items:center;justify-content:center;cursor:zoom-in;position:relative}
   .rv .img img{width:100%;height:100%;object-fit:contain}
   .rv .img .cargar{color:var(--muted);font-size:13px}
@@ -308,6 +315,14 @@
       <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Revisión de reportes <span class="muted" id="rvContador" style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px"></span></span>
         <span style="display:flex;gap:8px;align-items:center"><select id="rvEstado" style="width:auto"><option value="pendiente">Pendientes</option><option value="devuelto">Devueltos para corregir</option><option value="rechazado">Rechazados</option><option value="aprobado">Aprobados (últimos)</option></select></span></h3>
       <p class="muted" id="rvAviso" style="margin-top:0;font-size:13px">Solo entran aquí los reportes de formularios con "Requiere aprobación de un revisor" (Formularios → Editar). Todos los reportes se publican en Discord al enviarse; la revisión decide si cuentan para el Resumen, el ranking y las estadísticas. Uno rechazado queda en el historial con el motivo y no cuenta.</p>
+      <div id="rvBulk" class="rv-bulk" hidden>
+        <label style="display:flex;align-items:center;gap:6px;margin:0"><input type="checkbox" id="rvTodos" style="width:auto"> <span id="rvSelN">0 seleccionados</span></label>
+        <button type="button" class="sm aprobar" data-rvb="aprobado">✅ Aprobar</button>
+        <button type="button" class="sm devolver" data-rvb="devuelto">✏️ Devolver</button>
+        <button type="button" class="sm rechazar" data-rvb="rechazado">⛔ Rechazar</button>
+        <button type="button" class="ghost sm" id="rvCancelar">Cancelar</button>
+        <span class="muted" id="rvProgreso" style="font-size:12px"></span>
+      </div>
       <div id="rvLista" class="rv-lista"></div>
       <div class="err" id="rvErr"></div>
     </div>
@@ -538,6 +553,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=9c82f7d7"></script>
+<script type="module" src="../js/app-admin.js?v=99febdea"></script>
 </body>
 </html>

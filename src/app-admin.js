@@ -763,6 +763,40 @@ $('#bRespaldo').onclick = async () => {
 };
 
 // ====================== REVISIÓN DE REPORTES ======================
+let SEL_RV = new Set();
+function pintarBulkRV(lista){
+  const n = SEL_RV.size; const bar = $('#rvBulk');
+  bar.hidden = !n; if(!n){ $('#rvTodos').checked = false; return; }
+  const sel = lista.filter(r => SEL_RV.has(r.id));
+  const altos = sel.filter(r => r.auditoria_ia && r.auditoria_ia.riesgo === 'alto').length;
+  $('#rvSelN').innerHTML = `<b>${n}</b> seleccionado(s)` + (altos ? ` · <span style="color:var(--err2)">${altos} con riesgo alto según la IA</span>` : '');
+  $('#rvTodos').checked = n === lista.length;
+  $('#rvProgreso').textContent = '';
+}
+// Revisa en bloque: un reporte a la vez, para que cada aviso de Discord salga en orden y nada se pierda a medias.
+async function revisarEnBloque(estado, lista){
+  const sel = lista.filter(r => SEL_RV.has(r.id)); if(!sel.length) return;
+  let comentario = null;
+  if(estado === 'rechazado'){ comentario = prompt(`Motivo del rechazo de ${sel.length} reporte(s) (lo verán los autores):`); if(comentario===null) return; if(!comentario.trim()){ alert('Indica el motivo.'); return; } }
+  else if(estado === 'devuelto'){ comentario = prompt(`¿Qué deben corregir estos ${sel.length} reporte(s)?`); if(comentario===null) return; if(!comentario.trim()){ alert('Indica qué deben corregir.'); return; } }
+  else {
+    const altos = sel.filter(r => r.auditoria_ia && r.auditoria_ia.riesgo === 'alto');
+    const aviso = altos.length ? `\n\n⚠️ ${altos.length} de ellos están marcados con RIESGO ALTO por la IA:\n` + altos.map(r => '· ' + (r.folio||r.id)).join('\n') : '';
+    if(!confirm(`¿Aprobar ${sel.length} reporte(s)?${aviso}`)) return;
+  }
+  document.querySelectorAll('[data-rvb], #rvCancelar').forEach(b => b.disabled = true);
+  let ok = 0; const fallos = [];
+  for(const [i, r] of sel.entries()){
+    $('#rvProgreso').textContent = `${estado === 'aprobado' ? 'Aprobando' : estado === 'devuelto' ? 'Devolviendo' : 'Rechazando'} ${i+1} de ${sel.length}…`;
+    const { error } = await sb.rpc('revisar_reporte', { p_id: r.id, p_estado: estado, p_comentario: comentario || null });
+    if(error) fallos.push(`${r.folio||r.id}: ${error.message}`); else ok++;
+  }
+  document.querySelectorAll('[data-rvb], #rvCancelar').forEach(b => b.disabled = false);
+  SEL_RV.clear();
+  toast(fallos.length ? `${ok} listo(s), ${fallos.length} con error: ${fallos[0]}` : `${ok} reporte(s) ${estado === 'aprobado' ? 'aprobados' : estado === 'devuelto' ? 'devueltos para corregir' : 'rechazados'}.`, fallos.length > 0);
+  cargarRevision(); contarPendientes();
+}
+
 const etiquetaEstado = r => { const e = r.estado || 'aprobado'; const t = e==='pendiente' ? '<span class="tag pend">Pendiente</span>' : e==='devuelto' ? '<span class="tag" style="background:var(--avisobg);color:var(--gold)">Devuelto para corregir</span>' : e==='rechazado' ? '<span class="tag off">Rechazado</span>' : (r.requiere_aprobacion ? '<span class="tag on">Aprobado</span>' : '<span class="tag on" title="Formulario sin revisión">Aprobado</span>');
   return t + (r.comentario_revision ? `<br><span class="muted" style="font-size:11px" title="${esc(r.comentario_revision)}">${esc(r.revisor||'')}: ${esc(r.comentario_revision.slice(0,60))}${r.comentario_revision.length>60?'…':''}</span>` : (r.revisor ? `<br><span class="muted" style="font-size:11px">${esc(r.revisor)}</span>` : '')); };
 async function cargarRevision(){
@@ -774,7 +808,9 @@ async function cargarRevision(){
   $('#rvErr').textContent=''; const lista = data || [];
   $('#rvContador').textContent = est==='pendiente' ? `${lista.length} pendiente(s)` : `${lista.length} mostrado(s)`;
   const fmt = iso => iso ? iso.slice(0,10).split('-').reverse().join('-') : '—';
-  $('#rvLista').innerHTML = lista.map(r => `<div class="rv" data-id="${r.id}">
+  SEL_RV = new Set([...SEL_RV].filter(id => lista.some(r => r.id === id)));
+  $('#rvLista').innerHTML = lista.map(r => `<div class="rv${SEL_RV.has(r.id)?' sel':''}" data-id="${r.id}">
+      <label class="pick" title="Seleccionar para revisar en bloque"><input type="checkbox" data-rvs="${r.id}" ${SEL_RV.has(r.id)?'checked':''}></label>
       <div class="img" data-rvimg="${esc(r.imagen_path||'')}" data-n="reporte-${esc(r.folio||r.id)}.${(r.imagen_path||'png').split('.').pop()}"><span class="cargar">${r.imagen_path ? '🔍 Ver imagen' : 'Sin imagen'}</span></div>
       <div class="cuerpo">
         <div><b>${esc(r.folio||r.id)}</b> · ${esc(r.formulario||r.formulario_id)} · ${fmt(r.fecha)}</div>
@@ -791,6 +827,19 @@ async function cargarRevision(){
           ${r.imagen_path ? `<button type="button" class="ghost sm" data-redis="${r.id}" title="Vuelve a publicarlo en el canal de Discord que esté configurado ahora para este formulario">📨 Enviar de nuevo</button>` : ''}
         </div>
       </div></div>`).join('') || `<p class="muted">No hay reportes ${est==='pendiente'?'pendientes de revisión':est+'s'}.</p>`;
+  // ---- Selección múltiple ----
+  document.querySelectorAll('[data-rvs]').forEach(c => c.onchange = () => {
+    const id = +c.dataset.rvs; c.checked ? SEL_RV.add(id) : SEL_RV.delete(id);
+    c.closest('.rv').classList.toggle('sel', c.checked); pintarBulkRV(lista);
+  });
+  $('#rvTodos').onchange = () => { const marcar = $('#rvTodos').checked;
+    document.querySelectorAll('[data-rvs]').forEach(c => { c.checked = marcar; marcar ? SEL_RV.add(+c.dataset.rvs) : SEL_RV.delete(+c.dataset.rvs);
+      c.closest('.rv').classList.toggle('sel', marcar); });
+    pintarBulkRV(lista); };
+  $('#rvCancelar').onclick = () => { SEL_RV.clear(); document.querySelectorAll('[data-rvs]').forEach(c => { c.checked = false; c.closest('.rv').classList.remove('sel'); }); pintarBulkRV(lista); };
+  document.querySelectorAll('[data-rvb]').forEach(b => b.onclick = () => revisarEnBloque(b.dataset.rvb, lista));
+  pintarBulkRV(lista);
+
   document.querySelectorAll('[data-rvimg]').forEach(d => d.onclick = async () => { if(!d.dataset.rvimg) return;
     if(!d.querySelector('img')){ try{ const u = await urlImagen(d.dataset.rvimg); d.innerHTML = `<img src="${u}" alt="">`; d.dataset.u = u; }catch(x){ alert(x.message); return; } }
     else { $('#dlgImg').src = d.dataset.u; $('#dlgDl').href = d.dataset.u; $('#dlgDl').download = d.dataset.n; $('#dlg').showModal(); } });
