@@ -19,7 +19,7 @@
   s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
   s.async = true; s.defer = true;
   s.onload = function () {
-    widget = window.turnstile.render('#cf', { sitekey: SITE_KEY, theme: 'dark', language: 'es' });
+    widget = window.turnstile.render('#cf', { sitekey: SITE_KEY, action: 'solicitud-acceso', theme: 'dark', language: 'es' });
   };
   document.head.appendChild(s);
 

@@ -43,7 +43,8 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors(origin) });
   if (req.method !== "POST") return json(origin, 405, { error: "Método no permitido" });
 
-  const secretoTS = Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
+  // Si existe un widget propio para este formulario se usa ese; si no, el mismo del login.
+  const secretoTS = Deno.env.get("TURNSTILE_SECRET_ACCESO") || Deno.env.get("TURNSTILE_SECRET_KEY") || "";
   if (!secretoTS) return json(origin, 503, { error: "El formulario todavía no está habilitado." });
 
   // Cuerpo pequeño: nada de cargas grandes
@@ -69,10 +70,13 @@ Deno.serve(async (req: Request) => {
   form.append("secret", secretoTS);
   form.append("response", token);
   if (ip) form.append("remoteip", ip);
+  // No basta con que el token sea válido: tiene que venir de ESTA página y de ESTE formulario.
+  // Así, un token resuelto en el login no sirve aquí aunque el widget sea el mismo.
   let ok = false;
   try {
     const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form });
-    ok = r.ok && !!(await r.json())?.success;
+    const v = r.ok ? await r.json() : null;
+    ok = !!v?.success && v.action === "solicitud-acceso" && ORIGENES.includes("https://" + String(v.hostname ?? ""));
   } catch { ok = false; }
   if (!ok) return json(origin, 403, { error: "No pudimos comprobar que eres una persona. Vuelve a intentarlo." });
 
