@@ -7,12 +7,26 @@
   else {
     const visibles = (formularios||[]).filter(f => puedeFormulario(yo, f.id));
     if(!visibles.length) el.innerHTML = '<p class="empty">No tienes formularios asignados. Pide acceso al administrador.</p>';
-    else el.innerHTML = visibles.map(r => `<a class="card" href="${esc(r.ruta)}">
+    else {
+      // Lo que cada quien más usa va primero, y de cada formulario se recuerda su último reporte
+      const mios = {}, ultimo = {};
+      try{
+        const { data } = await sb.from('reportes').select('id,formulario_id')
+          .eq('usuario_id', yo.id).order('id', { ascending:false }).limit(300);
+        for(const r of data || []){ mios[r.formulario_id] = (mios[r.formulario_id]||0) + 1;
+          if(!ultimo[r.formulario_id]) ultimo[r.formulario_id] = r.id; }
+      }catch(e){}
+      visibles.sort((a,b) => (mios[b.id]||0) - (mios[a.id]||0) || (a.orden||100) - (b.orden||100));
+      el.innerHTML = visibles.map(r => {
+        const n = mios[r.id] || 0;
+        return `<div class="item"><a class="card" href="${esc(r.ruta)}">
           <div class="ico">${esc(r.icono || '📋')}</div>
           <h2>${esc(r.titulo)}</h2>
           <p>${esc(r.descripcion || '')}</p>
-          <div class="meta"><span>${r.creado_en ? 'Desde ' + fmt(r.creado_en.slice(0,10)) : ''}</span><span class="tag">Disponible</span></div>
-        </a>`).join('');
+          <div class="meta"><span>${n ? n + ' reporte(s) tuyo(s)' : (r.creado_en ? 'Desde ' + fmt(r.creado_en.slice(0,10)) : '')}</span><span class="tag">Disponible</span></div>
+        </a>${ultimo[r.id] ? `<a class="rep" href="${esc(r.ruta)}${r.ruta.includes('?') ? '&' : '?'}repetir=${ultimo[r.id]}" title="Abre el formulario con los datos de tu último reporte">↻ Repetir</a>` : ''}</div>`;
+      }).join('');
+    }
   }
 
 // ---- Tablón de anuncios y turnos ----

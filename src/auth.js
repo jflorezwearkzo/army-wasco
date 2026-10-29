@@ -210,6 +210,7 @@ export function barraUsuario(yo){
   marcaOrg(yo); blindarSoloLectura(yo);
   // Después de que el formulario termine de armarse
   if(location.search.includes('corregir=')) setTimeout(() => modoCorreccion(yo).catch(() => {}), 0);
+  else if(location.search.includes('repetir=')) setTimeout(() => modoRepetir(yo).catch(() => {}), 0);
   if(!document.getElementById('barraCss')){
     const s = document.createElement('style'); s.id = 'barraCss';
     s.textContent = `
@@ -287,22 +288,42 @@ export async function modoCorreccion(yo){
     return null;
   }
   CORRIGIENDO = { id: r.id, folio: r.folio };
-  // Se precargan los campos sencillos; las listas y las fotos hay que rehacerlas
-  let puestos = 0;
-  for(const [k, v] of Object.entries(r.datos || {})){
-    if(v == null || typeof v === 'object') continue;
-    const el = form.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(k) : k));
-    if(!el || el.type === 'file') continue;
-    if(el.type === 'checkbox') el.checked = !!v; else el.value = v;
-    el.dispatchEvent(new Event('change', { bubbles:true })); el.dispatchEvent(new Event('input', { bubbles:true }));
-    puestos++;
-  }
+  const puestos = precargarCampos(form, r.datos);
   avisoCorreccion(form,
     `✏️ Estás corrigiendo el reporte <b>${esc(r.folio)}</b>.` +
     (r.comentario_revision ? `<br><span style="color:var(--muted)">Motivo (${esc(r.revisor||'revisor')}): ${esc(r.comentario_revision)}</span>` : '') +
     `<br><span style="color:var(--muted)">${puestos ? 'Recuperamos lo que se pudo; r' : 'R'}evisa todo, vuelve a adjuntar las fotos y expórtalo: al terminar reemplaza el reporte y vuelve a revisión.</span>`);
   return CORRIGIENDO;
 }
+// Copia los valores sencillos de un reporte a los campos del formulario (las listas y las fotos se rehacen)
+function precargarCampos(form, datos){
+  let puestos = 0;
+  for(const [k, v] of Object.entries(datos || {})){
+    if(v == null || typeof v === 'object') continue;
+    const el = form.querySelector('#' + (window.CSS && CSS.escape ? CSS.escape(k) : k));
+    if(!el || el.type === 'file' || el.readOnly) continue;
+    if(el.type === 'checkbox') el.checked = !!v; else el.value = v;
+    el.dispatchEvent(new Event('change', { bubbles:true })); el.dispatchEvent(new Event('input', { bubbles:true }));
+    puestos++;
+  }
+  return puestos;
+}
+
+// Repetir el último reporte: mismos datos, reporte nuevo. No toca el anterior.
+export async function modoRepetir(yo){
+  const id = new URLSearchParams(location.search).get('repetir');
+  if(!id) return null;
+  const form = document.querySelector('form'); if(!form) return null;
+  const { data: r } = await sb.from('reportes_vista').select('id,folio,datos,fecha').eq('id', id).maybeSingle();
+  if(!r) return null;
+  const datos = { ...(r.datos || {}) };
+  delete datos.fecha;                       // la fecha es la de hoy, no la de la vez pasada
+  const puestos = precargarCampos(form, datos);
+  if(puestos) avisoCorreccion(form,
+    `↻ Copiamos los datos de tu último reporte (<b>${esc(r.folio)}</b>). Revísalos, cambia lo que toque y adjunta las fotos de hoy.`);
+  return { desde: r.id };
+}
+
 function avisoCorreccion(form, html, error=false){
   const b = document.createElement('div');
   b.style.cssText = `background:var(--${error?'errbg':'avisobg'});border:1px solid var(--${error?'err2':'avisoline'});border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:14px;color:var(--text);line-height:1.5`;

@@ -39,6 +39,24 @@
   .card .meta .tag{color:#7fd38a}
   .card.proximo{opacity:.55;pointer-events:none}
   .card.proximo .meta .tag{color:var(--muted)}
+  .item{position:relative;display:flex}
+  .item>.card{flex:1}
+  .item .rep{position:absolute;top:12px;right:12px;background:var(--panel3);color:var(--muted);border:1px solid var(--line2);
+    border-radius:7px;padding:5px 9px;font:inherit;font-size:12px;cursor:pointer;text-decoration:none;z-index:2}
+  .item .rep:hover{background:var(--hover2);color:var(--gold);border-color:var(--avisoline)}
+  /* En el celular, cada formulario es una fila: se ven todos de una vez */
+  @media(max-width:700px){
+    .grid{grid-template-columns:1fr;gap:8px}
+    #lista .card{display:grid;grid-template-columns:30px 1fr;align-items:center;gap:3px 12px;padding:12px 14px 12px 16px}
+    #lista .card .ico{grid-row:1/span 2;font-size:23px;margin:0;align-self:center}
+    #lista .card h2{grid-column:2;font-size:15px;font-style:normal;margin:0;letter-spacing:.3px;line-height:1.25;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    #lista .card p{grid-column:2;font-size:12px;margin:0;line-height:1.35;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+    #lista .card .meta{display:none}
+    #lista .card:hover{transform:none}
+    .item .rep{top:50%;transform:translateY(-50%);right:10px;padding:6px 8px}
+    #lista .card h2,#lista .card p{padding-right:56px}
+  }
   .empty{color:var(--muted);text-align:center;padding:40px}
   .tablon{max-width:980px;margin:26px auto 0;display:grid;grid-template-columns:2fr 1fr;gap:14px}
   @media(max-width:800px){.tablon{grid-template-columns:1fr}}
@@ -57,7 +75,7 @@
   .enlaces a{text-decoration:none}
   footer{text-align:center;padding:18px;color:#5a6a71;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-top:1px solid var(--line3)}
 </style>
-<script src="js/tema.js?v=917ff118"></script>
+<script src="js/tema.js?v=f220e4eb"></script>
 </head>
 <body>
 <header>
@@ -79,6 +97,6 @@
 </main>
 <footer>Un equipo · Una misión · Un solo Army</footer>
 
-<script type="module" src="js/app-index.js?v=55be7ad8"></script>
+<script type="module" src="js/app-index.js?v=329f5e6b"></script>
 </body>
 </html>
