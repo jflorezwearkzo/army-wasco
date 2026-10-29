@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://static.cloudflareinsights.com; connect-src 'self' https://rvwvnrqwlaudjgzvrzgf.supabase.co https://cdn.jsdelivr.net https://cloudflareinsights.com; img-src 'self' data: blob: https://rvwvnrqwlaudjgzvrzgf.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1216">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Reportes">
+<title>Eventos del día · Army de Wasco</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<script src="js/tema.js?v=b73dff2a"></script>
+<link rel="stylesheet" href="estilos.css">
+<style>
+  main{max-width:980px;margin:24px auto;padding:0 20px}
+  h1{color:var(--gold);margin:0 0 4px;font-size:28px}
+  #prox{background:var(--panel);border:1px solid var(--avisoline);border-radius:10px;padding:14px 16px;margin:14px 0}
+  #prox h3{margin:0 0 8px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px}
+  #prox .gr{font-size:22px;font-weight:700}
+  #prox .cuenta{color:var(--gold)}
+  .act{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+  .act h3{margin:0 0 2px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px}
+  .act .des{color:var(--muted);font-size:13px;margin:0 0 10px}
+  .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+  .slot{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:8px 10px}
+  .slot .hl{font-size:19px;font-weight:700;color:var(--text)}
+  .slot .hu{display:block;color:var(--muted);font-size:12px}
+  .slot .et{display:block;color:var(--gold);font-size:12px;margin-top:2px}
+  .slot.ya{opacity:.45}
+  .slot.sig{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+  .nota{color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <p class="unidad" data-org-nombre>Army de Wasco</p>
+  <h1>🗓️ Eventos del día</h1>
+  <p class="muted" style="margin:0">Horarios fijos del servidor, iguales todos los días. Se muestran en <b>tu hora</b> y en <b>hora del servidor (UTC)</b>.</p>
+  <div id="prox"><span class="muted">Cargando…</span></div>
+  <div id="lista"></div>
+  <p class="nota">Tu zona horaria: <b id="tz"></b>. El servidor va en UTC 0.</p>
+  <div class="err" id="err"></div>
+</main>
+<script type="module" src="js/app-calendario.js?v=15c1bc06"></script>
+</body>
+</html>

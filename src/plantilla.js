@@ -30,6 +30,16 @@ export const OPERACIONES = {
 };
 export const DEFECTOS = { '':'— Vacío —', hoy:'Fecha de hoy', mi_nombre:'Mi nombre', mi_rango:'Mi rango', mi_rango_pm:'Mi Rango PM', mi_usuario:'Mi usuario', mi_rango_nombre:'Mi rango y nombre' };
 
+// Una opción que empieza por "HH:MM UTC" se muestra además con la hora local de quien
+// la lee, pero lo que se guarda y se sella es siempre la hora del servidor (UTC).
+const RE_UTC = /^(\d{1,2}):(\d{2})\s*UTC\b/;
+export function conHoraLocal(o){
+  const m = RE_UTC.exec(String(o||'')); if(!m) return o;
+  const d = new Date(Date.UTC(2001,0,1,+m[1],+m[2]));
+  const hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
+  return (hh+':'+mm === m[1].padStart(2,'0')+':'+m[2]) ? o : `${o} · ${hh}:${mm} tu hora`;
+}
+
 export function campoNuevo(tipo='texto', n=1){
   return { id:'c'+Date.now().toString(36)+n, tipo, etiqueta:'Campo '+n, req:true, defecto:'', bloqueado:false, opciones:[], min:1, max:3, resumen:false, porPagina:false,
     conTexto:false, textoDef:'', formula:{ op:'contar', origen:'', origenes:[], sep:' · ', prefijo:'DOC' },
@@ -118,7 +128,7 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
       case 'fecha': { const i=document.createElement('input'); i.type='date'; i.value=v0; bloquear(i); i.addEventListener('click',()=>{ try{ i.showPicker(); }catch(e){} }); box.appendChild(i); el[c.id]=i; break; }
       case 'hora': { box.className='hora'; box.innerHTML=sel(24,(v0||'').slice(0,2))+'<span>:</span>'+sel(60,(v0||'').slice(3,5)); const s=box.querySelectorAll('select'); s.forEach(bloquear); el[c.id]=s; break; }
       case 'opcion': case 'rango': case 'sino': { const i=document.createElement('select'); const ops=c.tipo==='sino'?['SÍ','NO']:c.tipo==='rango'?RANGOS:(c.opciones||[]);
-        i.innerHTML='<option value="">— Selecciona —</option>'+ops.map(o=>`<option${o===v0?' selected':''}>${esc(o)}</option>`).join(''); bloquear(i); box.appendChild(i); el[c.id]=i; break; }
+        i.innerHTML='<option value="">— Selecciona —</option>'+ops.map(o=>`<option value="${esc(o)}"${o===v0?' selected':''}>${esc(conHoraLocal(o))}</option>`).join(''); bloquear(i); box.appendChild(i); el[c.id]=i; break; }
       case 'persona': { box.className='sug'; const i=document.createElement('input'); i.type='text'; i.maxLength=60; i.autocomplete='off'; i.value=v0; i.placeholder='Escribe para buscar…'; bloquear(i); box.appendChild(i); if(!c.bloqueado) sugerencias(i,buscarPersona([i],i),pintarPersona,p=>{ i.value=p.texto; }); el[c.id]=i; break; }
       case 'personas': case 'lista': {
         const n=Math.max(1,Math.min(60,+c.max||3)); const inputs=[];

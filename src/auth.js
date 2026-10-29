@@ -255,6 +255,7 @@ export function barraUsuario(yo){
       <a href="${RAIZ}cuenta.html">Mi cuenta</a>
       <a href="${RAIZ}expediente.html">Mi expediente</a>
       <a href="${RAIZ}ranking.html">Ranking</a>
+      <a href="${RAIZ}calendario.html">Eventos del día</a>
       <a href="#" id="btnTema" title="Cambiar entre tema oscuro y claro">🌗 Tema</a>
       <a href="${RAIZ}privacidad.html" style="font-size:12px">Privacidad</a>
       <a href="#" id="btnSalir">Salir</a>

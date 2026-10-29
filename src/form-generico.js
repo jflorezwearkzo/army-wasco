@@ -11,7 +11,8 @@ const { data: F, error } = await sb.from('formularios').select('*').eq('id', ID)
 if(error || !F || !F.definicion){ document.querySelector('main').innerHTML = `<p class="err" style="padding:20px">${esc(error ? error.message : 'Este formulario no tiene plantilla configurada.')}</p>`; throw new Error('sin plantilla'); }
 const DEF = F.definicion; DEF.paginas = DEF.paginas || { activo:false };
 const MULTI = !!DEF.paginas.activo, ETQ = DEF.paginas.etiqueta || 'Página', MAXP = Math.max(1, Math.min(20, +DEF.paginas.max || 10));
-document.title = `${F.titulo} — Policía Militar`; $('#titulo').textContent = `${F.titulo} · Army de Wasco · Policía Militar`; $('#descripcion').textContent = F.descripcion || (MULTI ? `Indica cuántos ${ETQ.toLowerCase()}s hubo: se genera una imagen por cada uno, con su propio folio.` : '');
+const ORG = (YO.org && YO.org.nombre) || 'Policía Militar';
+document.title = `${F.titulo} — ${ORG}`; $('#titulo').textContent = `${F.titulo} · Army de Wasco · ${ORG}`; $('#descripcion').textContent = F.descripcion || (MULTI ? `Indica cuántos ${ETQ.toLowerCase()}s hubo: se genera una imagen por cada uno, con su propio folio.` : '');
 faviconEmoji(F.icono);
 
 let INTEGRANTES=[];

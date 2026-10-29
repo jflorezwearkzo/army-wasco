@@ -25,7 +25,7 @@ esc = Image.open('icons/eea-512.png').convert('RGBA').resize((76,76), Image.LANC
 base.paste(esc, (20, 12), esc)
 
 d.text((110, 19), 'ARMY DE WASCO · ESCUADRÓN TORMENTA', font=f(14), fill=ORO)
-d.text((110, 39), 'REPORTE DE ENTREGA AÉREA', font=f(37), fill=TXT)
+d.text((110, 39), 'REPORTE DE TOMA AÉREA', font=f(37), fill=TXT)
 d.text((111, 82), 'DISCIPLINA  ★  PRECISIÓN  ★  ENTREGA', font=f(13), fill=MUT)
 d.line([(0,BANDA),(W,BANDA)], fill=ORO, width=3)
 
@@ -45,7 +45,7 @@ def etiqueta(x,y,t,ancho=None,alto=34):
 
 M=19; COLW=(W-M*3)//2; Y0=BANDA+16
 # ----- Columna izquierda -----
-panel(M, Y0, COLW, 143, 'DATOS DE LA ENTREGA')
+panel(M, Y0, COLW, 143, 'DATOS DE LA OPERACIÓN')
 d.text((M+13, Y0+41),  'Fecha:',            font=f(14), fill=MUT)
 d.text((M+13, Y0+67),  'Reporta:',          font=f(14), fill=MUT)
 d.text((M+13, Y0+94),  'Actividad:',        font=f(14), fill=MUT)
