@@ -62,6 +62,22 @@
         : `🚔 <b>Hoy tienes turno</b> a las <b>${h}</b>${t.notas ? ' · ' + esc(t.notas) : ''}. Recuerda enviar el reporte de patrullaje al terminar.` });
     }
   }catch(e){}
+  // Dónde vas en el ranking del mes: la mejor posición que tengas
+  try{
+    const { data } = await sb.rpc('ranking_mes');
+    const CAT = [['patrullajes','patrullajes'],['bajas','bajas'],['reportes','reportes'],['reclutamientos','reclutamientos'],['participaciones','participaciones'],['aks','AKs']];
+    let mejor = null;
+    for(const [k, nom] of CAT){
+      const orden = (data||[]).filter(r => +r[k] > 0).sort((a,b) => b[k]-a[k]);
+      const i = orden.findIndex(r => r.usuario_id === yo.id);
+      if(i < 0) continue;
+      const falta = i === 0 ? 0 : (+orden[i-1][k] - +orden[i][k] + 1);
+      if(!mejor || i < mejor.i) mejor = { i, nom, falta, valor:+orden[i][k] };
+    }
+    if(mejor) avisos.push({ html: mejor.i === 0
+      ? `🥇 Vas <b>de primero</b> en ${mejor.nom} este mes, con ${mejor.valor}. <a href="ranking.html">Ver el ranking</a>`
+      : `🏅 Vas <b>#${mejor.i+1}</b> en ${mejor.nom} este mes. Te falta${mejor.falta===1?'':'n'} <b>${mejor.falta}</b> para subir un puesto. <a href="ranking.html">Ver el ranking</a>` });
+  }catch(e){}
   if(avisos.length) caja.innerHTML = avisos.map(a => `<div class="av${a.ojo ? ' ojo' : ''}">${a.html}</div>`).join('');
 })();
 

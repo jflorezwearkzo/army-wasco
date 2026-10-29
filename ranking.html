@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Ranking · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=238c5f79"></script>
+<script src="js/tema.js?v=35928d50"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1100px;margin:24px auto;padding:0 20px}
@@ -22,6 +22,16 @@
   .barra-mes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 18px}
   .barra-mes select{width:auto}
   .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  #mivista{background:var(--panel);border:1px solid var(--avisoline);border-radius:10px;padding:14px 16px;margin:0 0 14px}
+  #mivista h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px}
+  #mivista .fila{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line3);flex-wrap:wrap}
+  #mivista .fila:first-of-type{border-top:0}
+  #mivista .cat-n{flex:1 1 180px;font-size:14px}
+  #mivista .pos{font-weight:700;color:var(--gold);min-width:52px;text-align:right}
+  #mivista .val{color:var(--muted);font-size:13px;min-width:70px}
+  #mivista .falta{font-size:13px;color:var(--muted);flex:1 1 220px}
+  #mivista .falta b{color:var(--text)}
+  #mivista .lider{color:#5fd38d}
   .cat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
   .cat h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px}
   .pod{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line3)}
@@ -47,12 +57,13 @@
   <h1>🏆 Ranking del mes</h1>
   <p class="muted" style="margin:0">Solo cuentan los reportes aprobados. El día 1 de cada mes se publican los ganadores en Discord y reciben su insignia.</p>
   <div class="barra-mes"><label style="margin:0">Mes</label><select id="mes"></select><span class="muted" id="total"></span></div>
+  <div id="mivista"></div>
   <div class="cats" id="cats"></div>
   <div class="caja tabla"><h3 style="margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px">Tabla completa</h3>
     <div style="overflow:auto"><table id="tabla"><thead><tr><th data-k="pos">#</th><th data-k="nombre">Integrante</th><th data-k="reportes">Reportes</th><th data-k="bajas">Bajas</th><th data-k="patrullajes">Patrullajes</th><th data-k="reclutamientos">Reclut.</th><th data-k="aks">AKs</th><th data-k="participaciones">Particip.</th></tr></thead><tbody id="tb"></tbody></table></div></div>
   <div class="caja" style="margin-top:18px"><h3 style="margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px">Salón de insignias</h3><div class="insig" id="insignias"><span class="muted">Cargando…</span></div></div>
   <div class="err" id="err"></div>
 </main>
-<script type="module" src="js/app-ranking.js?v=6ecba355"></script>
+<script type="module" src="js/app-ranking.js?v=0e6dff73"></script>
 </body>
 </html>

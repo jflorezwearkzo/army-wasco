@@ -15,7 +15,30 @@ async function cargar(){
   const activos = FILAS.filter(r => r.reportes || r.participaciones).length; $('#total').textContent = `${activos} integrante(s) con actividad`;
   $('#cats').innerHTML = CATS.map(([k, t]) => { const top = FILAS.filter(r => r[k] > 0).sort((a,b) => b[k]-a[k] || a.nombre.localeCompare(b.nombre)).slice(0,3);
     return `<div class="cat"><h3>${t}</h3>${top.map((r,i) => `<div class="pod ${r.usuario_id===yo.id?'yo':''}"><span class="m">${['🥇','🥈','🥉'][i]}</span><span class="n">${esc(r.nombre)}<small>@${esc(r.usuario)}</small></span><span class="v">${r[k]}</span></div>`).join('') || '<p class="vacio">Sin datos este mes.</p>'}</div>`; }).join('');
-  pintarTabla();
+  pintarTabla(); pintarMiVista();
+}
+// Dónde va cada quien y qué le falta para subir un puesto
+function pintarMiVista(){
+  const caja = document.getElementById('mivista'); if(!caja) return;
+  const mio = FILAS.find(r => r.usuario_id === yo.id);
+  const filas = CATS.map(([k, t]) => {
+    const orden = FILAS.filter(r => r[k] > 0).sort((a,b) => b[k]-a[k] || a.nombre.localeCompare(b.nombre));
+    const valor = mio ? (mio[k] || 0) : 0;
+    const i = orden.findIndex(r => r.usuario_id === yo.id);
+    if(!orden.length && !valor) return '';
+    let estado;
+    if(i < 0) estado = `<span class="falta">Todavía no apareces. <b>1</b> te mete en la tabla.</span>`;
+    else if(i === 0){ const seg = orden[1]; estado = seg
+        ? `<span class="falta lider">🥇 Vas de primero, con <b>${valor - seg[k]}</b> de ventaja sobre ${esc(seg.nombre)}.</span>`
+        : `<span class="falta lider">🥇 Vas de primero.</span>`; }
+    else { const arriba = orden[i-1]; const falta = arriba[k] - valor + 1;
+      estado = `<span class="falta">Te falta${falta===1?'':'n'} <b>${falta}</b> para pasar a ${esc(arriba.nombre)}${i===1?' y quedar de primero':` y subir al puesto ${i}`}.</span>`; }
+    return `<div class="fila"><span class="cat-n">${t}</span>
+      <span class="pos">${i >= 0 ? '#'+(i+1) : '—'}</span>
+      <span class="val">${valor} este mes</span>${estado}</div>`;
+  }).filter(Boolean).join('');
+  caja.innerHTML = `<h3>Así vas tú · ${esc(nombreCompleto(yo))}</h3>` + (filas ||
+    '<p class="muted" style="margin:0">Este mes todavía no hay actividad registrada.</p>');
 }
 function pintarTabla(){
   const lista = FILAS.filter(r => r.reportes || r.participaciones).sort((a,b) => ORDEN==='nombre' ? a.nombre.localeCompare(b.nombre) : (b[ORDEN]-a[ORDEN] || b.reportes-a.reportes));
