@@ -3,7 +3,7 @@
 // Cuerpo: { canal, texto?, embed?, prueba?, origen?: { tabla, id } } publica y registra el mensaje en discord_mensajes.
 //         { canal, accion: "editar", mensaje_id, texto?, embed? } edita un mensaje enviado antes por la página.
 //         { canal, accion: "borrar", mensaje_id } lo borra. Quien llama debe tener alguno de los permisos que publican avisos.
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// (sin el import de tipos de jsr: solo aportaba tipados y a veces no responde al compilar)
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const cors = {
@@ -13,6 +13,20 @@ const cors = {
 };
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+// Arma la dirección del webhook. El hilo va aparte porque al editar o borrar hay que meterlo
+// después de /messages/<id>, no pegado al final del enlace que guardó el administrador.
+function urlEnviar(base: string, hilo: string | null | undefined, espera = false): string {
+  const u = new URL(base);
+  if (hilo) u.searchParams.set("thread_id", hilo);
+  if (espera) u.searchParams.set("wait", "true");
+  return u.toString();
+}
+function urlMensaje(base: string, hilo: string | null | undefined, mid: string): string {
+  const u = new URL(base);
+  u.pathname = u.pathname.replace(/\/+$/, "") + "/messages/" + mid;
+  if (hilo) u.searchParams.set("thread_id", hilo);
+  return u.toString();
+}
 const PERMISOS = ["gestion_reportes", "sanciones", "anuncios", "turnos", "usuarios", "aprobar_reportes"];
 
 Deno.serve(async (req: Request) => {
@@ -39,7 +53,7 @@ Deno.serve(async (req: Request) => {
   // La clave del canal se repite entre organizaciones: siempre el de la organización de quien llama
   const { data: miOrg } = await caller.rpc("mi_org");
   const org = String(miOrg ?? "pm");
-  const { data: cfg } = await admin.from("discord_canales").select("nombre, webhook, activo").eq("clave", canal).eq("org_id", org).maybeSingle();
+  const { data: cfg } = await admin.from("discord_canales").select("nombre, webhook, activo, hilo").eq("clave", canal).eq("org_id", org).maybeSingle();
   if (!cfg) return json(404, { error: "Canal desconocido" });
   if (!cfg.webhook || (!cfg.activo && !body.prueba)) return json(200, { ok: false, motivo: "sin_webhook" });
 
@@ -48,7 +62,7 @@ Deno.serve(async (req: Request) => {
     const mid = String(body.mensaje_id ?? "").trim(); if (!/^\d+$/.test(mid)) return json(400, { error: "Falta mensaje_id" });
     const { data: reg } = await admin.from("discord_mensajes").select("id, origen_tabla, origen_id").eq("canal", canal).eq("mensaje_id", mid).maybeSingle();
     if (!reg) return json(404, { error: "Ese mensaje no fue enviado por la página" });
-    const urlMsg = `${cfg.webhook}/messages/${mid}`;
+    const urlMsg = urlMensaje(cfg.webhook, cfg.hilo, mid);
     if (body.accion === "borrar") {
       const r = await fetch(urlMsg, { method: "DELETE" });
       if (!r.ok && r.status !== 404) return json(502, { error: `Discord respondió ${r.status}: ${(await r.text()).slice(0, 200)}` });
@@ -76,7 +90,7 @@ Deno.serve(async (req: Request) => {
     if (body.embed && typeof body.embed === "object") payload.embeds = [{ color: 0xf0c24d, ...body.embed }];
     if (!payload.content && !payload.embeds) return json(400, { error: "Nada que publicar" });
   }
-  const resp = await fetch(cfg.webhook + (cfg.webhook.includes("?") ? "&" : "?") + "wait=true", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  const resp = await fetch(urlEnviar(cfg.webhook, cfg.hilo, true), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!resp.ok) return json(502, { error: `Discord respondió ${resp.status}: ${(await resp.text()).slice(0, 200)}` });
   let mensajeId: string | null = null; try { mensajeId = (await resp.json())?.id ?? null; } catch { /* sin id */ }
   if (!body.prueba) await admin.from("discord_mensajes").insert({ canal, origen_tabla: body.origen?.tabla ?? null, origen_id: body.origen?.id != null ? String(body.origen.id) : null, mensaje_id: mensajeId, titulo: (body.embed as Record<string, unknown> | undefined)?.title ?? String(body.texto ?? "").slice(0, 120) }).then(() => {}, () => {});

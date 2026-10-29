@@ -724,18 +724,35 @@ async function cargarAutomatizacion(){
   const campoWh = (attr, clave, valor, tiene) => EDITA
     ? `<input type="url" data-${attr}="${esc(clave)}" value="${esc(valor||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px">`
     : `<span class="muted" title="No tienes permiso para ver los enlaces">${tiene ? '🔒 ••••••••••••••••••••  <span style="font-size:11px">(configurado)</span>' : '— sin webhook'}</span>`;
+  // Hilo opcional dentro del canal del webhook. Va aparte del enlace para que editar y borrar
+  // los mensajes siga funcionando (esas llamadas arman la dirección de otra manera).
+  const campoHilo = (attr, clave, valor) => EDITA
+    ? `<input type="text" inputmode="numeric" data-${attr}="${esc(clave)}" value="${esc(valor||'')}" placeholder="Canal" title="Id del hilo. Vacío = el canal directamente. Modo desarrollador → clic derecho en el hilo → Copiar ID." style="width:150px">`
+    : `<span class="muted" style="font-size:12px">${valor ? 'hilo '+esc(valor) : 'canal'}</span>`;
+  // Si pegan el enlace con ?thread_id=…, se separa solo: el id al campo de hilo y el enlace limpio
+  const separarHilo = (campoW, campoH) => {
+    const w = campoW.value.trim(); const i = w.indexOf('?'); if(i < 0) return;
+    let id = null;
+    try{ const p = new URLSearchParams(w.slice(i+1)); id = p.get('thread_id'); }catch(x){ return; }
+    if(!id || !/^[0-9]{5,25}$/.test(id)) return;
+    campoW.value = w.slice(0, i); if(!campoH.value.trim()) campoH.value = id;
+  };
   // El canal de solicitudes lleva además el enlace público que se le pasa a quien no tiene cuenta
   const ORG_ID = (yo.org && yo.org.id) || 'pm';
   const enlacePublico = c => c.clave !== 'solicitudes' ? ''
     : `<br><span class="muted" style="font-size:12px">Enlace público: <a href="${esc(RAIZ)}acceso.html?u=${esc(ORG_ID)}" target="_blank" rel="noopener">${esc(RAIZ)}acceso.html?u=${esc(ORG_ID)}</a></span>`;
   $('#tbCanales').innerHTML = (data||[]).map(c => `<tr data-id="${esc(c.clave)}"><td><b>${esc(c.nombre)}</b><br><span class="muted" style="font-size:12px">${esc(c.clave)}</span>${enlacePublico(c)}</td>
     <td>${campoWh('wh', c.clave, c.webhook, c.tiene_webhook)}</td>
+    <td>${campoHilo('hilo', c.clave, c.hilo)}</td>
     <td><input type="checkbox" data-on="${esc(c.clave)}" ${c.activo?'checked':''} ${EDITA?'':'disabled'}></td>
     <td style="white-space:nowrap">${EDITA ? `<button class="ghost sm" data-cg="${esc(c.clave)}">Guardar</button> <button class="ghost sm" data-cp="${esc(c.clave)}" title="Envía un mensaje de prueba al canal">Probar</button>` : ''} <span class="muted" data-cm="${esc(c.clave)}" style="font-size:12px"></span></td></tr>`).join('');
   const guardar = async clave => {
-    const w = $(`[data-wh="${clave}"]`).value.trim(); const m = $(`[data-cm="${clave}"]`);
+    const cw = $(`[data-wh="${clave}"]`), ch = $(`[data-hilo="${clave}"]`), m = $(`[data-cm="${clave}"]`);
+    separarHilo(cw, ch);
+    const w = cw.value.trim(), h = ch.value.trim();
     if(w && !/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }
-    const { error } = await sb.from('discord_canales').update({ webhook: w || null, activo: $(`[data-on="${clave}"]`).checked, actualizado_en: new Date().toISOString() }).eq('clave', clave).eq('org_id', ORG_ID);
+    if(h && !/^[0-9]{5,25}$/.test(h)){ m.textContent='El hilo es solo el id (números). Modo desarrollador → clic derecho en el hilo → Copiar ID.'; return false; }
+    const { error } = await sb.from('discord_canales').update({ webhook: w || null, hilo: h || null, activo: $(`[data-on="${clave}"]`).checked, actualizado_en: new Date().toISOString() }).eq('clave', clave).eq('org_id', ORG_ID);
     m.textContent = error ? 'Error: '+error.message : 'Guardado.'; return !error;
   };
   document.querySelectorAll('[data-cg]').forEach(b => b.onclick = () => guardar(b.dataset.cg));
@@ -751,12 +768,16 @@ async function cargarAutomatizacion(){
   const mapa = {}; ((dc && dc.formularios) || []).forEach(x => mapa[x.formulario_id] = x);
   $('#tbCanalesForm').innerHTML = formularios.map(f => { const c = mapa[f.id] || {}; return `<tr><td><b>${esc(f.icono||'')} ${esc(f.titulo)}</b><br><span class="muted" style="font-size:12px">${esc(f.id)}${f.requiere_aprobacion?' · se publica al aprobar':''}</span></td>
     <td>${campoWh('fwh', f.id, c.webhook, c.tiene_webhook)}</td>
+    <td>${campoHilo('fhilo', f.id, c.hilo)}</td>
     <td><input type="checkbox" data-fon="${esc(f.id)}" ${c.activo!==false?'checked':''} ${EDITA?'':'disabled'}></td>
     <td style="white-space:nowrap">${EDITA ? `<button class="ghost sm" data-fg="${esc(f.id)}">Guardar</button> <button class="ghost sm" data-fp="${esc(f.id)}">Probar</button>` : ''} <span class="muted" data-fm="${esc(f.id)}" style="font-size:12px"></span></td></tr>`; }).join('');
-  const guardarF = async id => { const w = $(`[data-fwh="${id}"]`).value.trim(), m = $(`[data-fm="${id}"]`);
+  const guardarF = async id => { const cw = $(`[data-fwh="${id}"]`), ch = $(`[data-fhilo="${id}"]`), m = $(`[data-fm="${id}"]`);
+    separarHilo(cw, ch);
+    const w = cw.value.trim(), h = ch.value.trim();
     if(!w){ await sb.from('formularios_discord').delete().eq('formulario_id', id); m.textContent='Sin webhook.'; return true; }
     if(!/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }
-    const { error } = await sb.from('formularios_discord').upsert({ formulario_id: id, webhook: w, activo: $(`[data-fon="${id}"]`).checked, actualizado_en: new Date().toISOString() }); m.textContent = error ? 'Error: '+error.message : 'Guardado.'; return !error; };
+    if(h && !/^[0-9]{5,25}$/.test(h)){ m.textContent='El hilo es solo el id (números). Modo desarrollador → clic derecho en el hilo → Copiar ID.'; return false; }
+    const { error } = await sb.from('formularios_discord').upsert({ formulario_id: id, webhook: w, hilo: h || null, activo: $(`[data-fon="${id}"]`).checked, actualizado_en: new Date().toISOString() }); m.textContent = error ? 'Error: '+error.message : 'Guardado.'; return !error; };
   document.querySelectorAll('[data-fg]').forEach(b => b.onclick = () => guardarF(b.dataset.fg));
   document.querySelectorAll('[data-fp]').forEach(b => b.onclick = async () => { const id = b.dataset.fp, m = $(`[data-fm="${id}"]`); if(!(await guardarF(id))) return; m.textContent='Enviando…';
     const { data, error } = await sb.functions.invoke('notificar-discord', { body:{ formulario_id: id, prueba: true } }); m.textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Prueba enviada.' : 'Error: '+((data&&data.error)||'sin respuesta'); });

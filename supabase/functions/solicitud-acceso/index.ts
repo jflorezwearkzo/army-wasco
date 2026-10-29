@@ -84,7 +84,7 @@ Deno.serve(async (req: Request) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
   const { data: permiso, error } = await admin.rpc("solicitud_permitida", { p_org: org, p_ip: ip || "sin-ip" });
   if (error) return json(origin, 500, { error: "No se pudo procesar la solicitud." });
-  const p = permiso as { ok?: boolean; motivo?: string; webhook?: string; org_nombre?: string };
+  const p = permiso as { ok?: boolean; motivo?: string; webhook?: string; hilo?: string | null; org_nombre?: string };
   if (!p?.ok) {
     if (p?.motivo === "limite") return json(origin, 429, { error: "Ya enviaste una solicitud hoy. Si fue un error, escríbele al liderazgo por Discord." });
     return json(origin, 404, { error: "Esa unidad no está recibiendo solicitudes ahora mismo." });
@@ -107,7 +107,9 @@ Deno.serve(async (req: Request) => {
     }],
   };
   try {
-    const r = await fetch(p.webhook!, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const destino = new URL(p.webhook!);
+    if (p.hilo) destino.searchParams.set("thread_id", p.hilo);   // si el canal publica dentro de un hilo
+    const r = await fetch(destino.toString(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     if (!r.ok) return json(origin, 502, { error: "No se pudo entregar la solicitud. Inténtalo más tarde." });
   } catch { return json(origin, 502, { error: "No se pudo entregar la solicitud. Inténtalo más tarde." }); }
 

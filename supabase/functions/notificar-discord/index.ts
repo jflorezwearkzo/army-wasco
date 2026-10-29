@@ -13,6 +13,15 @@ const cors = {
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
+// Arma la dirección del webhook. Si el canal publica dentro de un hilo, el id va como thread_id.
+function urlEnviar(base: string, hilo: string | null | undefined, espera = false): string {
+  const u = new URL(base);
+  if (hilo) u.searchParams.set("thread_id", hilo);
+  if (espera) u.searchParams.set("wait", "true");
+  return u.toString();
+}
+
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json(405, { error: "Método no permitido" });
@@ -31,9 +40,9 @@ Deno.serve(async (req: Request) => {
   if (body.prueba) {
     const { data: ok } = await caller.rpc("tengo_permiso", { p: "gestion_reportes" });
     if (!ok) return json(403, { error: "Sin permiso de gestión de reportes" });
-    const { data: cfg } = await admin.from("formularios_discord").select("webhook, activo").eq("formulario_id", body.formulario_id ?? "").maybeSingle();
+    const { data: cfg } = await admin.from("formularios_discord").select("webhook, activo, hilo").eq("formulario_id", body.formulario_id ?? "").maybeSingle();
     if (!cfg) return json(404, { error: "Este formulario no tiene webhook configurado" });
-    const r = await fetch(cfg.webhook, { method: "POST", headers: { "Content-Type": "application/json" },
+    const r = await fetch(urlEnviar(cfg.webhook, cfg.hilo), { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "Policía Militar · Reportes", content: `✅ Prueba de conexión: los reportes de **${body.formulario_id}** se publicarán en este canal.` }) });
     if (!r.ok) return json(502, { error: `Discord respondió ${r.status}: ${(await r.text()).slice(0, 200)}` });
     return json(200, { ok: true });
@@ -57,7 +66,7 @@ Deno.serve(async (req: Request) => {
   const { data: raw } = await admin.from("reportes").select("discord_enviado_en").eq("id", id).maybeSingle();
   if (raw?.discord_enviado_en && !reenvio) return json(200, { ok: true, repetido: true });
   // El webhook se lee AHORA, no el que se usó la vez pasada: si lo cambiaste, el reenvío va al nuevo.
-  const { data: cfg } = await admin.from("formularios_discord").select("webhook, activo").eq("formulario_id", r.formulario_id).maybeSingle();
+  const { data: cfg } = await admin.from("formularios_discord").select("webhook, activo, hilo").eq("formulario_id", r.formulario_id).maybeSingle();
   if (!cfg || !cfg.activo) return json(200, { ok: false, motivo: "sin_webhook" });
 
   const ext = (r.imagen_path.split(".").pop() || "png").toLowerCase();
@@ -75,7 +84,7 @@ Deno.serve(async (req: Request) => {
   const form = new FormData();
   form.append("payload_json", JSON.stringify(payload));
   form.append("files[0]", file, `${r.folio}.${ext}`);
-  const resp = await fetch(cfg.webhook + (cfg.webhook.includes("?") ? "&" : "?") + "wait=true", { method: "POST", body: form });
+  const resp = await fetch(urlEnviar(cfg.webhook, cfg.hilo, true), { method: "POST", body: form });
   if (!resp.ok) return json(502, { error: `Discord respondió ${resp.status}: ${(await resp.text()).slice(0, 200)}` });
   let mensajeId: string | null = null; try { mensajeId = (await resp.json())?.id ?? null; } catch { /* sin id */ }
   await admin.from("reportes").update({ discord_enviado_en: new Date().toISOString() }).eq("id", id);

@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=b05ba9e0"></script>
+<script src="../js/tema.js?v=03ee1f4c"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -422,10 +422,10 @@
     <div class="caja">
       <h3>Canales de Discord</h3>
       <p class="muted" style="margin-top:0;font-size:13px">Cada propósito tiene su propio canal (webhook). Los reportes de cada formulario se configuran en Formularios; aquí van los avisos generales. Los enlaces nunca se muestran a los usuarios.</p>
-      <table><thead><tr><th>Canal</th><th>Webhook</th><th>Activo</th><th></th></tr></thead><tbody id="tbCanales"></tbody></table>
+      <table><thead><tr><th>Canal</th><th>Webhook</th><th title="Opcional: id del hilo dentro del canal. Vacío = el canal directamente.">Hilo</th><th>Activo</th><th></th></tr></thead><tbody id="tbCanales"></tbody></table>
       <h4 style="margin:18px 0 6px;color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:1px">Canales por formulario (reportes sellados)</h4>
       <p class="muted" style="margin:0 0 8px;font-size:13px">Cada formulario publica sus reportes en su propio canal. Es lo mismo que el campo "Webhook de Discord" al editar el formulario.</p>
-      <table><thead><tr><th>Formulario</th><th>Webhook</th><th>Publicar</th><th></th></tr></thead><tbody id="tbCanalesForm"></tbody></table>
+      <table><thead><tr><th>Formulario</th><th>Webhook</th><th title="Opcional: id del hilo dentro del canal. Vacío = el canal directamente.">Hilo</th><th>Publicar</th><th></th></tr></thead><tbody id="tbCanalesForm"></tbody></table>
       <div class="err" id="cErr"></div>
     </div>
     <div class="caja" style="margin-top:18px" id="cajaProgramadas">
@@ -553,6 +553,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=b224441c"></script>
+<script type="module" src="../js/app-admin.js?v=57a44728"></script>
 </body>
 </html>
