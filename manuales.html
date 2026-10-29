@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=56ccd7cc"></script>
+<script src="js/tema.js?v=3d25ec4d"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -106,6 +106,16 @@
     <p>El calendario es del juego, no de una unidad: Policía Militar y Escuadrón Tormenta ven los mismos eventos.</p></div>
 </section>
 
+<section class="sec-panel" id="sec-ruta" data-titulo="Ruta de aprendizaje" data-icono="🧭" data-grupo="Para todos" data-permisos="*" hidden>
+  <h2 class="sec">Ruta de aprendizaje<small>Cuatro etapas para los que llegan nuevos</small></h2>
+  <div class="bloque"><h3>Qué es</h3>
+    <p>Una <b>guía</b>, no un requisito: no da ni quita permisos, y nadie pierde acceso a nada por ir despacio. Son cuatro etapas — Llegada, Primer reporte, Operar solo y Veterano — iguales para todas las unidades.</p></div>
+  <div class="bloque"><h3>Cómo se van marcando</h3>
+    <p>Casi todo se marca solo con lo que ya haces: reportes enviados y aprobados, turnos cumplidos con su reporte, verificación en dos pasos, participaciones en reportes de otros. Lo que la página no puede saber (si leíste el reglamento, si instalaste la app) lo marcas tú con un clic, y lo puedes desmarcar.</p></div>
+  <div class="bloque"><h3>La última etapa la firma el liderazgo</h3>
+    <p>La etapa 4 no se cierra sola: la firma alguien con jerarquía por encima. Lo que aparece debajo de esa etapa son señales que ayudan a decidir, no requisitos.</p></div>
+</section>
+
 <section class="sec-panel" id="sec-cuenta" data-titulo="Mi cuenta y seguridad" data-icono="🔐" data-grupo="Para todos" data-permisos="*" hidden>
   <h2 class="sec">Mi cuenta y seguridad<small>Contraseña, verificación en dos pasos, app</small></h2>
   <div class="bloque"><h3>Cambiar la contraseña</h3><p>Escribe la actual y la nueva dos veces. Mínimo 8 caracteres con mayúscula, minúscula, número y símbolo.</p></div>
@@ -154,6 +164,10 @@
     <ul><li><b>Inactivo</b>: no puede entrar y no aparece en los formularios (los intentos de acceso quedan en Auditoría).</li><li><b>Oculto en formularios</b>: sigue entrando, pero no aparece en los desplegables de integrantes.</li><li><b>Último reporte</b>: fecha y cantidad de reportes aprobados.</li></ul></div>
   <div class="bloque"><h3>Acciones en bloque</h3><p>Marca las casillas (o la de la cabecera para todos los visibles) y abajo aparece la barra: Activar, Desactivar, Mostrar, Ocultar, Asignar rol. Pide confirmación con la lista de nombres. Nunca toca roles fuera de tus permisos ni tu propia cuenta.</p></div>
   <div class="bloque" data-solo="permisos_granulares"><h3>Permisos granulares por usuario</h3><p>En la ficha del usuario, pestaña <i>Permisos</i>: cada permiso muestra si viene <b>por rol</b>, si está marcado como <b>extra</b> (se otorga aunque el rol no lo tenga) o <b>negado</b> (se quita aunque el rol lo tenga), y el resultado <b>efectivo</b>. Solo puedes otorgar como extra permisos que tú mismo tienes; "Ver como" nunca. En <i>Formularios</i> puedes dar acceso a formularios adicionales. Requiere el permiso "Permisos granulares por usuario" (por defecto solo Administrador) y queda en Auditoría.</p></div>
+  <div class="bloque"><h3>Ruta de aprendizaje de cada integrante</h3>
+    <p>⋯ → <b>🧭 Ruta de aprendizaje</b> abre su avance. Desde ahí puedes <b>firmar</b> la última etapa (si tu jerarquía lo permite) y <b>↺ Reiniciar esta ruta</b>, que borra los pasos que marcó a mano y la firma. Lo automático no se toca: los reportes y turnos siguen ahí, así que esos pasos se vuelven a marcar enseguida.</p>
+    <p><b>Quién firma a quién</b> lo decide la <i>jerarquía de firma</i> del rol, no su nombre. Se puede firmar a quien esté en tu mismo nivel o por debajo, y solo el nivel Líder puede firmarse a sí mismo.</p>
+    <div class="ojo">Mientras el interruptor general esté apagado, la ruta no existe para nadie salvo para el Administrador, que es quien la enciende desde la propia página de la ruta.</div></div>
   <div class="bloque"><h3>Ver como (solo Administrador)</h3><p>Muestra toda la página tal como la ve ese usuario, en solo lectura, con una franja amarilla arriba para salir. Sirve para comprobar quejas tipo "no me aparece el formulario". Queda en Auditoría.</p></div>
   <div class="bloque"><h3>Restablecer contraseña</h3><p>⋯ → Restablecer contraseña: asigna una nueva y entrégasela por privado. Solo sobre usuarios con roles dentro de tus permisos.</p></div>
   <div class="bloque" data-solo="superadmin"><h3>Quitar verificación en dos pasos (solo Administrador)</h3><p>Si alguien perdió el celular con su app de autenticación: ⋯ → <b>Quitar verificación en dos pasos</b> (o el botón 🔓 en su expediente). Confirma y el usuario vuelve a entrar solo con su contraseña; después puede configurarla de nuevo en Mi cuenta. Queda en Auditoría.</p></div>
@@ -180,6 +194,7 @@
     <ul><li><b>Gestión de usuarios</b>: crear/editar/activar usuarios, cambiar rangos, requisitos de ascenso.</li><li><b>Asignación de roles</b> y <b>Restablecer contraseñas</b>.</li><li><b>Creación de roles</b>: esta pestaña.</li><li><b>Creación de reportes</b> / <b>Gestión de reportes</b>: catálogo de formularios, webhooks de Discord, canales y tareas de Automatización.</li><li><b>Creación de formularios (diseñador)</b>: plantillas personalizadas.</li><li><b>Ver historial</b> / <b>Eliminar historial</b>: pestañas Historial y Resumen; ver expedientes ajenos.</li><li><b>Revisar y aprobar reportes</b>: pestaña Revisión.</li><li><b>Sanciones y advertencias</b>: pestaña Disciplina y registrar sanciones desde el expediente.</li><li><b>Turnos: asignar y editar</b> / <b>Turnos: solo ver</b>.</li><li><b>Anuncios: publicar y editar</b> / <b>Anuncios: solo ver</b>.</li><li><b>Ver auditoría</b>.</li><li><b>Ver como</b>: exclusivo del rol Administrador.</li>
       <li><b>Ver todo (solo lectura)</b>: abre todas las secciones de la página sin poder cambiar nada. Útil para auditores o para alguien de confianza que necesita mirar. Anula cualquier otro permiso de escritura que tenga el rol: aunque le marques más, el servidor se los quita. Los enlaces de los webhooks le salen tapados y los botones de <i>Probar</i> no hacen nada.</li>
       <li><b>Control de TODAS las organizaciones</b>: ver y administrar todas las unidades, no solo la propia. Exclusivo del Administrador.</li></ul>
+    <p><b>Jerarquía de firma</b> es un campo aparte de los permisos, en el rol: <i>Sin firma</i>, <i>Auxiliar</i>, <i>Co-Líder</i> o <i>Líder</i>. Solo decide quién puede firmar la última etapa de la ruta de aprendizaje, y no depende de cómo se llame el rol, así que cada unidad lo configura a su manera.</p>
     <div class="tip">Los roles son de cada unidad. Un rol creado en la Policía Militar no existe ni se puede asignar en el Escuadrón Tormenta, ni al revés.</div></div>
   <div class="bloque"><h3>Rangos PM</h3><p>Lista de rangos internos de la unidad (Auxiliar, Co-líder, Líder…). Si renombras uno, los roles que lo usan se actualizan.</p></div>
 </section>
@@ -283,7 +298,7 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=5b3186ad"></script>
+<script type="module" src="js/app-manuales.js?v=ca0d95ae"></script>
 </body>
 </html>  <div class="bloque"><h3>El mensaje en Discord</h3><p>Al guardar con <i>Publicar en Discord</i> el anuncio sale al canal de anuncios y la página recuerda ese mensaje. En el menú ⋯ del anuncio: <b>🔄 Actualizar en Discord</b> reescribe el mensaje con el texto actual (también ocurre al guardar cambios con la casilla marcada) y <b>🧹 Borrar de Discord</b> lo retira del canal sin tocar el tablón. Eliminar el anuncio borra también su mensaje.</p></div>
 

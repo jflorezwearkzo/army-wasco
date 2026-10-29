@@ -1,5 +1,6 @@
-  import { requerir, barraUsuario, puedeFormulario, sb, esc, avisoDiscord, nombreCompleto } from './auth.js';
+  import { requerir, barraUsuario, puedeFormulario, sb, esc, avisoDiscord, nombreCompleto, rutaVisible } from './auth.js';
   const yo = await requerir(); barraUsuario(yo);
+  { const er = document.getElementById('enlaceRuta'); if(er) er.hidden = !rutaVisible(yo); }
   const fmt = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}-${m}-${y}`; };
   const el = document.getElementById('lista');
   const { data: formularios, error } = await sb.from('formularios').select('*').eq('activo', true).order('orden');

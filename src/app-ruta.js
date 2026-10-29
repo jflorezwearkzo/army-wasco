@@ -8,7 +8,6 @@ const $ = s => document.querySelector(s);
 
 const OTRO = new URLSearchParams(location.search).get('u') || '';
 const AJENA = !!OTRO && OTRO !== yo.id;
-const PUEDE_FIRMAR = tiene(yo, 'usuarios') && AJENA;
 
 // Cada paso dice cómo se comprueba: auto (una función sobre los datos) o marca (la persona la marca).
 const ETAPAS = [
@@ -77,6 +76,18 @@ function etapaActual(d){
 
 function pintar(){
   const d = D, act = etapaActual(d);
+  // El interruptor general lo mueve solo el administrador; mientras esté apagado, la ruta es un
+  // borrador que únicamente ve quien puede encenderla.
+  $('#switch').innerHTML = d.puedo_activar
+    ? `<label class="sw"><input type="checkbox" id="chkActiva" ${d.activa?'checked':''}>
+         <span>Ruta de aprendizaje <b>${d.activa?'activada':'desactivada'}</b> para toda la página</span></label>
+       <small>Mientras esté desactivada, solo tú la ves. Nadie más la tiene en el menú ni puede firmar.</small>`
+    : '';
+  if(!d.activa && !d.puedo_activar){
+    $('#cab').innerHTML = '';
+    $('#etapas').innerHTML = '<section class="etapa"><h2><span class="ico">🚧</span> Todavía no está disponible</h2><p class="intro">La ruta de aprendizaje está en preparación. Cuando el liderazgo la active, la verás aquí.</p></section>';
+    return;
+  }
   const total = ETAPAS.reduce((a,e) => a + e.pasos.filter(p => !p.opcional).length, 0);
   const listos = ETAPAS.reduce((a,e) => a + e.pasos.filter(p => !p.opcional && hechoPaso(p,d)).length, 0);
 
@@ -99,8 +110,11 @@ function pintar(){
     const lista_ok = etapaCompleta(e, d);
     const firmaTxt = e.firma && d.firma && d.firma.etapa >= 4
       ? `<p class="firmada">🎖️ Firmada por <b>${esc(d.firma.firmado_por || '—')}</b> el ${new Date(d.firma.firmado_en).toLocaleDateString('es-CO')}${d.firma.nota ? ` · ${esc(d.firma.nota)}` : ''}</p>` : '';
-    const botonFirma = e.firma && PUEDE_FIRMAR && !(d.firma && d.firma.etapa >= 4)
-      ? `<button class="primary sm" id="btnFirmar">🎖️ Firmar esta etapa</button>` : '';
+    const yaFirmada = !!(d.firma && d.firma.etapa >= 4);
+    const botonFirma = e.firma && d.puedo_firmar && !yaFirmada && d.activa
+      ? `<button class="primary sm" id="btnFirmar">🎖️ Firmar esta etapa</button>`
+      : (e.firma && !yaFirmada && AJENA && +d.mi_nivel >= 1
+          ? `<p class="nota-jer">No puedes firmar esta ruta: esa persona está en tu mismo nivel o por encima.</p>` : '');
     return `<section class="etapa ${lista_ok?'completa':''} ${e.n===act?'actual':''}">
       <h2><span class="ico">${e.icono}</span> Etapa ${e.n} · ${esc(e.titulo)}
         <small>${esc(e.cuando)}</small>${lista_ok?'<span class="sello">Completa</span>':''}</h2>
@@ -110,6 +124,10 @@ function pintar(){
 
   document.querySelectorAll('[data-paso]').forEach(b => b.onclick = () => alternar(b.dataset.paso));
   const bf = $('#btnFirmar'); if(bf) bf.onclick = firmar;
+  const ch = $('#chkActiva'); if(ch) ch.onchange = () => activar(ch.checked);
+  $('#pie').innerHTML = d.puedo_reiniciar && AJENA
+    ? `<button class="ghost sm" id="btnReiniciar">↺ Reiniciar esta ruta</button>` : '';
+  const br = $('#btnReiniciar'); if(br) br.onclick = reiniciar;
 }
 
 async function alternar(paso){
@@ -123,9 +141,25 @@ async function alternar(paso){
 }
 
 async function firmar(){
-  const nota = (prompt('¿Algún comentario para dejar en la firma? (opcional)') || '').trim();
+  const nota = prompt('¿Algún comentario para dejar en la firma? (opcional)');
   if(nota === null) return;
-  const { error } = await sb.from('ruta_firmas').upsert({ usuario_id: OTRO, etapa: 4, firmado_por: yo.id, nota: nota || null });
+  const { error } = await sb.rpc('firmar_ruta', { p_usuario: OTRO || yo.id, p_nota: nota.trim() || null });
+  if(error){ $('#err').textContent = error.message; return; }
+  await cargar();
+}
+
+// Borra lo que la persona marcó y su firma. No toca nada automático: los reportes aprobados o los
+// turnos cumplidos siguen ahí, así que esos pasos vuelven a marcarse solos.
+async function reiniciar(){
+  if(!confirm('¿Reiniciar la ruta de esta persona?\n\nSe borran los pasos que marcó a mano y la firma. Lo que se comprueba solo (reportes, turnos, dos pasos) se vuelve a marcar enseguida.')) return;
+  const { error } = await sb.rpc('reiniciar_ruta', { p_usuario: OTRO });
+  if(error){ $('#err').textContent = error.message; return; }
+  await cargar();
+}
+
+async function activar(valor){
+  const { error } = await sb.from('ajustes_globales')
+    .upsert({ clave:'ruta_aprendizaje', valor:{ activo: !!valor }, actualizado_en: new Date().toISOString(), actualizado_por: yo.id });
   if(error){ $('#err').textContent = error.message; return; }
   await cargar();
 }

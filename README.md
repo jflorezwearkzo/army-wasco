@@ -308,6 +308,19 @@ En pantallas angostas los formularios muestran una barra fija abajo con **Vista 
 
 `manifest.webmanifest` + `sw.js` + iconos en `icons/` (generados desde `favicon.svg`). En **Mi cuenta › Instalar como app** aparece el botón de instalación (Android/Chrome/Edge) o las instrucciones para iPhone (Compartir → Añadir a pantalla de inicio). El service worker guarda el cascarón (páginas, estilos, scripts, plantillas, iconos): las páginas y scripts van **red primero** con caché de respaldo (los cambios llegan de inmediato; `build.mjs` cambia la versión del SW con cada build), las imágenes van **caché primero**; las llamadas a Supabase nunca se cachean. Sin conexión: las páginas ya visitadas abren; lo no visitado muestra `sin-conexion.html`. Iniciar sesión, exportar y ver historial requieren conexión.
 
+## Ruta de aprendizaje
+
+Cuatro etapas (`ruta.html` + `src/app-ruta.js`), iguales para todas las unidades y **solo guía**: no otorga ni quita permisos. Las tres primeras se calculan con datos que ya existen; la cuarta la firma el liderazgo.
+
+- `ruta_marcas(usuario_id, paso)` — lo que la persona marca a mano. Solo escribe sobre sí misma.
+- `ruta_firmas(usuario_id, etapa, firmado_por, nota)` — la firma de la etapa 4.
+- `mi_ruta(usuario)` — datos crudos (reportes, aprobados, turnos cumplidos, participaciones, MFA, marcas, firma) más `activa`, `puedo_firmar`, `puedo_reiniciar` y `mi_nivel`. La página decide qué paso está hecho.
+- `firmar_ruta(usuario, nota)` y `reiniciar_ruta(usuario)` — con sus candados; auditan `ruta_firmada` y `ruta_reiniciada`.
+
+**Jerarquía de firma.** `roles.nivel_firma` (0 sin firma, 1 Auxiliar, 2 Co-Líder, 3 Líder) es explícita por rol y se edita en el panel: no se deduce del nombre del rol ni del `rango_pm`, porque cada unidad los llama distinto. `puedo_firmar_ruta()` permite firmar a quien tenga nivel **igual o menor** al propio, y solo el nivel 3 puede firmarse a sí mismo.
+
+**Interruptor general.** `ajustes_globales` (clave `ruta_aprendizaje`) con RLS: lectura para cualquier perfil activo, escritura solo para el superadmin. Nace apagado. Mientras lo esté, `rutaVisible()` esconde el enlace del menú y del inicio, y la página solo la ve quien puede encenderla. `mi_sesion()` devuelve el estado para no consultar en cada página.
+
 ## Deuda conocida
 
 - `supabase/schema.sql` quedó desactualizado frente al modelo multi-organización: sirve como referencia histórica, no para recrear la base desde cero. La fuente de verdad son las migraciones aplicadas en Supabase.

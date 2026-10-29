@@ -24,6 +24,7 @@ async function cargar(){
   const be = $('#bEliminar'); if(be) be.onclick = async () => { if(!confirm(`¿Eliminar el rol "${r.nombre}"? Los ${(miembros||[]).length} usuario(s) que lo tienen quedarán sin rol.`)) return; const { error: e } = await sb.from('roles').delete().eq('id', ID); if(e){ toast(e.message, true); return; } location.href = './#roles'; };
   $('#kvRol').innerHTML = [['Identificador', r.id], ['Usuarios', (miembros||[]).length], ['Permisos', Object.values(r.permisos||{}).filter(Boolean).length], ['Formularios', (r.formularios||[]).includes('*') ? 'Todos' : (r.formularios||[]).length], ['Tipo', r.protegido ? 'Protegido (Administrador)' : 'Normal']].map(([k,v]) => `<span>${esc(k)}</span><span>${esc(String(v))}</span>`).join('');
   $('#rNombre').value = r.nombre; $('#rDesc').value = r.descripcion || ''; $('#rRangoPM').innerHTML = '<option value="">— Sin Rango PM —</option>' + (rangos||[]).map(x => `<option ${x.nombre===r.rango_pm?'selected':''}>${esc(x.nombre)}</option>`).join('');
+  $('#rNivel').value = String(r.nivel_firma || 0);
   ['#rNombre','#rDesc','#rRangoPM'].forEach(x => $(x).disabled = !editable); $('#dGuardar').style.display = editable ? '' : 'none';
   $('#permNota').textContent = editable ? '' : (r.protegido ? 'El rol Administrador solo lo modifica otro Administrador.' : 'Solo lectura: este rol tiene permisos que tú no tienes.');
   $('#tbPerm').innerHTML = PERMS.map(([k,n]) => { const on = !!(r.permisos||{})[k]; const puedo = editable && (sup || mp[k]) && (k!=='ver_como' || r.protegido);
@@ -40,7 +41,7 @@ async function cargar(){
 }
 await cargar();
 async function guardar(cambios){ const { error } = await sb.from('roles').update(cambios).eq('id', ID); if(error) throw new Error(error.message); }
-$('#dGuardar').onclick = async () => { try{ await guardar({ nombre: $('#rNombre').value.trim(), descripcion: $('#rDesc').value.trim(), rango_pm: $('#rRangoPM').value || null }); toast('Datos guardados.'); cargar(); }catch(x){ toast(x.message, true); } };
+$('#dGuardar').onclick = async () => { try{ await guardar({ nombre: $('#rNombre').value.trim(), descripcion: $('#rDesc').value.trim(), rango_pm: $('#rRangoPM').value || null, nivel_firma: +$('#rNivel').value || 0 }); toast('Datos guardados.'); cargar(); }catch(x){ toast(x.message, true); } };
 $('#pGuardar').onclick = async () => { $('#pErr').textContent=''; const permisos = { ...(R.permisos||{}) }; document.querySelectorAll('[data-perm]').forEach(c => { if(!c.disabled) permisos[c.dataset.perm] = c.checked; });
   if(R.id==='admin' && !(permisos.crear_roles && permisos.asignar_roles && permisos.auditoria)){ $('#pErr').textContent='El rol admin debe conservar los permisos de roles.'; return; }
   try{ await guardar({ permisos }); toast('Permisos guardados.'); cargar(); }catch(x){ $('#pErr').textContent = x.message; } };

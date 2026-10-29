@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Ruta de aprendizaje · Army de Wasco</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=56ccd7cc"></script>
+<script src="js/tema.js?v=3d25ec4d"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:880px;margin:24px auto;padding:0 20px}
@@ -43,18 +43,26 @@
   .ayu{display:block;color:var(--muted);font-size:12px;margin-top:2px;line-height:1.45}
   .firmada{background:var(--avisobg);border:1px solid var(--avisoline);border-radius:8px;padding:8px 12px;font-size:13px;margin:12px 0 0}
   .nota-guia{color:var(--muted);font-size:13px;margin:18px 0 0;line-height:1.5}
+  #switch{margin:0 0 14px}
+  #switch:not(:empty){background:var(--avisobg);border:1px solid var(--avisoline);border-radius:10px;padding:12px 14px}
+  .sw{display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer}
+  .sw input{width:18px;height:18px;cursor:pointer}
+  #switch small{display:block;color:var(--muted);font-size:12px;margin-top:6px;line-height:1.45}
+  .nota-jer{color:var(--muted);font-size:13px;margin:12px 0 0}
 </style>
 </head>
 <body>
 <main>
   <p class="unidad">Army de Wasco · <span data-org-nombre>Policía Militar</span></p>
   <h1>🧭 Ruta de aprendizaje</h1>
+  <div id="switch"></div>
   <div id="cab"></div>
   <div id="etapas"></div>
+  <div id="pie" style="margin-top:14px"></div>
   <p class="nota-guia">Esta ruta es una <b>guía</b>, no un requisito: no da ni quita permisos, y nadie pierde acceso a nada por ir despacio.
     Las tres primeras etapas se marcan solas con lo que ya haces; la última la firma el liderazgo.</p>
   <div class="err" id="err"></div>
 </main>
-<script type="module" src="js/app-ruta.js?v=4e01ca36"></script>
+<script type="module" src="js/app-ruta.js?v=e00314e4"></script>
 </body>
 </html>

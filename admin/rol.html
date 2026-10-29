@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Rol · Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=56ccd7cc"></script>
+<script src="../js/tema.js?v=3d25ec4d"></script>
 <link rel="stylesheet" href="../estilos.css">
 <link rel="stylesheet" href="ficha.css">
 </head>
@@ -26,7 +26,7 @@
     <div class="lateral">
       <div class="caja"><h3>Rol</h3><div class="kv" id="kvRol"></div></div>
       <div class="caja"><h3>Datos <button type="button" class="ghost sm" id="dGuardar" style="display:none">Guardar</button></h3>
-        <label>Nombre</label><input id="rNombre"><label>Descripción</label><input id="rDesc"><label>Rango PM</label><select id="rRangoPM"></select></div>
+        <label>Nombre</label><input id="rNombre"><label>Descripción</label><input id="rDesc"><label>Rango PM</label><select id="rRangoPM"></select><label title="Orden de firma de la ruta de aprendizaje. No depende del nombre del rol.">Jerarquía de firma</label><select id="rNivel"><option value="0">Sin firma</option><option value="1">Nivel 1 · Auxiliar</option><option value="2">Nivel 2 · Co-Líder</option><option value="3">Nivel 3 · Líder</option></select></div>
     </div>
     <div>
       <div class="pestanas" id="pestanas"><button data-p="permisos" class="on">Permisos</button><button data-p="formularios">Formularios</button><button data-p="miembros">Miembros</button><button data-p="historial">Historial de cambios</button></div>
@@ -45,6 +45,6 @@
   <div class="err" id="err"></div>
   <div class="toast" id="toast"></div>
 </main>
-<script type="module" src="../js/app-rol.js?v=cfda427a"></script>
+<script type="module" src="../js/app-rol.js?v=c3069af7"></script>
 </body>
 </html>

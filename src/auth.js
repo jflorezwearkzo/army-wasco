@@ -51,6 +51,7 @@ export async function cargarYo(){
   if(!rol && ses && ses.global) rol = { id:null, nombre:'Administrador general', permisos:{}, formularios:['*'], rango_pm:null, protegido:true };
   const yo = armarYo(p, rol, await permisosEfectivos(p.id));
   yo.org = (ses && ses.org) || null; yo.orgs = (ses && ses.orgs) || [];
+  yo.ruta = (ses && ses.ruta) || { activa:false, puedo_activar:false, nivel:0 };
   return yo;
 }
 // Permisos efectivos = (rol ∪ extra del usuario) − negados; los calcula el servidor (permisos_efectivos)
@@ -193,6 +194,10 @@ export async function mensajesDiscord(tabla, id=null){
 
 // Barra superior con usuario, rol, enlaces y salir. Se inserta al inicio de <body>.
 // Pone el nombre de la organización activa donde corresponde (cabeceras y título de la pestaña).
+// La ruta de aprendizaje solo sale en el menú cuando está encendida; mientras no lo esté, la ve
+// únicamente quien puede encenderla.
+export const rutaVisible = yo => !!(yo && yo.ruta && (yo.ruta.activa || yo.ruta.puedo_activar));
+
 export function marcaOrg(yo){
   const o = yo && yo.org; if(!o) return;
   document.querySelectorAll('[data-org-nombre]').forEach(e => {
@@ -256,7 +261,7 @@ export function barraUsuario(yo){
       <a href="${RAIZ}expediente.html">Mi expediente</a>
       <a href="${RAIZ}ranking.html">Ranking</a>
       <a href="${RAIZ}calendario.html">Eventos del día</a>
-      <a href="${RAIZ}ruta.html">Ruta de aprendizaje</a>
+      ${rutaVisible(yo) ? `<a href="${RAIZ}ruta.html">Ruta de aprendizaje</a>` : ''}
       <a href="#" id="btnTema" title="Cambiar entre tema oscuro y claro">🌗 Tema</a>
       <a href="${RAIZ}privacidad.html" style="font-size:12px">Privacidad</a>
       <a href="#" id="btnSalir">Salir</a>

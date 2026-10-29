@@ -361,7 +361,7 @@ async function cargarRoles(){
   $('#rTodos').onchange();
   $('#rNuevo').style.display = tiene(yo,'crear_roles') ? '' : 'none';
   $('#tbRoles').innerHTML = roles.map(r => `<tr data-id="${esc(r.id)}"><td><b>${esc(r.nombre)}</b><br><span class="muted">${esc(r.id)} · ${esc(r.descripcion||'')}</span></td>
-    <td>${esc(r.rango_pm||'—')}</td><td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
+    <td>${esc(r.rango_pm||'—')}</td><td class="muted">${['—','Auxiliar','Co-Líder','Líder'][r.nivel_firma||0]}</td><td>${esc(permisosTexto(r))}</td><td>${esc(formsTexto(r))}</td>
     <td class="acc" style="text-align:right">${botonMenu(r.id, 'data-k="rol"')}</td></tr>`).join('');
   document.querySelectorAll('#tbRoles tr[data-id]').forEach(tr => { tr.style.cursor='pointer'; tr.onclick = e => { if(e.target.closest('input,button,a')) return; location.href = 'rol.html?id=' + encodeURIComponent(tr.dataset.id); }; });
   if(RESALTAR){ resaltar($('#tbRoles'), RESALTAR); RESALTAR=null; }
@@ -377,7 +377,7 @@ function nuevoRol(){ limpiarRol(); abrirDialogo('roles', 'nuevo'); }
 $('#rNuevo').onclick = () => nuevoRol();
 function editarRol(r){
   $('#tituloRol').textContent='Editar rol · '+r.nombre; $('#rGuardar').textContent='Guardar';
-  $('#rId').value=r.id; $('#rId').disabled=true; $('#rNombre').value=r.nombre; $('#rDesc').value=r.descripcion||''; $('#rRangoPM').value=r.rango_pm||'';
+  $('#rId').value=r.id; $('#rId').disabled=true; $('#rNombre').value=r.nombre; $('#rDesc').value=r.descripcion||''; $('#rRangoPM').value=r.rango_pm||''; $('#rNivel').value=String(r.nivel_firma||0);
   document.querySelectorAll('.rp').forEach(c => c.checked = !!(r.permisos||{})[c.value]);
   $('#rTodos').checked = r.formularios.includes('*'); $('#rTodos').onchange();
   document.querySelectorAll('.rf').forEach(c => c.checked = r.formularios.includes(c.value)); msg('r','');
@@ -387,7 +387,7 @@ function limpiarRol(){ $('#fRol').reset(); $('#tituloRol').textContent='Nuevo ro
 $('#rCancelar').onclick = () => $('#dlgRol').close();
 $('#fRol').onsubmit = async e => {
   e.preventDefault(); msg('r','');
-  const rol = { id:$('#rId').value.trim().toLowerCase(), nombre:$('#rNombre').value.trim(), descripcion:$('#rDesc').value.trim(), rango_pm:$('#rRangoPM').value||null,
+  const rol = { id:$('#rId').value.trim().toLowerCase(), nombre:$('#rNombre').value.trim(), descripcion:$('#rDesc').value.trim(), rango_pm:$('#rRangoPM').value||null, nivel_firma:+$('#rNivel').value||0,
     permisos: Object.fromEntries([...document.querySelectorAll('.rp')].map(c => [c.value, c.checked])),
     formularios: $('#rTodos').checked ? ['*'] : [...document.querySelectorAll('.rf:checked')].map(c => c.value) };
   if(rol.id==='admin' && !(rol.permisos.crear_roles && rol.permisos.asignar_roles && rol.permisos.auditoria)){ msg('r','El rol admin debe conservar los permisos de roles.'); return; }

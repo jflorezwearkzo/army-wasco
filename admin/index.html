@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=56ccd7cc"></script>
+<script src="../js/tema.js?v=3d25ec4d"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
@@ -225,7 +225,7 @@
   <section id="t-roles">
       <div class="caja">
         <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Roles</span><button type="button" class="primary sm btn-nuevo" id="rNuevo">＋ Nuevo rol</button></h3>
-        <table><thead><tr><th>Rol</th><th>Rango PM</th><th>Permisos</th><th>Formularios</th><th></th></tr></thead><tbody id="tbRoles"></tbody></table>
+        <table><thead><tr><th>Rol</th><th>Rango PM</th><th title="Orden de firma de la ruta de aprendizaje">Jerarquía</th><th>Permisos</th><th>Formularios</th><th></th></tr></thead><tbody id="tbRoles"></tbody></table>
       </div>
     <dialog id="dlgRol" class="dlg-edit">
       <div class="caja">
@@ -236,6 +236,7 @@
           <label>Descripción</label><input id="rDesc">
           <label>Rango PM (lo heredan los usuarios de este rol en los reportes)</label>
           <select id="rRangoPM"><option value="">— Sin Rango PM —</option></select>
+          <label title="Orden de firma de la ruta de aprendizaje. No depende del nombre del rol.">Jerarquía de firma</label><select id="rNivel"><option value="0">Sin firma</option><option value="1">Nivel 1 · Auxiliar</option><option value="2">Nivel 2 · Co-Líder</option><option value="3">Nivel 3 · Líder</option></select>
           <label>Permisos</label>
           <div class="chips" id="rPermisos"></div>
           <label>Acceso a formularios</label>
@@ -553,6 +554,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=ce3e6694"></script>
+<script type="module" src="../js/app-admin.js?v=cd587536"></script>
 </body>
 </html>
