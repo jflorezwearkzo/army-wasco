@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=b279dcbe"></script>
+<script src="../js/tema.js?v=7131d1bc"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -45,7 +45,9 @@
   @media(max-width:900px){
     .panel{grid-template-columns:minmax(0,1fr)}
     .cuerpo,.caja{min-width:0}
-    .movil{display:flex}
+    /* La cajita de "Sección" se queda pegada arriba mientras se baja por la página */
+    .movil{display:flex;position:sticky;top:8px;z-index:100;box-shadow:0 8px 18px rgba(0,0,0,.45)}
+    .movil::before{content:"";position:absolute;left:-14px;right:-14px;top:-14px;bottom:-8px;background:var(--bg);z-index:-1}
     #navCaja{position:fixed;top:0;bottom:0;left:0;z-index:250;width:min(86vw,320px);display:flex;flex-direction:column;
              background:var(--panel);border-right:1px solid var(--line2);box-shadow:8px 0 30px rgba(0,0,0,.5);
              transform:translateX(-101%);transition:transform .22s ease;max-height:none}
@@ -644,6 +646,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=9aeb099e"></script>
+<script type="module" src="../js/app-admin.js?v=77ebc9c3"></script>
 </body>
 </html>
