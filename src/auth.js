@@ -161,6 +161,12 @@ body.pm-modo-vc #btnExport,body.pm-modo-vc button[type=submit]{opacity:.5;cursor
     d.innerHTML = `👁 Estás viendo como <b>${esc(nombreCompleto(yo))}</b> <span class="rl">(${esc(yo.rol.nombre)}${yo.activo?'':' · inactivo'})</span> · solo lectura <button type="button" id="btnSalirVC">Salir de Ver como</button>`;
     d.querySelector('#btnSalirVC').onclick = () => salirVerComo(yo.id);
     document.body.prepend(d); document.body.classList.add('pm-modo-vc');
+    // La barra superior se pega justo debajo de este aviso, así que publica su altura aquí
+    // mismo: si se midiera solo al crear la barra, el aviso podría no existir todavía.
+    const medirVC = () => document.documentElement.style.setProperty('--vc-h', d.offsetHeight + 'px');
+    medirVC();
+    if(window.ResizeObserver) new ResizeObserver(medirVC).observe(d);
+    window.addEventListener('resize', medirVC);
     document.addEventListener('click', e => { const b = e.target.closest('#btnExport,button[type=submit]'); if(b){ e.preventDefault(); e.stopImmediatePropagation(); alert(ERR_VC); } }, true);
   };
   if(document.body) pintar(); else document.addEventListener('DOMContentLoaded', pintar);
@@ -281,7 +287,7 @@ export function barraUsuario(yo){
   const medir = () => {
     document.documentElement.style.setProperty('--barra-h', b.offsetHeight + 'px');
     const vc = document.querySelector('.pm-vc');
-    document.documentElement.style.setProperty('--vc-h', (vc ? vc.offsetHeight : 0) + 'px');
+    if(vc) document.documentElement.style.setProperty('--vc-h', vc.offsetHeight + 'px');
   };
   medir();
   if(window.ResizeObserver){ const ro = new ResizeObserver(medir); ro.observe(b); const vc = document.querySelector('.pm-vc'); if(vc) ro.observe(vc); }
