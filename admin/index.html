@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=2dce114a"></script>
+<script src="../js/tema.js?v=5b4e3928"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -34,8 +34,32 @@
   nav#tabs button.on{background:var(--avisobg);color:var(--gold);border:1px solid var(--avisoline);font-weight:700}
   nav#tabs .tag{margin-left:auto}
   .migas{font-size:13px;color:var(--muted);margin-bottom:10px}.migas b{color:var(--text);font-weight:400}
-  .movil{display:none;width:100%;margin:0 0 12px;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:8px;font:inherit}
-  @media(max-width:900px){.panel{grid-template-columns:1fr}nav#tabs{display:none}.movil{display:block}}
+  /* --- Navegación en móvil: el mismo menú lateral, guardado en un cajón que se desliza --- */
+  .nav-cab{display:none}
+  #navFondo{display:none}
+  .movil{display:none;width:100%;margin:0 0 12px;padding:11px 14px;background:var(--panel);color:var(--text);
+         border:1px solid var(--line2);border-radius:8px;font:inherit;text-align:left;text-transform:none;letter-spacing:0;
+         align-items:center;gap:10px}
+  .movil .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+  .movil b{color:var(--gold);font-weight:700}
+  @media(max-width:900px){
+    .panel{grid-template-columns:minmax(0,1fr)}
+    .cuerpo,.caja{min-width:0}
+    .movil{display:flex}
+    #navCaja{position:fixed;top:0;bottom:0;left:0;z-index:250;width:min(86vw,320px);display:flex;flex-direction:column;
+             background:var(--panel);border-right:1px solid var(--line2);box-shadow:8px 0 30px rgba(0,0,0,.5);
+             transform:translateX(-101%);transition:transform .22s ease;max-height:none}
+    #navCaja.on{transform:none}
+    .nav-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 10px 12px 16px;
+             border-bottom:1px solid var(--line3);color:var(--gold);text-transform:uppercase;letter-spacing:2px;font-size:12px}
+    .nav-cab button{padding:4px 10px;font-size:16px;line-height:1}
+    nav#tabs{position:static;top:auto;border:0;border-radius:0;background:transparent;max-height:none;
+             flex:1;overflow:auto;padding:8px 10px 28px;-webkit-overflow-scrolling:touch}
+    nav#tabs button{padding:11px 10px;font-size:15px}
+    #navFondo{display:block;position:fixed;inset:0;z-index:240;background:rgba(0,0,0,.55);border:0}
+    #navFondo[hidden]{display:none}
+  }
+  @media(min-width:901px){#navCaja{position:sticky;top:56px}}
   section{display:none} section.on{display:block}
   .dos{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
@@ -46,7 +70,8 @@
   .barras div{flex:1;background:var(--gold);min-width:4px;position:relative;border-radius:2px 2px 0 0}
   .barras div:hover::after{content:attr(data-t);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#000c;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap}
   #t-resumen h4{margin:0 0 6px;color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:1px}
-  @media(max-width:950px){.dos{grid-template-columns:1fr}}
+  /* El !important es para ganarle al grid de dos columnas escrito en el propio elemento */
+  @media(max-width:950px){.dos{grid-template-columns:minmax(0,1fr)!important}.dos > div{min-width:0}}
   .caja h3{margin:0 0 10px;color:var(--gold);text-transform:uppercase;font-size:14px;letter-spacing:1px}
   img.mini{height:48px;border-radius:4px;border:1px solid var(--line2)}
   dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;max-width:95vw}
@@ -162,6 +187,23 @@
   .u-bulk .rolw{display:flex;gap:4px;align-items:center}
   .u-bulk select{width:auto;padding:5px 8px;font-size:12px}
   .u-bulk [data-bulk=cancelar]{margin-left:auto}
+  /* Tablas anchas: se deslizan de lado en vez de salirse de la pantalla */
+  .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  @media(max-width:720px){
+    .tscroll{margin:0 -4px;padding:0 4px}
+    .tscroll > table{min-width:calc(var(--cols,1) * 92px)}
+    .tscroll > table.usuarios{min-width:0}
+    .u-herr{flex-direction:column}
+    .u-herr input[type=search],.u-herr select{width:100%;min-width:0;flex:none}
+    .u-bulk{flex-direction:column;align-items:stretch}
+    .u-bulk [data-bulk=cancelar]{margin-left:0}
+    .barra-act,.barra-act .gr,.caja h3,.caja h3 > span{flex-wrap:wrap}
+    .barra-act input[type=date]{min-width:0;flex:1 1 120px}
+    .caja label{max-width:100%}
+    .caja label select,.caja label input{max-width:100%}
+    .kpi b{font-size:22px}
+    main{padding:12px 14px 26px}
+  }
   @media(max-width:720px){
     .u-tabla table.usuarios,table.usuarios tbody,table.usuarios tr{display:block;width:100%}
     table.usuarios thead{display:none}
@@ -177,9 +219,13 @@
 <body>
 <main>
   <h1 style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">Panel de administración <a class="ghost sm" href="../manuales.html#usuarios" style="text-decoration:none;font-style:normal;text-transform:none;letter-spacing:0;font-size:12px">📖 Manuales de uso</a></h1>
-  <select id="tabsMovil" class="movil"></select>
+  <button type="button" id="abrirNav" class="ghost movil" aria-expanded="false" aria-controls="navCaja">☰ <span class="lbl">Sección</span> <b id="navActual">Secciones</b></button>
   <div class="panel">
-  <nav id="tabs"></nav>
+  <button type="button" id="navFondo" hidden aria-label="Cerrar el menú"></button>
+  <div id="navCaja">
+    <div class="nav-cab"><span>Secciones</span><button type="button" class="ghost sm" id="cerrarNav" aria-label="Cerrar">✕</button></div>
+    <nav id="tabs"></nav>
+  </div>
   <div class="cuerpo" id="cuerpo">
   <div class="migas" id="migas"></div>
 
@@ -441,6 +487,19 @@
       <table><thead><tr><th>Tarea</th><th>Canal</th><th>Activa</th><th>Hora</th><th></th><th></th><th></th></tr></thead><tbody id="tbProg"></tbody></table>
       <div class="err" id="pErr"></div>
     </div>
+    <div class="caja" style="margin-top:18px" id="cajaEventos">
+      <h3>Aviso de eventos del día</h3>
+      <p class="muted" style="margin-top:0;font-size:13px">Avisa en Discord antes de cada horario del calendario (entrega aérea, incursión al arsenal…). El canal se configura arriba, en <b>Aviso de eventos del día</b>.</p>
+      <div class="barra-act">
+        <span class="gr"><label style="margin:0"><input type="checkbox" id="evActivo"> Activo</label></span>
+        <span class="gr"><label style="margin:0">Avisar</label><input type="number" id="evMin" min="1" max="240" style="width:80px"><span class="muted">minutos antes</span></span>
+        <span class="gr"><button type="button" class="ghost sm" id="evGuardar">Guardar</button>
+          <button type="button" class="ghost sm" id="evPrueba" title="Muestra los avisos que saldrían ahora mismo, sin enviarlos">👁 Vista previa</button></span>
+      </div>
+      <div id="evActs" style="margin-top:10px"></div>
+      <p class="muted" id="evNota" style="margin:8px 0 0;font-size:12px"></p>
+      <div class="err" id="evErr"></div>
+    </div>
     <dialog id="dlgPrevia" class="dlg-edit"><div class="caja">
       <div class="cab-dlg"><button type="button" class="ghost sm volver" data-close="dlgPrevia">← Volver</button><h3 id="tituloPrevia">Vista previa</h3><button type="button" class="cerrar" data-close="dlgPrevia" aria-label="Cerrar">✕</button></div>
       <p class="muted" style="margin-top:0;font-size:13px">Así se verá el mensaje en Discord. Esta vista no envía nada ni otorga insignias.</p>
@@ -459,7 +518,7 @@
       <p class="muted" style="margin-top:0;font-size:13px">Cuando un reporte recibe su imagen, el servidor la envía a Gemini (nivel gratuito de Google) para leer el texto de las capturas del juego, compararlas con lo declarado en el formulario y detectar indicios de falsedad o capturas reutilizadas. El resultado aparece como semáforo en Revisión, Historial y el expediente. La IA solo orienta: aprobar o rechazar sigue siendo decisión del revisor. Si la IA falla, el reporte entra igual, marcado "sin análisis".</p>
       <div class="fila" style="align-items:center">
         <label style="margin:0;display:flex;gap:6px;align-items:center;flex:0 0 auto"><input type="checkbox" id="iaActivo" style="width:auto"> Analizar automáticamente cada reporte nuevo</label>
-        <label style="margin:0;display:flex;gap:6px;align-items:center;flex:0 0 auto">Modelo preferido (si falla o tarda, se usa el siguiente disponible) <select id="iaModelo" style="width:auto"><option value="gemini-3.8-flash">Gemini 3.8 Flash (recomendado)</option><option value="gemini-flash-latest">Gemini Flash (alias "última versión")</option><option value="gemini-3.5-flash">Gemini 3.5 Flash</option><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (más rápido)</option><option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option></select></label>
+        <label style="margin:0;display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0;flex-wrap:wrap">Modelo preferido (si falla o tarda, se usa el siguiente disponible) <select id="iaModelo" style="width:auto"><option value="gemini-3.8-flash">Gemini 3.8 Flash (recomendado)</option><option value="gemini-flash-latest">Gemini Flash (alias "última versión")</option><option value="gemini-3.5-flash">Gemini 3.5 Flash</option><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (más rápido)</option><option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option></select></label>
         <button type="button" class="primary" id="iaGuardar" style="flex:0 0 auto">Guardar</button><span class="muted" id="iaMsg" style="font-size:13px"></span>
       </div>
       <p class="muted" id="iaStats" style="font-size:12px;margin:10px 0 0"></p>
@@ -590,6 +649,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=d91cb2de"></script>
+<script type="module" src="../js/app-admin.js?v=4a24c38c"></script>
 </body>
 </html>

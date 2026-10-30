@@ -37,19 +37,43 @@ const tabs = TABS.filter(([id,,ps]) => ps.some(p => p==='*superadmin' ? esSupera
 if(!tabs.length){ document.body.innerHTML = '<p style="padding:40px;text-align:center">No tienes permisos de administración.</p>'; throw new Error('sin permisos'); }
 $('#rPermisos').innerHTML = PERMS.filter(p => p!=='ver_como' && p!=='organizaciones').map(p => `<label><input type="checkbox" class="rp" value="${p}"> ${NOMBRE_PERM[p]}</label>`).join('') + `<p class="muted" style="margin:6px 0 0;font-size:12px">👁 "Ver la página como otro usuario" y 🏛️ "Control de todas las organizaciones" son exclusivos del rol Administrador y se otorgan desde la ficha de cada usuario.</p>`;
 { let g = null; $('#tabs').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre,,grupo,ic]) => (g!==grupo ? (g=grupo, `<div class="grp">${grupo}</div>`) : '') + `<button data-t="${id}"><span class="ic">${ic}</span><span class="tx">${nombre}</span></button>`).join('');
-  g = null; $('#tabsMovil').innerHTML = TABS.filter(([id]) => tabs.includes(id)).map(([id,nombre,,grupo]) => (g!==grupo ? (g=grupo, `<optgroup label="${grupo}">`) : '') + `<option value="${id}">${nombre}</option>`).join('');
-  $('#tabsMovil').onchange = () => { cerrarDialogos(); abrir($('#tabsMovil').value); }; }
+}
+// En móvil el menú lateral vive en un cajón que se desliza: es la misma lista de siempre,
+// con sus grupos e iconos, así no hay dos menús que mantener ni un desplegable que se recorte.
+const esMovil = () => window.matchMedia('(max-width:900px)').matches;
+function nav(abierto){
+  $('#navCaja').classList.toggle('on', abierto);
+  $('#navFondo').hidden = !abierto;
+  $('#abrirNav').setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  document.body.style.overflow = abierto ? 'hidden' : '';
+  if(abierto){ const act = document.querySelector('nav#tabs button.on'); if(act) act.scrollIntoView({block:'nearest'}); }
+}
+$('#abrirNav').onclick = () => nav(!$('#navCaja').classList.contains('on'));
+$('#cerrarNav').onclick = () => nav(false);
+$('#navFondo').onclick = () => nav(false);
+document.addEventListener('keydown', e => { if(e.key==='Escape' && $('#navCaja').classList.contains('on')) nav(false); });
+window.addEventListener('resize', () => { if(!esMovil() && $('#navCaja').classList.contains('on')) nav(false); });
 let TAB_ACTUAL = null;
 function abrir(t, sub=''){
   if(!tabs.includes(t)) t = tabs[0];
   const nuevo = t!==TAB_ACTUAL; TAB_ACTUAL = t;
   document.querySelectorAll('nav#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
-  const def = TABS.find(x => x[0]===t); $('#tabsMovil').value = t; $('#migas').innerHTML = `Administración › <b>${def ? def[3] : ''}</b> › <b>${def ? def[1] : t}</b>`;
+  const def = TABS.find(x => x[0]===t);
+  $('#navActual').textContent = def ? `${def[4]} ${def[1]}` : t;
+  $('#migas').innerHTML = `Administración › <b>${def ? def[3] : ''}</b> › <b>${def ? def[1] : t}</b>`;
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
   if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, actividad:cargarActividad, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios, organizaciones:cargarOrgs})[t]();
 }
-document.querySelectorAll('nav#tabs button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
+document.querySelectorAll('nav#tabs button').forEach(b => b.onclick = () => { cerrarDialogos(); nav(false); abrir(b.dataset.t); });
+// Las tablas anchas se envuelven para que en pantallas pequeñas se deslicen de lado
+document.querySelectorAll('section table').forEach(t => {
+  if(t.parentElement && t.parentElement.classList.contains('tscroll')) return;
+  const d = document.createElement('div'); d.className = 'tscroll';
+  // El ancho mínimo depende de cuántas columnas tenga: las tablas cortas no necesitan deslizarse
+  d.style.setProperty('--cols', t.querySelectorAll('thead th').length || 1);
+  t.parentNode.insertBefore(d, t); d.appendChild(t);
+});
 // Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
 const DLG = { usuarios:'dlgUsuario', roles:'dlgRol', formularios:'dlgForm' };
 function abrirDialogo(t, sub){ const d = $('#'+DLG[t]); if(!d.open) d.showModal(); d.scrollTop = 0; abrir(t, sub); const f = d.querySelector('input:not([disabled]):not([type=hidden]),select:not([disabled])'); if(f && window.innerWidth>720) setTimeout(()=>f.focus(), 50); }
@@ -768,6 +792,7 @@ async function cargarAutomatizacion(){
     m.textContent = error ? 'Error: '+error.message : (data&&data.ok) ? '✅ Prueba enviada.' : 'Error: '+((data&&(data.error||data.motivo))||'sin respuesta');
   });
   if(typeof cargarProgramadas === 'function') cargarProgramadas();
+  if(typeof cargarEventos === 'function') cargarEventos();
   cargarConfigIA();
   $('#cajaRespaldo').hidden = !esSuperadmin(yo);
   // Canales por formulario (formularios_discord)
@@ -1290,4 +1315,45 @@ $('#aDiscord').onclick = async () => {
     description: min > 0 ? `Mínimo esperado: **${min}** reporte(s) por integrante. Cuentan los aprobados y los pendientes.` : 'Cuentan los reportes aprobados y los pendientes.',
     fields: campos }, origen: { tabla:'actividad', id: d + '_' + h } });
   toast(r === 'ok' ? 'Publicado en el canal.' : 'No se pudo publicar: ' + r, r !== 'ok');
+};
+
+// ====================== AVISO DE EVENTOS DEL DÍA ======================
+// Avisa en Discord X minutos antes de cada horario del calendario. El trabajo corre cada minuto
+// en el servidor y lleva memoria de lo ya avisado, así que no repite.
+async function cargarEventos(){
+  $('#cajaEventos').hidden = !PUEDE_TAREAS && !tiene(yo,'ver_todo');
+  const [{ data: cfgRow }, { data: acts }] = await Promise.all([
+    sb.from('configuracion').select('valor').eq('clave','eventos').maybeSingle(),
+    sb.from('actividades').select('id,nombre,icono').eq('activo', true).order('orden'),
+  ]);
+  const c = (cfgRow && cfgRow.valor) || { activo:false, minutos:15, actividades:null };
+  $('#evActivo').checked = !!c.activo;
+  $('#evMin').value = c.minutos || 15;
+  const sel = Array.isArray(c.actividades) ? c.actividades.map(Number) : null;
+  $('#evActs').innerHTML = `<span class="muted" style="font-size:13px">Actividades que se avisan:</span><br>` +
+    (acts||[]).map(a => `<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 14px 0 0;font-size:14px">
+      <input type="checkbox" class="eva" value="${a.id}" ${(!sel || sel.includes(a.id)) ? 'checked' : ''}> ${esc(a.icono||'')} ${esc(a.nombre)}</label>`).join('')
+    + (acts && acts.length ? '' : '<span class="muted">No hay actividades en el calendario.</span>');
+  ['#evActivo','#evMin','#evGuardar','.eva'].forEach(x => document.querySelectorAll(x).forEach(e => e.disabled = !PUEDE_TAREAS));
+  $('#evNota').textContent = c.activo
+    ? `Encendido: avisa ${c.minutos} minuto(s) antes de cada horario.`
+    : 'Apagado: no se envía ningún aviso.';
+}
+$('#evGuardar').onclick = async () => {
+  const todas = [...document.querySelectorAll('.eva')], marcadas = todas.filter(c => c.checked).map(c => +c.value);
+  // marcar todas equivale a "sin filtro": si mañana añades una actividad, también se avisa
+  const lista = marcadas.length === todas.length ? null : marcadas;
+  if(marcadas.length === 0 && $('#evActivo').checked){ $('#evErr').textContent = 'Marca al menos una actividad.'; return; }
+  const { error } = await sb.rpc('programar_eventos', { p_activo: $('#evActivo').checked, p_minutos: +$('#evMin').value || 15, p_actividades: lista });
+  $('#evErr').textContent = error ? error.message : '';
+  if(!error){ toast($('#evActivo').checked ? 'Aviso de eventos encendido.' : 'Aviso de eventos apagado.'); cargarEventos(); }
+};
+$('#evPrueba').onclick = async () => {
+  const { data, error } = await sb.rpc('avisar_eventos', { p_enviar: false });
+  if(error){ $('#evErr').textContent = error.message; return; }
+  const avisos = (data && data.avisos) || [];
+  $('#evErr').textContent = '';
+  $('#evNota').textContent = avisos.length
+    ? `Ahora mismo saldría: ${avisos.map(a => (a.title||'') + ' — ' + String(a.description||'').replace(/\*\*/g,'').replace(/\n/g,' · ')).join(' | ')}`
+    : 'Ahora mismo no hay ningún horario dentro de la ventana de aviso. Es lo normal: solo coincide en el minuto exacto.';
 };

@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=2dce114a"></script>
+<script src="js/tema.js?v=5b4e3928"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -153,6 +153,9 @@
 
 <section class="sec-panel" id="sec-usuarios" data-titulo="Usuarios" data-icono="👤" data-grupo="Administración" data-permisos="usuarios,asignar_roles,reset_password" hidden>
   <h2 class="sec">Usuarios<small>Crear, editar, activar, roles y contraseñas</small></h2>
+  <div class="bloque"><h3>Moverse por el panel en el celular</h3>
+    <p>En pantallas pequeñas el menú de secciones se guarda en un cajón lateral. Toca <b>☰</b> arriba (al lado dice en qué sección estás) y se despliega la lista completa, con sus grupos — Identidad, Reportes, Personal, Sistema — y la sección actual resaltada. Al elegir una, el cajón se cierra solo; también se cierra tocando fuera o con la ✕.</p>
+    <p>Las tablas anchas (historial, actividad, auditoría) <b>se deslizan de lado</b> con el dedo en vez de salirse de la pantalla. La lista de usuarios, en cambio, se convierte en tarjetas.</p></div>
   <div class="bloque"><h3>Crear un usuario</h3>
     <ol><li><span class="ruta">Administración → Usuarios → ＋ Nuevo usuario</span>.</li><li>Usuario para ingresar (minúsculas, sin espacios), nombre completo, rango, contraseña inicial y rol.</li><li>Entrégale el usuario y la contraseña por privado; él la cambia en Mi cuenta.</li></ol></div>
   <div class="bloque"><h3>El rango es general, el rol es de cada unidad</h3>
@@ -257,6 +260,7 @@
   <h2 class="sec">Tablón de anuncios<small>Comunicados para todos</small></h2>
   <div class="bloque" data-solo="anuncios"><h3>Publicar</h3>
     <ol><li><span class="ruta">Administración → Anuncios → ＋ Nuevo anuncio</span>.</li><li>Título, contenido, una imagen opcional, fecha de caducidad, <i>📌 Fijar arriba</i>, <i>Visible</i> y <i>Publicar en Discord al guardar</i>.</li><li>Guardar. Aparece en el inicio de todos como NUEVO hasta que cada uno lo marque leído.</li></ol></div>
+  <div class="bloque"><h3>El mensaje en Discord</h3><p>Al guardar con <i>Publicar en Discord</i> el anuncio sale al canal de anuncios y la página recuerda ese mensaje. En el menú ⋯ del anuncio: <b>🔄 Actualizar en Discord</b> reescribe el mensaje donde está, sin moverlo (también ocurre al guardar cambios con la casilla marcada); <b>📤 Reenviar al canal</b> borra el mensaje viejo y publica uno nuevo al final, para que vuelva a quedar a la vista de todos — es como moverlo abajo, y estrena identificador; y <b>🧹 Borrar de Discord</b> lo retira del canal sin tocar el tablón. Eliminar el anuncio borra también su mensaje.</p></div>
   <div class="bloque"><h3>Seguimiento</h3><p>La columna <i>Leído por</i> muestra cuántos lo han marcado frente al total de activos. Con ⋯ puedes editar, publicar en Discord, ocultar, fijar o eliminar.</p></div>
 </section>
 
@@ -296,6 +300,10 @@
     <div class="tip">Si pegas el enlace con el <code>?thread_id=</code> ya dentro, la página lo separa sola y lo pone en su casilla. El hilo va aparte a propósito: así editar y borrar anuncios desde el panel sigue funcionando.</div></div>
   <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b>, <b>Ranking mensual</b> (otorga las insignias), <b>Avance semanal del ranking</b> y <b>Reporte de actividad semanal</b> (cómo va la cosa a mitad de mes, sin repartir insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato.</p>
     <p><b>👁 Vista previa</b> te muestra el mensaje exacto que se enviaría, con los datos reales de hoy, sin publicarlo. Desde ahí puedes <b>descargarlo como imagen</b> o copiar el texto, por si quieres mandarlo a mano o guardarlo.</p></div>
+  <div class="bloque"><h3>Aviso de eventos del día</h3>
+    <p>Publica en Discord un recordatorio <b>X minutos antes</b> de cada horario del calendario de eventos. En <span class="ruta">Automatización → Aviso de eventos del día</span>: enciende el interruptor, escribe con cuántos minutos de antelación quieres el aviso y marca qué actividades se avisan. El mensaje sale al canal <b>Aviso de eventos del día</b>, así que primero pégale su webhook en la lista de canales.</p>
+    <p>Si dejas marcadas <b>todas</b> las actividades, también se avisarán las que se agreguen al calendario más adelante, sin tener que volver aquí. <b>👁 Vista previa</b> muestra lo que saldría en este momento; si no hay ningún horario dentro de la ventana, no muestra nada y eso es normal.</p>
+    <div class="tip">Cada horario se avisa una sola vez al día: aunque el reloj revise cada minuto, no se repite el mismo aviso.</div></div>
   <div class="bloque"><h3>Formularios públicos (sin cuenta)</h3>
     <p>Dos páginas abiertas, pensadas para quien todavía no puede entrar:</p>
     <ul><li><b>Solicitar acceso</b> — nombre, rango y unidad. Para quien no tiene usuario.</li>
@@ -318,7 +326,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=3438b73e"></script>
+<script type="module" src="js/app-manuales.js?v=25ce9b92"></script>
 </body>
-</html>  <div class="bloque"><h3>El mensaje en Discord</h3><p>Al guardar con <i>Publicar en Discord</i> el anuncio sale al canal de anuncios y la página recuerda ese mensaje. En el menú ⋯ del anuncio: <b>🔄 Actualizar en Discord</b> reescribe el mensaje donde está, sin moverlo (también ocurre al guardar cambios con la casilla marcada); <b>📤 Reenviar al canal</b> borra el mensaje viejo y publica uno nuevo al final, para que vuelva a quedar a la vista de todos — es como moverlo abajo, y estrena identificador; y <b>🧹 Borrar de Discord</b> lo retira del canal sin tocar el tablón. Eliminar el anuncio borra también su mensaje.</p></div>
-
+</html>
