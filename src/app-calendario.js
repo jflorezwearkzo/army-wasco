@@ -80,7 +80,7 @@ const fechaLarga = d => d.toLocaleString('es-CO', { weekday:'long', day:'numeric
 async function cargarAgenda(){
   const desde = new Date(Date.now() - 6 * 3600 * 1000).toISOString();   // los de hace un rato siguen a la vista
   const { data, error } = await sb.from('agenda_eventos')
-    .select('id,titulo,descripcion,lugar,inicia_en,duracion_min,cancelado,imagen_path')
+    .select('id,titulo,descripcion,lugar,inicia_en,duracion_min,cancelado,imagen_path,rangos')
     .gte('inicia_en', desde).order('inicia_en').limit(20);
   if(error || !data || !data.length){ $('#agenda').innerHTML = ''; return; }
   AGENDA = data;
@@ -99,7 +99,8 @@ async function cargarAgenda(){
       <h3>${e.cancelado ? '🚫 ' : ''}${esc(e.titulo)}${e.cancelado ? ' <span class="muted" style="font-size:14px">(cancelado)</span>' : ''}</h3>
       <p class="cuando" style="margin:0"><b>${esc(fechaLarga(d))}</b> <span class="muted">tu hora</span></p>
       <p class="det">🕒 ${dosD(d.getUTCHours())}:${dosD(d.getUTCMinutes())} UTC del servidor${e.duracion_min ? ` · dura ${e.duracion_min} min` : ''}
-        ${e.lugar ? `<br>📍 ${esc(e.lugar)}` : ''}</p>
+        ${e.lugar ? `<br>📍 ${esc(e.lugar)}` : ''}
+        ${(e.rangos || []).length ? `<br>👥 Convocados: ${e.rangos.map(esc).join(', ')}` : ''}</p>
       ${e.descripcion ? `<p class="des">${esc(e.descripcion)}</p>` : ''}
       ${e.imagen_path ? `<img class="portada" src="${esc(urlImagenEvento(e.imagen_path))}" alt="">` : ''}
       ${e.cancelado ? '' : `<div class="resp" data-ev="${e.id}">

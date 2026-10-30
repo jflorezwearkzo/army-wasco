@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=e9c85351"></script>
+<script src="js/tema.js?v=76d4bcbd"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -298,10 +298,15 @@
       <li>Título, descripción y lugar. El lugar puede ser del juego o un canal de voz.</li>
       <li>Fecha y hora <b>en hora del servidor (UTC)</b>, igual que el resto del calendario; debajo del campo se te muestra a qué hora tuya corresponde, para que no te equivoques.</li>
       <li><b>Imagen de portada</b> (opcional): un cartel, un mapa, lo que sea. Sale en la tarjeta del evento y dentro del mensaje de Discord.</li>
+      <li><b>Quién está convocado</b>: marca los <b>Rangos PM</b> (Líder PM, Co-líder PM, Auxiliar PM, Oficial…) que deben asistir. Si no marcas ninguno, el evento es para toda la unidad.</li>
       <li>Marca <b>dónde se publica</b>. Puedes elegir varios destinos a la vez, y con <b>＋ Nuevo destino</b> creas los que te falten sin salir de aquí: cada destino aparece como un canal más en Automatización, donde le pegas su webhook. La ✕ de un destino lo borra, pero no te deja si algún evento próximo todavía publica ahí.</li>
       <li>Decide si quieres recordatorio y con cuántos minutos de antelación.</li>
       <li><b>Guardar y publicar</b> lo manda al canal en ese momento; <b>Guardar sin publicar</b> lo deja listo y lo publicas después desde el menú ⋯.</li></ol>
     <p>Al publicar sale el mismo mensaje en todos los destinos marcados, así cubres de una vez los canales que te interesen. La casilla <b>@everyone</b> hace que el mensaje avise a todo el canal. Úsala con cabeza: si cada evento menciona a todos, la gente acaba silenciando el canal.</p></div>
+  <div class="bloque"><h3>A quién le aparece</h3>
+    <p>Si el evento tiene rangos convocados, <b>solo esas personas lo ven</b> en su página de Eventos del día, y solo ellas pueden confirmar. A los demás ni les aparece, así no se llena de citas que no les tocan.</p>
+    <p>El mensaje de Discord sí sale al canal y lo lee cualquiera que entre ahí, pero dice en grande a quién va dirigido (<i>👥 Convocados: Líder PM, Co-líder PM</i>), y quien no esté convocado no podrá confirmar aunque toque el enlace.</p>
+    <div class="ojo">Quien tiene el permiso de <b>Anuncios</b> ve todos los eventos aunque no esté convocado, porque es quien administra la agenda. Hoy lo tienen Líder PM, Co-líder PM y Auxiliares PM.</div></div>
   <div class="bloque"><h3>Confirmar asistencia</h3>
     <p>En <span class="ruta">Eventos del día</span> todos ven los próximos eventos arriba, antes de los horarios fijos, con dos botones: <b>✅ Asisto</b> y <b>❌ No puedo</b>. Se puede cambiar la respuesta cuantas veces haga falta.</p>
     <p>El mensaje de Discord lleva esos mismos dos enlaces: quien los toca entra a la app, queda registrado y vuelve al evento. Si no tiene la sesión abierta, se le pide entrar y después se le lleva igual al evento, sin perder el clic.</p>
@@ -352,6 +357,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=0bf2c402"></script>
+<script type="module" src="js/app-manuales.js?v=ac2fcbfa"></script>
 </body>
 </html>

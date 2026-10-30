@@ -1431,11 +1431,13 @@ const aCampoUTC = iso => {                    // Date -> valor del input, en UTC
 async function cargarAgenda(){
   $('#agNuevo').style.display = PUEDE_AGENDA ? '' : 'none';
   const [{ data: evs, error }, { data: dc }, { data: dest }] = await Promise.all([
-    sb.from('agenda_eventos').select('id,titulo,lugar,inicia_en,duracion_min,canales,minutos_antes,recordar,recordado_en,cancelado,descripcion,imagen_path').order('inicia_en', { ascending:false }).limit(60),
+    sb.from('agenda_eventos').select('id,titulo,lugar,inicia_en,duracion_min,canales,minutos_antes,recordar,recordado_en,cancelado,descripcion,imagen_path,rangos').order('inicia_en', { ascending:false }).limit(60),
     sb.rpc('canales_discord'),
     sb.from('agenda_canales').select('id,nombre,canal').order('id'),
   ]);
   AG_DESTINOS = dest || [];
+  // Los Rangos PM se cargan con la pestaña de Roles; aquí puede que aún no estén
+  if(!rangosPM.length) rangosPM = (await sb.from('rangos_pm').select('*').order('orden')).data || [];
   if(error){ $('#agErr').textContent = error.message; return; }
   $('#agErr').textContent = '';
   AG_CANALES = (dc && dc.canales) || [];
@@ -1451,12 +1453,13 @@ async function cargarAgenda(){
         ${e.descripcion ? `<br><span class="muted" style="font-size:12px">${esc(e.descripcion.slice(0,80))}${e.descripcion.length>80?'…':''}</span>` : ''}</td>
       <td style="white-space:nowrap">${esc(new Date(e.inicia_en).toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' }))}<br><span class="muted" style="font-size:12px">${aCampoUTC(e.inicia_en).replace('T',' ')} UTC</span></td>
       <td>${esc(e.lugar || '—')}</td>
+      <td>${(e.rangos || []).length ? (e.rangos).map(esc).join('<br>') : '<span class="muted">toda la unidad</span>'}</td>
       <td>${suyos.length ? suyos.map(esc).join('<br>') : '<span class="muted">sin destino</span>'}</td>
       <td>${e.recordar ? `${e.minutos_antes} min antes${e.recordado_en ? ' · <span class="muted">enviado</span>' : ''}` : '<span class="muted">no</span>'}</td>
       <td>${c.si} sí · ${c.no} no</td>
       <td class="acc" style="text-align:right">${PUEDE_AGENDA ? botonMenu(e.id) : ''}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" class="muted">Todavía no hay eventos en la agenda.</td></tr>';
+  }).join('') || '<tr><td colspan="8" class="muted">Todavía no hay eventos en la agenda.</td></tr>';
   document.querySelectorAll('#tbAgenda [data-menu]').forEach(b => b.onclick = ev2 => {
     ev2.stopPropagation(); const e = (evs || []).find(x => x.id == b.dataset.menu);
     abrirMenu(b, 'agenda:' + e.id, `<b style="color:var(--text)">${esc(e.titulo)}</b>`,
@@ -1498,6 +1501,7 @@ function abrirEvento(e){
   $('#agRecordar').checked = nuevo ? true : e.recordar;
   $('#agMencion').checked = false;
   pintarDestinos(nuevo ? [] : (e.canales || []));
+  pintarRangos(nuevo ? [] : (e.rangos || []));
   AG_IMG = null; AG_IMG_QUITAR = false; $('#agImagen').value = '';
   agImgPrev(nuevo || !e.imagen_path ? null : urlAnuncio(e.imagen_path));
   $('#agErr2').textContent = '';
@@ -1530,7 +1534,8 @@ async function guardarEvento(publicar){
     p_lugar: $('#agLugar').value.trim() || null, p_inicia_en: d.toISOString(),
     p_duracion: +$('#agDur').value || null, p_canales: canales,
     p_minutos: +$('#agMin').value || 60, p_recordar: $('#agRecordar').checked,
-    p_imagen: ruta, p_quitar_imagen: AG_IMG_QUITAR });
+    p_imagen: ruta, p_quitar_imagen: AG_IMG_QUITAR,
+    p_rangos: [...document.querySelectorAll('#agRangos .agr:checked')].map(x => x.value) });
   if(error){ $('#agErr2').textContent = error.message; return; }
   if(publicar && canales.length){
     const { data: pub } = await sb.rpc('agenda_publicar', { p_id: data.id, p_mencion: $('#agMencion').checked });
@@ -1598,3 +1603,11 @@ $('#agImagen').onchange = async e => {
     AG_IMG = b; AG_IMG_QUITAR = false; agImgPrev(URL.createObjectURL(b));
   }catch(x){ $('#agErr2').textContent = 'No se pudo leer la imagen.'; }
 };
+
+// --- Rangos PM convocados: sin marcar nada, el evento es para toda la unidad ---
+function pintarRangos(marcados){
+  $('#agRangos').innerHTML = rangosPM.map(r => `<label class="chip">
+    <input type="checkbox" class="agr" value="${esc(r.nombre)}" ${marcados.includes(r.nombre) ? 'checked' : ''}> ${esc(r.nombre)}</label>`).join('')
+    || '<span class="muted" style="font-size:13px">No hay Rangos PM definidos (Roles y permisos → Rangos PM).</span>';
+}
+$('#agRangosNinguno').onclick = () => document.querySelectorAll('#agRangos .agr').forEach(c => c.checked = false);

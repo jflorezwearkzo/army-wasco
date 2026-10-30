@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=e9c85351"></script>
+<script src="../js/tema.js?v=76d4bcbd"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -34,8 +34,10 @@
   nav#tabs button.on{background:var(--avisobg);color:var(--gold);border:1px solid var(--avisoline);font-weight:700}
   nav#tabs .tag{margin-left:auto}
   /* Las casillas heredan width:100% de los campos; en la agenda deben ser casillas de verdad */
-  #dlgEvento input[type=checkbox],#agCanales input[type=checkbox]{width:16px;height:16px;flex:0 0 auto;accent-color:var(--gold);padding:0}
+  #dlgEvento input[type=checkbox],#agCanales input[type=checkbox],#agRangos input[type=checkbox]{width:16px;height:16px;flex:0 0 auto;accent-color:var(--gold);padding:0}
   #dlgEvento .lineaChk{display:flex;align-items:center;gap:8px;margin:10px 0 4px;color:var(--muted);font-size:13px}
+  #agRangos .chip{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:6px 12px;margin:0;font-size:14px;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+  #agRangos .chip:has(input:checked){border-color:var(--gold);color:var(--gold)}
   #agCanales .chip{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:6px 12px;margin:0;font-size:14px;color:var(--text)}
   #agCanales .chip:has(input:checked){border-color:var(--gold);color:var(--gold)}
   .migas{font-size:13px;color:var(--muted);margin-bottom:10px}.migas b{color:var(--text);font-weight:400}
@@ -485,7 +487,7 @@
       <button type="button" class="primary sm" id="agNuevo">＋ Nuevo evento</button></h3>
     <p class="muted" style="margin-top:0;font-size:13px">Reuniones, operaciones especiales, cualquier cita con <b>fecha, hora y lugar</b>. No tiene nada que ver con los horarios fijos del servidor (entrega aérea, arsenal), que son otra cosa y no se tocan desde aquí.</p>
     <div class="tscroll">
-      <table><thead><tr><th>Evento</th><th>Cuándo</th><th>Lugar</th><th>Canal</th><th>Recordatorio</th><th>Asisten</th><th></th></tr></thead><tbody id="tbAgenda"></tbody></table>
+      <table><thead><tr><th>Evento</th><th>Cuándo</th><th>Lugar</th><th>Convocados</th><th>Canal</th><th>Recordatorio</th><th>Asisten</th><th></th></tr></thead><tbody id="tbAgenda"></tbody></table>
     </div>
     <div class="err" id="agErr"></div>
   </div>
@@ -512,6 +514,10 @@
       <span>¿Dónde se publica? <span class="muted" style="font-weight:400">(puedes marcar varios)</span></span>
       <button type="button" class="ghost sm" id="agNuevoCanal">＋ Nuevo destino</button></label>
     <div id="agCanales" class="chips"></div>
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <span>¿Quién está convocado? <span class="muted" style="font-weight:400">(Rangos PM; sin marcar nada = toda la unidad)</span></span>
+      <button type="button" class="ghost sm" id="agRangosNinguno">Quitar todos</button></label>
+    <div id="agRangos" class="chips"></div>
     <div class="lineaChk"><input type="checkbox" id="agRecordar" checked><label for="agRecordar" style="margin:0">Recordar antes del evento</label>
       <input id="agMin" type="number" min="1" max="10080" value="60" style="width:90px;margin-left:6px"><span>minutos antes</span></div>
     <div class="lineaChk"><input type="checkbox" id="agMencion"><label for="agMencion" style="margin:0">Avisar con <b style="color:var(--gold)">@everyone</b> al publicarlo</label></div>
@@ -696,6 +702,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=af788ff1"></script>
+<script type="module" src="../js/app-admin.js?v=e0d4ffad"></script>
 </body>
 </html>
