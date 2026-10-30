@@ -21,6 +21,7 @@ const TABS = [
   ['ascensos',    'Ascensos',    ['usuarios'], 'Personal', '🎖️'],
   ['turnos',      'Turnos',      ['turnos','ver_turnos'], 'Personal', '🚔'],
   ['anuncios',    'Anuncios',    ['anuncios','ver_anuncios'], 'Personal', '📣'],
+  ['agenda',      'Agenda',      ['anuncios'], 'Personal', '📅'],
   ['automatizacion','Automatización',['gestion_reportes'], 'Sistema', '⏰'],
   ['auditoria',   'Auditoría',   ['auditoria'], 'Sistema', '🔎'],
   ['organizaciones','Organizaciones',['organizaciones','*superadmin'], 'Sistema', '🏛️'],
@@ -28,6 +29,8 @@ const TABS = [
 let roles = [], formularios = [], rangosPM = [], MEMB = {}, ORGS_TODAS = [];
 const VER_ORGS = esSuperadmin(yo);   // la columna de organizaciones es solo para quien manda en todas
 let ACT = [], ACT_CFG = { dia_inicio:2, min_semanal:2, min_mensual:8 }, ACT_MODO = 'semana';
+let AG_CANALES = [];
+const PUEDE_AGENDA = tiene(yo, 'anuncios');
 let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
 
 // ---------- Pestañas según permisos ----------
@@ -63,7 +66,7 @@ function abrir(t, sub=''){
   $('#navActual').textContent = def ? `${def[4]} ${def[1]}` : t;
   $('#migas').innerHTML = `Administración › <b>${def ? def[3] : ''}</b> › <b>${def ? def[1] : t}</b>`;
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
-  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, actividad:cargarActividad, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios, organizaciones:cargarOrgs})[t]();
+  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, actividad:cargarActividad, auditoria:cargarAud, automatizacion:cargarAutomatizacion, agenda:cargarAgenda, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios, organizaciones:cargarOrgs})[t]();
 }
 document.querySelectorAll('nav#tabs button').forEach(b => b.onclick = () => { cerrarDialogos(); nav(false); abrir(b.dataset.t); });
 // Las tablas anchas se envuelven para que en pantallas pequeñas se deslicen de lado
@@ -1412,3 +1415,118 @@ async function borrarAviso(id, nombre){
   $('#evErr').textContent = error ? error.message : '';
   if(!error){ toast('Aviso borrado.'); cargarAutomatizacion(); }
 }
+
+// ====================== AGENDA DE EVENTOS ======================
+// Citas puntuales con fecha, hora y lugar. La fecha se escribe en hora del servidor (UTC)
+// para que todo el mundo hable del mismo instante; debajo del campo se muestra la hora local.
+const utcLocal = v => {                       // "2026-11-01T20:00" (UTC) -> Date real
+  if(!v) return null;
+  const [f, h] = v.split('T'); const [Y,M,D] = f.split('-').map(Number); const [hh,mm] = h.split(':').map(Number);
+  return new Date(Date.UTC(Y, M-1, D, hh, mm));
+};
+const aCampoUTC = iso => {                    // Date -> valor del input, en UTC
+  const d = new Date(iso); const p = n => String(n).padStart(2,'0');
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+};
+async function cargarAgenda(){
+  $('#agNuevo').style.display = PUEDE_AGENDA ? '' : 'none';
+  const [{ data: evs, error }, { data: dc }] = await Promise.all([
+    sb.from('agenda_eventos').select('id,titulo,lugar,inicia_en,duracion_min,canal,minutos_antes,recordar,recordado_en,cancelado,descripcion').order('inicia_en', { ascending:false }).limit(60),
+    sb.rpc('canales_discord'),
+  ]);
+  if(error){ $('#agErr').textContent = error.message; return; }
+  $('#agErr').textContent = '';
+  AG_CANALES = (dc && dc.canales) || [];
+  const ids = (evs || []).map(e => e.id);
+  const { data: asis } = ids.length ? await sb.from('agenda_asistencia').select('evento_id,respuesta').in('evento_id', ids) : { data: [] };
+  const cu = {}; (asis || []).forEach(r => { cu[r.evento_id] = cu[r.evento_id] || { si:0, no:0 }; cu[r.evento_id][r.respuesta]++; });
+  const ahora = Date.now();
+  $('#tbAgenda').innerHTML = (evs || []).map(e => {
+    const d = new Date(e.inicia_en), pasado = d.getTime() < ahora, c = cu[e.id] || { si:0, no:0 };
+    const canal = AG_CANALES.find(x => x.clave === e.canal);
+    return `<tr${e.cancelado ? ' style="opacity:.55"' : ''}>
+      <td><b>${esc(e.titulo)}</b>${e.cancelado ? ' <span class="tag">Cancelado</span>' : pasado ? ' <span class="muted" style="font-size:12px">(ya pasó)</span>' : ''}
+        ${e.descripcion ? `<br><span class="muted" style="font-size:12px">${esc(e.descripcion.slice(0,80))}${e.descripcion.length>80?'…':''}</span>` : ''}</td>
+      <td style="white-space:nowrap">${esc(new Date(e.inicia_en).toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' }))}<br><span class="muted" style="font-size:12px">${aCampoUTC(e.inicia_en).replace('T',' ')} UTC</span></td>
+      <td>${esc(e.lugar || '—')}</td>
+      <td>${canal ? esc(canal.nombre) : '<span class="muted">sin canal</span>'}</td>
+      <td>${e.recordar ? `${e.minutos_antes} min antes${e.recordado_en ? ' · <span class="muted">enviado</span>' : ''}` : '<span class="muted">no</span>'}</td>
+      <td>${c.si} sí · ${c.no} no</td>
+      <td class="acc" style="text-align:right">${PUEDE_AGENDA ? botonMenu(e.id) : ''}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="muted">Todavía no hay eventos en la agenda.</td></tr>';
+  document.querySelectorAll('#tbAgenda [data-menu]').forEach(b => b.onclick = ev2 => {
+    ev2.stopPropagation(); const e = (evs || []).find(x => x.id == b.dataset.menu);
+    abrirMenu(b, 'agenda:' + e.id, `<b style="color:var(--text)">${esc(e.titulo)}</b>`,
+      [['editar','✏️ Editar'], ['publicar','📣 Publicar en Discord'],
+       ...(e.cancelado ? [] : [['cancelar','🚫 Marcar como cancelado']]), ['borrar','🗑 Eliminar', true]],
+      op => accionAgenda(op, e.id, evs));
+  });
+}
+function accionAgenda(op, id, evs){
+  const e = (evs || []).find(x => x.id === +id);
+  if(op === 'editar') return abrirEvento(e);
+  if(op === 'publicar') return publicarEvento(+id, e);
+  if(op === 'cancelar' || op === 'borrar'){
+    const borrar = op === 'borrar';
+    if(!confirm(borrar ? `¿Eliminar «${e.titulo}»? Se pierden también las confirmaciones.` : `¿Marcar «${e.titulo}» como cancelado? Sigue a la vista, tachado.`)) return;
+    sb.rpc('agenda_cancelar', { p_id: +id, p_borrar: borrar }).then(({ error }) => {
+      $('#agErr').textContent = error ? error.message : '';
+      if(!error){ toast(borrar ? 'Evento eliminado.' : 'Evento cancelado.'); cargarAgenda(); }
+    });
+  }
+}
+async function publicarEvento(id, e){
+  const mencion = confirm(`¿Avisar con @everyone al publicar «${e.titulo}»?\n\nAceptar = con @everyone · Cancelar = sin mención`);
+  const { data, error } = await sb.rpc('agenda_publicar', { p_id: id, p_mencion: mencion });
+  if(error){ $('#agErr').textContent = error.message; return; }
+  if(data && data.ok) toast('Publicado en Discord.');
+  else toast(data && data.motivo === 'sin_canal' ? 'Ese evento no tiene canal elegido.' : 'No se pudo publicar: ' + ((data && data.motivo) || '?'), true);
+}
+function abrirEvento(e){
+  const nuevo = !e;
+  $('#agTitulo').textContent = nuevo ? 'Nuevo evento' : 'Editar evento';
+  $('#agId').value = nuevo ? '' : e.id;
+  $('#agNombre').value = nuevo ? '' : e.titulo;
+  $('#agDesc').value = nuevo ? '' : (e.descripcion || '');
+  $('#agLugar').value = nuevo ? '' : (e.lugar || '');
+  $('#agFecha').value = nuevo ? '' : aCampoUTC(e.inicia_en);
+  $('#agDur').value = nuevo ? '' : (e.duracion_min || '');
+  $('#agMin').value = nuevo ? 60 : e.minutos_antes;
+  $('#agRecordar').checked = nuevo ? true : e.recordar;
+  $('#agMencion').checked = false;
+  $('#agCanal').innerHTML = '<option value="">— sin canal (no se publica) —</option>' +
+    AG_CANALES.map(c => `<option value="${esc(c.clave)}" ${!nuevo && e.canal === c.clave ? 'selected' : ''}>${esc(c.nombre)}${c.tiene_webhook ? '' : ' (sin webhook)'}</option>`).join('');
+  $('#agErr2').textContent = '';
+  mostrarHoraLocal();
+  $('#dlgEvento').showModal();
+  $('#agNombre').focus();
+}
+function mostrarHoraLocal(){
+  const d = utcLocal($('#agFecha').value);
+  $('#agLocal').textContent = d
+    ? `Eso es ${d.toLocaleString('es-CO', { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' })} en tu hora. En Discord cada quien lo verá en la suya.`
+    : 'La hora se escribe en la del servidor (UTC), igual que los horarios del calendario.';
+}
+$('#agFecha').oninput = mostrarHoraLocal;
+$('#agNuevo').onclick = () => abrirEvento(null);
+async function guardarEvento(publicar){
+  const d = utcLocal($('#agFecha').value);
+  if(!$('#agNombre').value.trim()){ $('#agErr2').textContent = 'Ponle un título.'; return; }
+  if(!d){ $('#agErr2').textContent = 'Falta la fecha y la hora.'; return; }
+  const id = $('#agId').value ? +$('#agId').value : null;
+  const { data, error } = await sb.rpc('agenda_guardar', {
+    p_id: id, p_titulo: $('#agNombre').value.trim(), p_descripcion: $('#agDesc').value.trim() || null,
+    p_lugar: $('#agLugar').value.trim() || null, p_inicia_en: d.toISOString(),
+    p_duracion: +$('#agDur').value || null, p_canal: $('#agCanal').value || null,
+    p_minutos: +$('#agMin').value || 60, p_recordar: $('#agRecordar').checked });
+  if(error){ $('#agErr2').textContent = error.message; return; }
+  if(publicar && $('#agCanal').value){
+    const { data: pub } = await sb.rpc('agenda_publicar', { p_id: data.id, p_mencion: $('#agMencion').checked });
+    toast(pub && pub.ok ? 'Evento guardado y publicado en Discord.' : 'Evento guardado, pero no se pudo publicar: ' + ((pub && pub.motivo) || '?'), !(pub && pub.ok));
+  } else toast('Evento guardado.');
+  $('#dlgEvento').close();
+  cargarAgenda();
+}
+$('#agGuardar').onclick = () => guardarEvento(true);
+$('#agSoloGuardar').onclick = () => guardarEvento(false);

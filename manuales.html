@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=d7db5550"></script>
+<script src="js/tema.js?v=b725d182"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -288,6 +288,29 @@
     <p>En <span class="ruta">Automatización → Tareas programadas</span> está <b>Reporte de actividad semanal</b>, que publica solo cada semana el balance de la semana que cerró.</p></div>
 </section>
 
+<section class="sec-panel" id="sec-agenda" data-titulo="Agenda" data-icono="📅" data-grupo="Administración" data-permisos="anuncios" hidden>
+  <h2 class="sec">Agenda de eventos<small>Reuniones y operaciones con fecha, hora y lugar</small></h2>
+  <div class="bloque"><h3>Qué es y qué no es</h3>
+    <p>La agenda es para <b>citas puntuales</b>: una reunión de mando, una operación especial, una ceremonia de ascensos. Cada una tiene su fecha, su hora, su lugar y su gente confirmada.</p>
+    <div class="ojo">No confundir con los <b>horarios fijos del servidor</b> (entrega aérea, incursión al arsenal). Esos se repiten todos los días, son del juego y no se modifican desde la página.</div></div>
+  <div class="bloque"><h3>Crear un evento</h3>
+    <ol><li><span class="ruta">Administración → Agenda → ＋ Nuevo evento</span>.</li>
+      <li>Título, descripción y lugar. El lugar puede ser del juego o un canal de voz.</li>
+      <li>Fecha y hora <b>en hora del servidor (UTC)</b>, igual que el resto del calendario; debajo del campo se te muestra a qué hora tuya corresponde, para que no te equivoques.</li>
+      <li>Elige el <b>canal de Discord</b> al que sale ese evento. Cada evento puede ir a un canal distinto.</li>
+      <li>Decide si quieres recordatorio y con cuántos minutos de antelación.</li>
+      <li><b>Guardar y publicar</b> lo manda al canal en ese momento; <b>Guardar sin publicar</b> lo deja listo y lo publicas después desde el menú ⋯.</li></ol>
+    <p>La casilla <b>@everyone</b> hace que el mensaje avise a todo el canal. Úsala con cabeza: si cada evento menciona a todos, la gente acaba silenciando el canal.</p></div>
+  <div class="bloque"><h3>Confirmar asistencia</h3>
+    <p>En <span class="ruta">Eventos del día</span> todos ven los próximos eventos arriba, antes de los horarios fijos, con dos botones: <b>✅ Asisto</b> y <b>❌ No puedo</b>. Se puede cambiar la respuesta cuantas veces haga falta.</p>
+    <p>El mensaje de Discord lleva esos mismos dos enlaces: quien los toca entra a la app, queda registrado y vuelve al evento. Si no tiene la sesión abierta, se le pide entrar y después se le lleva igual al evento, sin perder el clic.</p>
+    <p>En la tabla de la agenda ves cuántos dijeron que sí y cuántos que no.</p>
+    <div class="tip">Los webhooks de Discord no pueden llevar botones de verdad (eso solo lo hace un bot). Por eso van como enlaces, que funcionan igual de bien desde el móvil.</div></div>
+  <div class="bloque"><h3>Cambios y cancelaciones</h3>
+    <p>Desde el menú ⋯ de cada fila: <b>✏️ Editar</b>, <b>📣 Publicar en Discord</b> (sirve para volver a sacarlo si cambió algo), <b>🚫 Marcar como cancelado</b> (sigue a la vista, tachado, para que nadie se presente) y <b>🗑 Eliminar</b>, que lo borra junto con las confirmaciones.</p>
+    <p>Si cambias la fecha, el recordatorio vuelve a quedar pendiente y saldrá de nuevo a su hora.</p></div>
+</section>
+
 <section class="sec-panel" id="sec-automatizacion" data-titulo="Automatización" data-icono="⏰" data-grupo="Administración" data-permisos="gestion_reportes" hidden>
   <h2 class="sec">Automatización<small>Discord, tareas programadas y copia de seguridad</small></h2>
   <div class="bloque"><h3>Canales de Discord</h3>
@@ -328,6 +351,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=dcf921b3"></script>
+<script type="module" src="js/app-manuales.js?v=8207d42d"></script>
 </body>
 </html>

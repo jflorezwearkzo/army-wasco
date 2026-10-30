@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=d7db5550"></script>
+<script src="../js/tema.js?v=b725d182"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -474,7 +474,48 @@
   </section>
 
   <!-- ===================== AUTOMATIZACIÓN ===================== -->
-  <section id="t-automatizacion">
+  <section id="t-agenda">
+  <div class="caja">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Agenda de eventos</span>
+      <button type="button" class="primary sm" id="agNuevo">＋ Nuevo evento</button></h3>
+    <p class="muted" style="margin-top:0;font-size:13px">Reuniones, operaciones especiales, cualquier cita con <b>fecha, hora y lugar</b>. No tiene nada que ver con los horarios fijos del servidor (entrega aérea, arsenal), que son otra cosa y no se tocan desde aquí.</p>
+    <div class="tscroll">
+      <table><thead><tr><th>Evento</th><th>Cuándo</th><th>Lugar</th><th>Canal</th><th>Recordatorio</th><th>Asisten</th><th></th></tr></thead><tbody id="tbAgenda"></tbody></table>
+    </div>
+    <div class="err" id="agErr"></div>
+  </div>
+  <dialog id="dlgEvento" class="dlg-edit"><div class="caja">
+    <div class="cab-dlg"><button type="button" class="ghost sm volver" data-close="dlgEvento">← Volver</button><h3 id="agTitulo">Nuevo evento</h3><button type="button" class="cerrar" data-close="dlgEvento" aria-label="Cerrar">✕</button></div>
+    <input type="hidden" id="agId">
+    <label for="agNombre">Título</label>
+    <input id="agNombre" maxlength="120" placeholder="Ej.: Reunión de mando">
+    <label for="agDesc">Descripción (opcional)</label>
+    <textarea id="agDesc" rows="4" placeholder="De qué va, qué hay que llevar, quién debe venir…"></textarea>
+    <label for="agLugar">Lugar (opcional)</label>
+    <input id="agLugar" maxlength="120" placeholder="Ej.: Base PM · sala de mando, o el canal de voz">
+    <div class="dos" style="grid-template-columns:1fr 1fr">
+      <div><label for="agFecha">Fecha y hora <span class="muted" style="font-weight:400">(hora del servidor, UTC)</span></label>
+        <input id="agFecha" type="datetime-local"></div>
+      <div><label for="agDur">Duración en minutos (opcional)</label>
+        <input id="agDur" type="number" min="5" max="1440" placeholder="60"></div>
+    </div>
+    <p class="muted" id="agLocal" style="margin:4px 0 0;font-size:12px"></p>
+    <label for="agCanal">Canal de Discord</label>
+    <select id="agCanal"></select>
+    <div class="dos" style="grid-template-columns:1fr 1fr;margin-top:10px">
+      <div><label style="margin:0;display:flex;gap:8px;align-items:center"><input type="checkbox" id="agRecordar" checked> Recordar antes del evento</label></div>
+      <div><label for="agMin">Minutos de antelación</label><input id="agMin" type="number" min="1" max="10080" value="60"></div>
+    </div>
+    <label style="margin-top:12px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="agMencion"> Avisar con @everyone al publicarlo</label>
+    <div class="fila" style="margin-top:14px">
+      <button type="button" class="primary" id="agGuardar">Guardar y publicar</button>
+      <button type="button" class="ghost" id="agSoloGuardar">Guardar sin publicar</button>
+    </div>
+    <div class="err" id="agErr2"></div>
+  </div></dialog>
+</section>
+
+<section id="t-automatizacion">
     <div class="caja">
       <h3>Canales de Discord</h3>
       <p class="muted" style="margin-top:0;font-size:13px">Cada propósito tiene su propio canal (webhook). Los reportes de cada formulario se configuran en Formularios; aquí van los avisos generales. Los enlaces nunca se muestran a los usuarios.</p>
@@ -647,6 +688,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=d0cef864"></script>
+<script type="module" src="../js/app-admin.js?v=db2f7360"></script>
 </body>
 </html>

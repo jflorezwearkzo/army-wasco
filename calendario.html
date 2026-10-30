@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Eventos del día · Army de Wasco</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=d7db5550"></script>
+<script src="js/tema.js?v=b725d182"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:980px;margin:24px auto;padding:0 20px}
@@ -34,6 +34,21 @@
   .slot.ya{opacity:.45}
   .slot.sig{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
   .nota{color:var(--muted);font-size:13px}
+  /* --- Agenda: eventos puntuales (reuniones, operaciones) --- */
+  #agenda h2{color:var(--gold);text-transform:uppercase;font-size:13px;letter-spacing:1px;margin:18px 0 8px}
+  .ev{background:var(--panel);border:1px solid var(--avisoline);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+  .ev.cancelado{opacity:.6;border-color:var(--line2)}
+  .ev h3{margin:0 0 6px;font-size:18px;color:var(--text)}
+  .ev .cuando{font-size:15px}
+  .ev .cuando b{color:var(--gold)}
+  .ev .det{color:var(--muted);font-size:13px;margin:4px 0 0;line-height:1.5}
+  .ev .des{margin:8px 0 0;font-size:14px;white-space:pre-wrap}
+  .ev .resp{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .ev .resp button{padding:7px 14px;font-size:14px}
+  .ev .resp button.on{border-color:var(--gold);color:var(--gold);background:var(--avisobg)}
+  .ev .conteo{color:var(--muted);font-size:13px;margin-left:auto}
+  #avisoResp:not(:empty){background:var(--okbg);border:1px solid #2f7a4c;color:#c8f5d6;border-radius:10px;padding:10px 14px;margin:14px 0;font-size:14px}
+  #avisoResp.mal{background:var(--errbg);border-color:#7a2f2f;color:#ffb4b4}
 </style>
 </head>
 <body>
@@ -41,11 +56,13 @@
   <p class="unidad" data-org-nombre>Army de Wasco</p>
   <h1>🗓️ Eventos del día</h1>
   <p class="muted" style="margin:0">Horarios fijos del servidor, iguales todos los días. Se muestran en <b>tu hora</b> y en <b>hora del servidor (UTC)</b>.</p>
+  <div id="avisoResp"></div>
+  <section id="agenda"></section>
   <div id="prox"><span class="muted">Cargando…</span></div>
   <div id="lista"></div>
   <p class="nota">Tu zona horaria: <b id="tz"></b>. El servidor va en UTC 0.</p>
   <div class="err" id="err"></div>
 </main>
-<script type="module" src="js/app-calendario.js?v=5f26f056"></script>
+<script type="module" src="js/app-calendario.js?v=81d23d0d"></script>
 </body>
 </html>

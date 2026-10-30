@@ -178,6 +178,16 @@ Permisos **Anuncios: publicar y editar** (`anuncios`) y **Anuncios: solo ver** (
 
 `ranking.html` (enlace "Ranking" en la barra): podio por categoría (reportes, bajas, patrullajes, reclutamientos, AKs, participaciones), tabla completa ordenable, selector de mes y Salón de insignias. Solo cuentan reportes aprobados (RPC `ranking_mes`). La tarea `ranking_mensual` publica el top 3 del mes anterior en Discord el día 1 y otorga la insignia 🥇 de cada categoría (`insignias`).
 
+## Agenda de eventos
+
+Admin → **Agenda** (permiso `anuncios`): eventos puntuales con título, descripción, lugar, fecha y hora, duración, canal de Discord propio y recordatorio configurable. Nada que ver con `actividades`/`actividades_horarios`, que son los horarios fijos del servidor y no se editan desde la interfaz.
+
+Tablas `agenda_eventos` y `agenda_asistencia(evento_id, usuario_id, respuesta)`. RLS: los ve cualquier miembro de la organización (`mis_orgs()`), y crear/editar/borrar pasa por RPCs que exigen `tengo_permiso('anuncios')`: `agenda_guardar`, `agenda_cancelar(p_id, p_borrar)`, `agenda_publicar(p_id, p_mencion, p_titulo)` y `agenda_responder(p_id, 'si'|'no')`, que cada quien ejecuta para sí mismo.
+
+`agenda_embed()` arma el mensaje: hora del servidor en UTC, marcas dinámicas de Discord para la hora de cada lector, lugar y **dos enlaces** `calendario.html?evento=<id>&r=si|no`. Los webhooks no admiten componentes interactivos (solo un bot), así que la confirmación va por enlace; si no hay sesión, `requerir()` manda al login con `?next=` y vuelve al evento. `agenda_recordatorios()` corre en el cron `pm_agenda` cada minuto y envía una sola vez, cuando faltan `minutos_antes`; cambiar la fecha pone `recordado_en` a null y vuelve a quedar pendiente. En Auditoría: `agenda_creado`, `agenda_editado`, `agenda_publicado`, `agenda_cancelado`, `agenda_borrado`.
+
+La sección "Próximos eventos" sale en `calendario.html` encima de los horarios fijos, con los botones de confirmación y el recuento.
+
 ## Tareas programadas (Automatización)
 
 Admin → Automatización → Tareas programadas: **Recordatorio de turnos de hoy** (quién tiene turno y quién no ha reportado), **Cierre del día**, **Resumen semanal** (día y hora) y **Ranking mensual** (día 1). Cada una se activa/desactiva, se le fija la hora (Colombia) y tiene "▶ Ejecutar ahora". Corren dentro de Postgres con pg_cron y publican por pg_net en el canal de Discord correspondiente (`discord_canales`): no hay Edge Function ni secretos de por medio. RPCs `programar`, `ejecutar_programada`; configuración en `configuracion.programadas`; quedan en Auditoría como `programada_*`.

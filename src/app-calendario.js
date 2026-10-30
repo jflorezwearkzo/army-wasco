@@ -70,6 +70,74 @@ function tick(){
     <p style="margin:4px 0 0">Empieza en <b class="cuenta">${falta(sig.d.getTime() - ahora)}</b></p>`;
 }
 
+// ====================== AGENDA (eventos puntuales) ======================
+// Reuniones, operaciones especiales… Tienen fecha, hora y lugar, y cada quien confirma si va.
+// Los horarios fijos del servidor (entrega aérea, arsenal) son otra cosa y no se tocan desde aquí.
+let AGENDA = [];
+const fechaLarga = d => d.toLocaleString('es-CO', { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+
+async function cargarAgenda(){
+  const desde = new Date(Date.now() - 6 * 3600 * 1000).toISOString();   // los de hace un rato siguen a la vista
+  const { data, error } = await sb.from('agenda_eventos')
+    .select('id,titulo,descripcion,lugar,inicia_en,duracion_min,cancelado')
+    .gte('inicia_en', desde).order('inicia_en').limit(20);
+  if(error || !data || !data.length){ $('#agenda').innerHTML = ''; return; }
+  AGENDA = data;
+  const ids = data.map(e => e.id);
+  const [{ data: resp }, { data: mias }] = await Promise.all([
+    sb.from('agenda_asistencia').select('evento_id,respuesta').in('evento_id', ids),
+    sb.from('agenda_asistencia').select('evento_id,respuesta').in('evento_id', ids).eq('usuario_id', yo.id),
+  ]);
+  const cuenta = {}, mia = {};
+  (resp || []).forEach(r => { cuenta[r.evento_id] = cuenta[r.evento_id] || { si:0, no:0 }; cuenta[r.evento_id][r.respuesta]++; });
+  (mias || []).forEach(r => mia[r.evento_id] = r.respuesta);
+
+  $('#agenda').innerHTML = '<h2>📌 Próximos eventos</h2>' + data.map(e => {
+    const d = new Date(e.inicia_en), c = cuenta[e.id] || { si:0, no:0 }, m = mia[e.id];
+    return `<article class="ev${e.cancelado ? ' cancelado' : ''}">
+      <h3>${e.cancelado ? '🚫 ' : ''}${esc(e.titulo)}${e.cancelado ? ' <span class="muted" style="font-size:14px">(cancelado)</span>' : ''}</h3>
+      <p class="cuando" style="margin:0"><b>${esc(fechaLarga(d))}</b> <span class="muted">tu hora</span></p>
+      <p class="det">🕒 ${dosD(d.getUTCHours())}:${dosD(d.getUTCMinutes())} UTC del servidor${e.duracion_min ? ` · dura ${e.duracion_min} min` : ''}
+        ${e.lugar ? `<br>📍 ${esc(e.lugar)}` : ''}</p>
+      ${e.descripcion ? `<p class="des">${esc(e.descripcion)}</p>` : ''}
+      ${e.cancelado ? '' : `<div class="resp" data-ev="${e.id}">
+        <button type="button" class="ghost${m === 'si' ? ' on' : ''}" data-r="si">✅ Asisto</button>
+        <button type="button" class="ghost${m === 'no' ? ' on' : ''}" data-r="no">❌ No puedo</button>
+        <span class="conteo">${c.si} asisten · ${c.no} no pueden</span>
+      </div>`}
+    </article>`;
+  }).join('');
+  document.querySelectorAll('#agenda .resp button').forEach(b => b.onclick = () => responder(b.closest('.resp').dataset.ev, b.dataset.r));
+}
+
+async function responder(id, r){
+  const { error } = await sb.rpc('agenda_responder', { p_id: +id, p_respuesta: r });
+  if(error){ $('#err').textContent = error.message; return; }
+  $('#err').textContent = '';
+  await cargarAgenda();
+  const ev = AGENDA.find(x => x.id === +id);
+  if(ev) aviso(r === 'si' ? `Quedaste apuntado a «${ev.titulo}».` : `Anotado: no puedes ir a «${ev.titulo}».`);
+}
+function aviso(txt, mal = false){
+  const c = $('#avisoResp'); c.textContent = txt; c.classList.toggle('mal', mal);
+}
+// Enlaces de Discord: calendario.html?evento=<id>&r=si|no  (si no hay sesión, el login devuelve aquí)
+async function respuestaDesdeEnlace(){
+  const p = new URLSearchParams(location.search), id = p.get('evento'), r = p.get('r');
+  if(!id) return;
+  if(r === 'si' || r === 'no'){
+    const { data, error } = await sb.rpc('agenda_responder', { p_id: +id, p_respuesta: r });
+    if(error) aviso('No se pudo registrar tu respuesta: ' + error.message, true);
+    else { aviso(r === 'si' ? `✅ Listo, quedaste apuntado a «${data.titulo}».` : `❌ Anotado: no puedes ir a «${data.titulo}».`);
+           await cargarAgenda(); }   // repinta con la respuesta recién guardada
+  }
+  history.replaceState(null, '', location.pathname);   // deja la dirección limpia
+  const el = document.getElementById('agenda');
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
 $('#tz').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || '—';
 await cargar();
+await cargarAgenda();
+await respuestaDesdeEnlace();
 setInterval(tick, 1000);
