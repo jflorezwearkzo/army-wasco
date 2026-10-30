@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=ebb10d69"></script>
+<script src="js/tema.js?v=28f54664"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -304,6 +304,7 @@
     <p>Publican en Discord un recordatorio <b>X minutos antes</b> de los horarios del calendario de eventos. Puedes tener <b>los que quieras</b>: uno solo para la incursión al arsenal, otro con todas las actividades, otro únicamente con la entrega aérea… Cada uno es independiente y tiene <b>su propio canal</b>.</p>
     <p>En <span class="ruta">Automatización → Avisos de eventos del día</span> pulsa <b>＋ Nuevo aviso</b>, ponle nombre, los minutos de antelación y marca qué actividades entran. Al guardarlo aparece su canal en la lista de arriba (<i>Aviso de eventos · &lt;nombre&gt;</i>): ahí le pegas el webhook. Sin webhook el reloj corre pero no publica nada.</p>
     <p>Si dejas marcadas <b>todas</b> las actividades, también se avisarán las que se agreguen al calendario más adelante, sin volver a tocar nada. <b>🗑 Borrar</b> quita el aviso y su canal. <b>👁 Vista previa</b> muestra lo que saldría en este momento en todos los avisos; si ningún horario cae dentro de la ventana no muestra nada, y eso es normal.</p>
+    <p>El mensaje muestra la <b>hora del servidor (UTC)</b> y, debajo, la misma hora traducida a la zona de <b>cada persona que lo lee</b>: Discord la dibuja en el idioma y el huso de quien mira, así que un miembro en Colombia y otro en España ven cada uno su hora correcta sin que nadie tenga que calcular nada. Va también cuánto falta, actualizándose solo.</p>
     <div class="tip">Cada aviso lleva su propia memoria: dos avisos distintos pueden anunciar el mismo horario sin pisarse, y ninguno repite el mismo horario dos veces el mismo día.</div></div>
   <div class="bloque"><h3>Formularios públicos (sin cuenta)</h3>
     <p>Dos páginas abiertas, pensadas para quien todavía no puede entrar:</p>
@@ -327,6 +328,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=57d67e97"></script>
+<script type="module" src="js/app-manuales.js?v=7144168d"></script>
 </body>
 </html>
