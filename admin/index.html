@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=7131d1bc"></script>
+<script src="../js/tema.js?v=ebb10d69"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -37,7 +37,8 @@
   /* --- Navegación en móvil: el mismo menú lateral, guardado en un cajón que se desliza --- */
   .nav-cab{display:none}
   #navFondo{display:none}
-  .movil{display:none;width:100%;margin:0 0 12px;padding:11px 14px;background:var(--panel);color:var(--text);
+  /* Va con el color de la barra superior (no el de los paneles) para que se lea como un menú */
+  .movil{display:none;width:100%;margin:0 0 12px;padding:11px 14px;background:var(--barra);color:var(--text);
          border:1px solid var(--line2);border-radius:8px;font:inherit;text-align:left;text-transform:none;letter-spacing:0;
          align-items:center;gap:10px}
   .movil .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
@@ -646,6 +647,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=77ebc9c3"></script>
+<script type="module" src="../js/app-admin.js?v=cc72d4cf"></script>
 </body>
 </html>
