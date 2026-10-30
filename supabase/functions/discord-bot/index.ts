@@ -64,6 +64,20 @@ Deno.serve(async (req: Request) => {
   const puede = (p: string) => permisos[p] === true;
   const nombre = i.data?.name;
 
+  // El panel manda: cada comando se puede apagar y se le puede exigir un permiso concreto.
+  const { data: cfg } = await admin.rpc("bot_config", { p_org: quien.org });
+  const regla = (cfg ?? {})[nombre] ?? { activo: true, permiso: null };
+  if (regla.activo === false) return responder("Ese comando está apagado para tu unidad.");
+  if (regla.permiso && !puede(regla.permiso)) {
+    return responder("No tienes permiso para usar ese comando. Habla con el liderazgo si crees que deberías tenerlo.");
+  }
+
+  const fecha = (f: string) => f ? f.split("-").reverse().join("/") : "—";
+  const consulta = async (que: string) => {
+    const { data } = await admin.rpc("discord_consulta", { p_discord: quienId, p_que: que });
+    return data;
+  };
+
   // ---------------- /eventos ----------------
   if (nombre === "eventos") {
     const { data: evs } = await admin.rpc("discord_eventos_hoy", { p_org: quien.org });
@@ -115,9 +129,6 @@ Deno.serve(async (req: Request) => {
 
   // ---------------- /mensaje ----------------
   if (nombre === "mensaje") {
-    if (!puede("usuarios") && !puede("anuncios")) {
-      return responder("No tienes permiso para escribir a los integrantes desde el bot.");
-    }
     const destinoId = String(opcion(i, "usuario") ?? "");
     const texto = String(opcion(i, "texto") ?? "").trim().slice(0, 1800);
     const asunto = opcion(i, "asunto");
@@ -155,6 +166,75 @@ Deno.serve(async (req: Request) => {
       p_registro: otro.perfil.usuario, p_detalle: { origen: "bot", titulo: embed.title },
     }).then(() => {}, () => {});
     return responder(`✅ Mensaje enviado a **${otro.perfil.nombre ?? otro.perfil.usuario}**.`);
+  }
+
+  // ---------------- /misreportes ----------------
+  if (nombre === "misreportes") {
+    const lista = (await consulta("misreportes") ?? []) as Array<Record<string, any>>;
+    if (!lista.length) return responder("Todavía no has enviado ningún reporte.");
+    const icono: Record<string, string> = { aprobado: "✅", pendiente: "⏳", devuelto: "↩️", rechazado: "❌" };
+    return responderEmbed({
+      color: 0xf0c24d, title: "📋 Tus últimos reportes",
+      description: lista.map((r) =>
+        `${icono[r.estado] ?? "•"} **${r.folio}** · ${r.formulario} · ${fecha(r.fecha)}` +
+        (r.comentario && (r.estado === "devuelto" || r.estado === "rechazado") ? `\n   ↳ _${String(r.comentario).slice(0, 150)}_` : "")
+      ).join("\n"),
+      footer: { text: "Los devueltos se corrigen desde Mi cuenta → Mis reportes" },
+    });
+  }
+
+  // ---------------- /pendientes ----------------
+  if (nombre === "pendientes") {
+    const lista = (await consulta("pendientes") ?? []) as Array<Record<string, any>>;
+    if (!lista.length) return responder("No hay nada pendiente de revisar. 👏");
+    return responderEmbed({
+      color: 0xf0c24d, title: `⏳ Pendientes de revisión (${lista.length})`,
+      description: lista.map((r) => `**${r.folio}** · ${r.formulario} · ${r.usuario} · ${fecha(r.fecha)}`).join("\n"),
+    });
+  }
+
+  // ---------------- /turnos ----------------
+  if (nombre === "turnos") {
+    const lista = (await consulta("turnos") ?? []) as Array<Record<string, any>>;
+    if (!lista.length) return responder("No hay turnos asignados esta semana.");
+    return responderEmbed({
+      color: 0xf0c24d, title: "🚔 Turnos de los próximos 7 días",
+      description: lista.map((t) =>
+        `${t.mio ? "**→ " : ""}${fecha(t.fecha)} · ${t.nombre ?? t.usuario}${t.mio ? " (tú)**" : ""}`).join("\n"),
+    });
+  }
+
+  // ---------------- /ranking ----------------
+  if (nombre === "ranking") {
+    const lista = (await consulta("ranking") ?? []) as Array<Record<string, any>>;
+    if (!lista.length) return responder("Todavía no hay datos para el ranking de este mes.");
+    const medalla = ["🥇", "🥈", "🥉"];
+    return responderEmbed({
+      color: 0xf0c24d, title: "🏅 Ranking del mes en curso",
+      description: lista.map((r, n2) =>
+        `${medalla[n2] ?? `${n2 + 1}.`} **${r.nombre ?? r.usuario}** — ${r.reportes} reporte(s)` +
+        (r.bajas ? ` · ${r.bajas} bajas` : "") + (r.patrullajes ? ` · ${r.patrullajes} patrullajes` : "")
+      ).join("\n"),
+      footer: { text: "Va del día 1 hasta hoy; las insignias se reparten al cerrar el mes" },
+    });
+  }
+
+  // ---------------- /ruta ----------------
+  if (nombre === "ruta") {
+    const r = (await consulta("ruta") ?? {}) as Record<string, any>;
+    if (!r || r.activa === false) return responder("La ruta de aprendizaje no está activa para ti.");
+    const marcas = (r.marcas ?? {}) as Record<string, unknown>;
+    const hechos = Object.values(marcas).filter(Boolean).length;
+    return responderEmbed({
+      color: 0xf0c24d, title: "🧭 Tu ruta de aprendizaje",
+      description: [
+        `**Pasos marcados:** ${hechos}`,
+        `**Reportes:** ${r.reportes ?? 0} · aprobados ${r.aprobados ?? 0}`,
+        `**Turnos cumplidos:** ${r.turnos_cumplidos ?? 0} de ${r.turnos_asignados ?? 0}`,
+        r.firma ? "**Última etapa:** firmada ✅" : "**Última etapa:** pendiente de firma del liderazgo",
+      ].join("\n"),
+      footer: { text: "El detalle completo está en la página Ruta de aprendizaje" },
+    });
   }
 
   return responder("Ese comando todavía no hace nada.");

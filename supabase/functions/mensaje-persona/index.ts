@@ -46,6 +46,11 @@ Deno.serve(async (req: Request) => {
     const COMANDOS = [
       { name: "eventos", description: "Horarios fijos del servidor para hoy", type: 1 },
       { name: "agenda", description: "Próximos eventos a los que estás convocado", type: 1 },
+      { name: "misreportes", description: "Estado de tus últimos reportes", type: 1 },
+      { name: "ruta", description: "Por dónde vas en la ruta de aprendizaje", type: 1 },
+      { name: "turnos", description: "Turnos de los próximos 7 días", type: 1 },
+      { name: "ranking", description: "Ranking del mes en curso", type: 1 },
+      { name: "pendientes", description: "Reportes pendientes de revisión", type: 1 },
       { name: "quien", description: "Ficha rápida de un integrante", type: 1,
         options: [{ name: "usuario", description: "La persona", type: 6, required: true }] },
       { name: "mensaje", description: "Mandar un privado a un integrante", type: 1,

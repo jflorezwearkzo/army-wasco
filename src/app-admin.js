@@ -796,6 +796,7 @@ async function cargarAutomatizacion(){
   });
   if(typeof cargarProgramadas === 'function') cargarProgramadas();
   if(typeof cargarEventos === 'function') cargarEventos();
+  if(typeof cargarBotConfig === 'function') cargarBotConfig();
   cargarConfigIA();
   $('#cajaRespaldo').hidden = !esSuperadmin(yo);
   // Canales por formulario (formularios_discord)
@@ -1636,4 +1637,46 @@ $('#botRegistrar').onclick = async () => {
   } else {
     $('#botErr').textContent = 'Discord no aceptó el registro: ' + ((data && (data.detalle || data.motivo)) || 'sin respuesta');
   }
+};
+
+// --- Qué comandos del bot están encendidos y qué permiso pide cada uno ---
+const BOT_COMANDOS = [
+  ['eventos',     '/eventos · horarios fijos de hoy'],
+  ['agenda',      '/agenda · sus próximos eventos'],
+  ['misreportes', '/misreportes · estado de sus envíos'],
+  ['ruta',        '/ruta · su ruta de aprendizaje'],
+  ['turnos',      '/turnos · turnos de la semana'],
+  ['ranking',     '/ranking · top del mes'],
+  ['pendientes',  '/pendientes · lo que falta por revisar'],
+  ['quien',       '/quien · ficha de un integrante'],
+  ['mensaje',     '/mensaje · privado a un integrante'],
+];
+let BOT_CFG = {};
+async function cargarBotConfig(){
+  const { data } = await sb.rpc('bot_config', { p_org: (yo.org && yo.org.id) || 'pm' });
+  BOT_CFG = data || {};
+  const opciones = sel => '<option value="">Cualquiera</option>' +
+    PERMS.filter(p => p !== 'ver_como' && p !== 'organizaciones')
+         .map(p => `<option value="${p}" ${sel === p ? 'selected' : ''}>${esc(NOMBRE_PERM[p])}</option>`).join('');
+  $('#tbBot').innerHTML = BOT_COMANDOS.map(([clave, texto]) => {
+    const c = BOT_CFG[clave] || { activo:true, permiso:null };
+    return `<tr data-cmd="${clave}">
+      <td><b>/${clave}</b></td>
+      <td class="muted" style="font-size:12px">${esc(texto.replace(/^\/\w+ · /, ''))}</td>
+      <td><input type="checkbox" class="bc-act" ${c.activo !== false ? 'checked' : ''}></td>
+      <td><select class="bc-perm" style="width:auto">${opciones(c.permiso)}</select></td>
+    </tr>`;
+  }).join('');
+  if(!PUEDE_TAREAS) $('#tbBot').querySelectorAll('input,select').forEach(e => e.disabled = true);
+  $('#botGuardarCfg').disabled = !PUEDE_TAREAS;
+}
+$('#botGuardarCfg').onclick = async () => {
+  const valor = {};
+  document.querySelectorAll('#tbBot tr[data-cmd]').forEach(tr => {
+    valor[tr.dataset.cmd] = { activo: tr.querySelector('.bc-act').checked,
+                              permiso: tr.querySelector('.bc-perm').value || null };
+  });
+  const { error } = await sb.rpc('guardar_bot_config', { p_valor: valor });
+  $('#botErr').textContent = error ? error.message : '';
+  if(!error){ toast('Permisos del bot guardados.'); BOT_CFG = valor; }
 };

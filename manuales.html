@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=90a5edfd"></script>
+<script src="js/tema.js?v=3eb3d80b"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -303,10 +303,16 @@
     <p>En los dos casos el mensaje va firmado con tu rango y tu nombre: nadie recibe un aviso anónimo. Y los dos quedan en Auditoría.</p></div>
   <div class="bloque"><h3>Comandos dentro de Discord</h3>
     <p>Sin salir de Discord, escribiendo <b>/</b>:</p>
-    <ul><li><b>/mensaje</b> — manda un privado a un integrante. Pide permiso de usuarios o anuncios.</li>
-      <li><b>/eventos</b> — los horarios fijos del servidor de hoy, cada hora en la tuya.</li>
+    <ul><li><b>/eventos</b> — los horarios fijos del servidor de hoy, cada hora en la tuya.</li>
       <li><b>/agenda</b> — los próximos eventos a los que <b>tú</b> estás convocado.</li>
-      <li><b>/quien</b> — ficha rápida de un integrante: usuario, rol, rango y estado.</li></ul>
+      <li><b>/misreportes</b> — cómo van tus últimos envíos, con el motivo si te devolvieron alguno.</li>
+      <li><b>/ruta</b> — por dónde vas en la ruta de aprendizaje.</li>
+      <li><b>/turnos</b> — los turnos de los próximos siete días, con el tuyo resaltado.</li>
+      <li><b>/ranking</b> — el top del mes en curso.</li>
+      <li><b>/pendientes</b> — lo que falta por revisar.</li>
+      <li><b>/quien</b> — ficha rápida de un integrante: usuario, rol, rango y estado.</li>
+      <li><b>/mensaje</b> — manda un privado a un integrante.</li></ul>
+    <p>En <span class="ruta">Automatización → Bot de Discord</span> decides <b>cuáles están encendidos</b> y <b>qué permiso hace falta para cada uno</b>. "Cualquiera" quiere decir cualquier integrante activo con su Discord enlazado; si eliges un permiso, solo lo podrán usar quienes lo tengan en la plataforma. Los ajustes son por unidad: PM y EEA pueden tener configuraciones distintas.</p>
     <p>El bot sabe quién eres por tu identificador de Discord: si no lo tienes puesto, te lo dirá y no hará nada más. Las respuestas solo las ves tú, aunque uses el comando en un canal lleno de gente.</p>
     <div class="tip">Los comandos se registran desde <span class="ruta">Automatización → Bot de Discord</span>. Si pones el id del servidor aparecen al momento solo ahí; sin id se registran globales y Discord tarda hasta una hora.</div></div>
   <div class="bloque"><h3>Cuándo no llega</h3>
@@ -385,6 +391,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=d0e58388"></script>
+<script type="module" src="js/app-manuales.js?v=928960c0"></script>
 </body>
 </html>
