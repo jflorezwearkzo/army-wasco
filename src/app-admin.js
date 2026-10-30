@@ -1,4 +1,4 @@
-import { dibujarResumen, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
+import { dibujarResumen, dibujarActividad, resumenPNG, resumenPDF, descargar } from './resumen-export.js';
 import { dibujarEmbed, textoEmbed } from './embed-export.js';
 import { respaldoCompleto } from './respaldo.js';
 import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord, hoyISO, cargarFoto, entrarVerComo, enVerComo, urlImagen, emailDe, RANGOS, nombreCompleto, esSuperadmin, validarPassword, traducirAuth, auditarReporte, badgeIA, detalleIA, mensajesDiscord, reenviarDiscord, RAIZ } from './auth.js';
@@ -16,6 +16,7 @@ const TABS = [
   ['revision',    'Revisión',    ['aprobar_reportes'], 'Reportes', '✅'],
   ['historial',   'Historial',   ['historial','eliminar_historial'], 'Reportes', '🗂️'],
   ['resumen',     'Resumen',     ['historial'], 'Reportes', '📊'],
+  ['actividad',   'Actividad',   ['historial'], 'Reportes', '📈'],
   ['disciplina',  'Disciplina',  ['sanciones'], 'Personal', '⚠️'],
   ['ascensos',    'Ascensos',    ['usuarios'], 'Personal', '🎖️'],
   ['turnos',      'Turnos',      ['turnos','ver_turnos'], 'Personal', '🚔'],
@@ -26,6 +27,7 @@ const TABS = [
 ];
 let roles = [], formularios = [], rangosPM = [], MEMB = {}, ORGS_TODAS = [];
 const VER_ORGS = esSuperadmin(yo);   // la columna de organizaciones es solo para quien manda en todas
+let ACT = [], ACT_CFG = { dia_inicio:2, min_semanal:2, min_mensual:8 }, ACT_MODO = 'semana';
 let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
 
 // ---------- Pestañas según permisos ----------
@@ -45,7 +47,7 @@ function abrir(t, sub=''){
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id==='t-'+t));
   const def = TABS.find(x => x[0]===t); $('#tabsMovil').value = t; $('#migas').innerHTML = `Administración › <b>${def ? def[3] : ''}</b> › <b>${def ? def[1] : t}</b>`;
   const h = '#' + t + (sub ? '/' + sub : ''); if(location.hash !== h) history.replaceState(null, '', h);
-  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios, organizaciones:cargarOrgs})[t]();
+  if(nuevo || !sub) return ({usuarios:cargarUsuarios, roles:cargarRoles, formularios:cargarForms, historial:cargarHist, resumen:cargarResumen, actividad:cargarActividad, auditoria:cargarAud, automatizacion:cargarAutomatizacion, revision:cargarRevision, disciplina:cargarDisciplina, ascensos:cargarAscensos, turnos:cargarTurnos, anuncios:cargarAnuncios, organizaciones:cargarOrgs})[t]();
 }
 document.querySelectorAll('nav#tabs button').forEach(b => b.onclick = () => { cerrarDialogos(); abrir(b.dataset.t); });
 // Sub-ventanas (diálogos) de crear/editar, con estado en la URL: #usuarios/nuevo · #usuarios/editar/<id> · #roles/… · #formularios/…
@@ -588,7 +590,7 @@ async function buscarAud(){
 }
 
 // ====================== RESUMEN ======================
-const iso = d => d.toISOString().slice(0,10);
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 let RES=null;
 async function cargarResumen(){
   if(!$('#rDesde').value){ const h=new Date(); $('#rHasta').value=iso(h); $('#rDesde').value=iso(new Date(h.getTime()-29*864e5)); }
@@ -1106,6 +1108,7 @@ var PROGRAMADAS = [
   ['resumen_semanal','Resumen semanal','resumen','KPIs de los últimos 7 días y los 5 más activos', 8, 0, 1],
   ['ranking_semanal','Ranking parcial (semanal)','ranking','Cómo va el ranking del mes en curso; no otorga insignias', 19, 0, 0],
   ['ranking_mensual','Ranking mensual','ranking','Top 3 del mes anterior por categoría; otorga las insignias', 9, 0, null],
+  ['actividad_semanal','Reporte de actividad semanal','resumen','Quién cumplió el mínimo de reportes de la semana que cerró y quién no', 9, 30, 2],
 ];
 const PUEDE_TAREAS = tiene(yo,'gestion_reportes');
 async function cargarProgramadas(){
@@ -1113,7 +1116,7 @@ async function cargarProgramadas(){
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   $('#tbProg').innerHTML = PROGRAMADAS.map(([k, n, canal, desc, h, m, dia]) => { const c = cfg[k] || {}; return `<tr data-p="${k}"><td><b>${esc(n)}</b><br><span class="muted" style="font-size:12px">${esc(desc)}</span></td><td class="muted">${esc(canal)}</td>
     <td><input type="checkbox" data-pa ${c.activo?'checked':''} ${PUEDE_TAREAS?'':'disabled'}></td>
-    <td style="white-space:nowrap">${(k==='resumen_semanal'||k==='ranking_semanal') ? `<select data-pd style="width:auto;display:inline-block;padding:4px 6px;margin-right:4px" ${PUEDE_TAREAS?'':'disabled'}>${DIAS.map((d,i)=>`<option value="${i}" ${(c.dia??dia)==i?'selected':''}>${d}</option>`).join('')}</select>` : k==='ranking_mensual' ? '<span class="muted">día 1 · </span>' : ''}<input type="time" data-ph value="${String(c.hora??h).padStart(2,'0')}:${String(c.minuto??m).padStart(2,'0')}" style="width:auto;display:inline-block;padding:4px 6px" ${PUEDE_TAREAS?'':'disabled'}></td>
+    <td style="white-space:nowrap">${(k==='resumen_semanal'||k==='ranking_semanal'||k==='actividad_semanal') ? `<select data-pd style="width:auto;display:inline-block;padding:4px 6px;margin-right:4px" ${PUEDE_TAREAS?'':'disabled'}>${DIAS.map((d,i)=>`<option value="${i}" ${(c.dia??dia)==i?'selected':''}>${d}</option>`).join('')}</select>` : k==='ranking_mensual' ? '<span class="muted">día 1 · </span>' : ''}<input type="time" data-ph value="${String(c.hora??h).padStart(2,'0')}:${String(c.minuto??m).padStart(2,'0')}" style="width:auto;display:inline-block;padding:4px 6px" ${PUEDE_TAREAS?'':'disabled'}></td>
     <td>${PUEDE_TAREAS ? `<button class="ghost sm" data-pg="${k}">Guardar</button>` : ''}</td><td>${PUEDE_TAREAS ? `<button class="ghost sm" data-pv="${k}" data-pn="${esc(n)}" title="Genera el mensaje con los datos de hoy sin enviarlo">👁 Vista previa</button>` : ''}</td><td>${PUEDE_TAREAS ? `<button class="ghost sm" data-px="${k}" title="Ejecuta la tarea ahora mismo con los datos de hoy">▶ Ejecutar ahora</button>` : ''}</td></tr>`; }).join('');
   document.querySelectorAll('[data-pg]').forEach(b => b.onclick = async () => { const tr = b.closest('tr'); const [hh, mm] = tr.querySelector('[data-ph]').value.split(':').map(Number); const dsel = tr.querySelector('[data-pd]');
     const { data: r, error } = await sb.rpc('programar', { p_clave: b.dataset.pg, p_activo: tr.querySelector('[data-pa]').checked, p_hora: hh, p_minuto: mm, p_dia: dsel ? +dsel.value : 1 });
@@ -1151,3 +1154,140 @@ async function vistaPrevia(clave, nombre){
     toast(e2.enviado ? 'Enviado a Discord.' : e2.motivo==='sin_webhook' ? 'El canal no tiene webhook configurado.' : 'No se envió: '+(e2.motivo||''), !e2.enviado);
   };
 }
+
+// ====================== ACTIVIDAD ======================
+// Mide la actividad de cada integrante en un rango. Cuentan los reportes aprobados y pendientes:
+// quien mandó el suyo hizo el trabajo aunque el revisor no haya pasado todavía.
+const isoF = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const dLoc = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const fmtF = s => s ? s.split('-').reverse().join('-') : '—';
+
+// Inicio de la semana que contiene a 'd', según el día elegido (0 domingo … 6 sábado)
+function inicioSemana(d, dia){ const x = new Date(d); const delta = (x.getDay() - dia + 7) % 7; x.setDate(x.getDate() - delta); return x; }
+function periodo(modo, refIso){
+  const ref = refIso ? dLoc(refIso) : new Date();
+  if(modo === 'mes'){ const a = new Date(ref.getFullYear(), ref.getMonth(), 1), b = new Date(ref.getFullYear(), ref.getMonth()+1, 0); return [isoF(a), isoF(b)]; }
+  const a = inicioSemana(ref, +ACT_CFG.dia_inicio); const b = new Date(a); b.setDate(b.getDate()+6);
+  return [isoF(a), isoF(b)];
+}
+const minimoActual = () => ACT_MODO === 'mes' ? +ACT_CFG.min_mensual : +ACT_CFG.min_semanal;
+
+async function cargarActividad(){
+  if(!ACT.cfgLeida){
+    const { data } = await sb.from('configuracion').select('valor').eq('clave','actividad').maybeSingle();
+    if(data && data.valor) ACT_CFG = { ...ACT_CFG, ...data.valor };
+    ACT.cfgLeida = true;
+    $('#aDiaIni').value = String(ACT_CFG.dia_inicio); $('#aMin').value = minimoActual();
+    const puedeCfg = tiene(yo,'gestion_reportes') || tiene(yo,'crear_roles');
+    ['#aDiaIni','#aMin','#aGuardarCfg'].forEach(x => $(x).disabled = !puedeCfg);
+    $('#aDiscord').style.display = tiene(yo,'anuncios') || tiene(yo,'gestion_reportes') ? '' : 'none';
+  }
+  if(!$('#aDesde').value){ const [a,b] = periodo(ACT_MODO); $('#aDesde').value = a; $('#aHasta').value = b; }
+  document.querySelectorAll('[data-ap]').forEach(b => b.classList.toggle('on', b.dataset.ap === ACT_MODO));
+  const desde = $('#aDesde').value, hasta = $('#aHasta').value;
+  if(!desde || !hasta) return;
+  $('#aNota').textContent = 'Cargando…';
+  const { data, error } = await sb.rpc('actividad', { p_desde: desde, p_hasta: hasta });
+  if(error){ $('#aNota').textContent = error.message; return; }
+  ACT = data || []; ACT.cfgLeida = true;
+  pintarActividad();
+}
+
+function clasificar(r, min){ return r.reportes === 0 ? 'inactivo' : (min > 0 && r.reportes < min ? 'bajo' : 'ok'); }
+
+function pintarActividad(){
+  const desde = $('#aDesde').value, hasta = $('#aHasta').value, min = minimoActual();
+  const dias = Math.round((dLoc(hasta) - dLoc(desde))/864e5) + 1;
+  const nAct = ACT.filter(r => clasificar(r,min)==='ok').length,
+        nBajo = ACT.filter(r => clasificar(r,min)==='bajo').length,
+        nIna = ACT.filter(r => clasificar(r,min)==='inactivo').length;
+  const total = ACT.reduce((a,r) => a + r.reportes, 0);
+  $('#aRango').innerHTML = `Del <b>${fmtF(desde)}</b> al <b>${fmtF(hasta)}</b> · ${dias} día(s)` +
+    (min > 0 ? ` · mínimo esperado: <b>${min}</b> reporte(s) por integrante` : '');
+  $('#aKpis').innerHTML = [[ACT.length,'Integrantes'],[nAct,'Al día'],[nBajo,'Bajo el mínimo'],[nIna,'Sin reportar'],
+      [total,'Reportes'],[ACT.length?(total/ACT.length).toFixed(1):'0','Promedio']]
+    .map(([v,l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('#tbAct').innerHTML = ACT.map(r => {
+    const c = clasificar(r, min);
+    const etiqueta = c==='ok' ? '<b style="color:#5fd38d">Al día</b>' : c==='bajo' ? '<b style="color:var(--gold)">Bajo el mínimo</b>' : '<b style="color:var(--err2)">Sin reportar</b>';
+    return `<tr class="${c==='ok'?'':c}"><td><b>${esc([r.rango, r.nombre || r.usuario].filter(Boolean).join(' '))}</b><br><span class="muted" style="font-size:12px">@${esc(r.usuario)}</span></td>
+      <td class="muted">${esc(r.rol||'—')}</td>
+      <td><b>${r.reportes}</b>${r.pendientes?` <span class="muted" style="font-size:11px">(${r.pendientes} pend.)</span>`:''}</td>
+      <td>${r.dias_activos}</td><td>${r.bajas}</td><td>${r.patrullajes}</td><td>${r.reclutamientos}</td><td>${r.aks}</td><td>${r.participaciones}</td>
+      <td class="muted">${r.devueltos||r.rechazados ? `${r.devueltos} / ${r.rechazados}` : '—'}</td>
+      <td class="muted">${fmtF(r.ultimo)}</td><td class="est">${etiqueta}</td></tr>`;
+  }).join('') || '<tr><td colspan=12 class="muted">No hay integrantes activos en esta organización.</td></tr>';
+  $('#aNota').textContent = 'Devueltos / rechazados no cuentan como actividad. El último reporte es el más reciente dentro del periodo.';
+}
+
+// ---- Controles ----
+document.querySelectorAll('[data-ap]').forEach(b => b.onclick = () => {
+  ACT_MODO = b.dataset.ap;
+  if(ACT_MODO !== 'libre'){ const [a,h] = periodo(ACT_MODO, $('#aDesde').value); $('#aDesde').value = a; $('#aHasta').value = h; }
+  $('#aMin').value = minimoActual(); cargarActividad();
+});
+$('#aHoy').onclick = () => { if(ACT_MODO === 'libre') ACT_MODO = 'semana'; const [a,h] = periodo(ACT_MODO); $('#aDesde').value = a; $('#aHasta').value = h; cargarActividad(); };
+function mover(signo){
+  if(ACT_MODO === 'mes'){ const d = dLoc($('#aDesde').value); d.setMonth(d.getMonth() + signo); const [a,h] = periodo('mes', isoF(d)); $('#aDesde').value = a; $('#aHasta').value = h; }
+  else { const paso = Math.round((dLoc($('#aHasta').value) - dLoc($('#aDesde').value))/864e5) + 1;
+    const a = dLoc($('#aDesde').value), h = dLoc($('#aHasta').value);
+    a.setDate(a.getDate() + signo*paso); h.setDate(h.getDate() + signo*paso);
+    $('#aDesde').value = isoF(a); $('#aHasta').value = isoF(h); }
+  cargarActividad();
+}
+$('#aAnt').onclick = () => mover(-1);
+$('#aSig').onclick = () => mover(1);
+$('#aDesde').onchange = $('#aHasta').onchange = () => { ACT_MODO = 'libre'; cargarActividad(); };
+$('#aDiaIni').onchange = () => { ACT_CFG.dia_inicio = +$('#aDiaIni').value; if(ACT_MODO === 'semana'){ const [a,h] = periodo('semana', $('#aDesde').value); $('#aDesde').value = a; $('#aHasta').value = h; } cargarActividad(); };
+$('#aMin').onchange = () => { if(ACT_MODO === 'mes') ACT_CFG.min_mensual = +$('#aMin').value||0; else ACT_CFG.min_semanal = +$('#aMin').value||0; pintarActividad(); };
+$('#aGuardarCfg').onclick = async () => {
+  const { error } = await sb.from('configuracion').update({ valor: { dia_inicio:+ACT_CFG.dia_inicio, min_semanal:+ACT_CFG.min_semanal, min_mensual:+ACT_CFG.min_mensual }, actualizado_en: new Date().toISOString(), actualizado_por: yo.id }).eq('clave','actividad');
+  toast(error ? 'No se pudo guardar: '+error.message : 'Ajustes guardados para toda la unidad.', !!error);
+};
+$('#aCsv').onclick = () => {
+  const cab = ['Usuario','Nombre','Rango','Rol','Reportes','Aprobados','Pendientes','Devueltos','Rechazados','Dias activos','Bajas','Patrullajes','Reclutamientos','AKs','Participaciones','Ultimo','Estado'];
+  const min = minimoActual();
+  const filas = ACT.map(r => [r.usuario, r.nombre||'', r.rango||'', r.rol||'', r.reportes, r.aprobados, r.pendientes, r.devueltos, r.rechazados, r.dias_activos, r.bajas, r.patrullajes, r.reclutamientos, r.aks, r.participaciones, r.ultimo||'', {ok:'Al dia',bajo:'Bajo el minimo',inactivo:'Sin reportar'}[clasificar(r,min)]]);
+  const csv = [cab, ...filas].map(f => f.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  descargar(new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8' }), `actividad-${$('#aDesde').value}_${$('#aHasta').value}.csv`);
+};
+// ---- Exportar y publicar ----
+function cabActividad(){
+  const d = $('#aDesde').value, h = $('#aHasta').value;
+  return { unidad: (yo.org && yo.org.nombre) || 'Policía Militar',
+           titulo: 'REPORTE DE ACTIVIDAD',
+           periodo: `${fmtF(d)} — ${fmtF(h)}`,
+           generado: `Generado el ${new Date().toLocaleString('es-CO')} por ${nombreCompleto(yo)}`,
+           minimo: minimoActual() };
+}
+$('#aExportar').onclick = async () => {
+  const b = $('#aExportar'); b.disabled = true; const antes = b.textContent; b.textContent = 'Generando…';
+  try{
+    const pags = await dibujarActividad(ACT, cabActividad());
+    const nombre = `actividad-${$('#aDesde').value}_${$('#aHasta').value}`;
+    if($('#aFormato').value === 'png') descargar(await resumenPNG(pags), nombre + '.png');
+    else descargar(resumenPDF(pags), nombre + '.pdf');
+  }catch(x){ toast('No se pudo exportar: ' + (x.message || x), true); }
+  b.disabled = false; b.textContent = antes;
+};
+// Al canal de Discord va el resumen en texto, no la tabla entera: lo que importa es quién falta.
+$('#aDiscord').onclick = async () => {
+  const min = minimoActual(), d = $('#aDesde').value, h = $('#aHasta').value;
+  const flojos = ACT.filter(r => clasificar(r,min) !== 'ok');
+  const top = [...ACT].sort((a,b) => b.reportes - a.reportes).filter(r => r.reportes > 0).slice(0,5);
+  const quien = r => [r.rango, r.nombre || r.usuario].filter(Boolean).join(' ');
+  if(!confirm(`¿Publicar el reporte de actividad del ${fmtF(d)} al ${fmtF(h)} en el canal?`)) return;
+  const campos = [
+    { name:'Integrantes', value:String(ACT.length), inline:true },
+    { name:'Al día', value:String(ACT.length - flojos.length), inline:true },
+    { name:'Por debajo o sin reportar', value:String(flojos.length), inline:true },
+  ];
+  if(top.length) campos.push({ name:'Más activos', value: top.map(r => `• ${quien(r)}: ${r.reportes}`).join('\n'), inline:false });
+  if(flojos.length) campos.push({ name:'Pendientes de ponerse al día',
+    value: flojos.slice(0,15).map(r => `• ${quien(r)}: ${r.reportes}`).join('\n') + (flojos.length>15 ? `\n…y ${flojos.length-15} más` : ''), inline:false });
+  const r = await avisoDiscord('resumen', { embed: {
+    title: `📈 Actividad · ${fmtF(d)} al ${fmtF(h)}`,
+    description: min > 0 ? `Mínimo esperado: **${min}** reporte(s) por integrante. Cuentan los aprobados y los pendientes.` : 'Cuentan los reportes aprobados y los pendientes.',
+    fields: campos }, origen: { tabla:'actividad', id: d + '_' + h } });
+  toast(r === 'ok' ? 'Publicado en el canal.' : 'No se pudo publicar: ' + r, r !== 'ok');
+};

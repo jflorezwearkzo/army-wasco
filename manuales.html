@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=af455008"></script>
+<script src="js/tema.js?v=2dce114a"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -267,6 +267,23 @@
   <div class="bloque"><h3>Resumen</h3><p>KPIs del periodo (reportes, por día, usuarios activos, bajas, reclutamientos, patrullajes, AKs) y tablas por día, formulario, usuario, integrantes, bajas y reclutamientos por persona. Solo cuenta reportes aprobados. <b>⬇ Exportar resumen</b> en PDF o imagen para compartirlo.</p></div>
 </section>
 
+<section class="sec-panel" id="sec-actividad" data-titulo="Reporte de actividad" data-icono="📈" data-grupo="Administración" data-permisos="historial" hidden>
+  <h2 class="sec">Reporte de actividad<small>Quién está reportando y quién no</small></h2>
+  <div class="bloque"><h3>Para qué sirve</h3>
+    <p>El Resumen dice cuánto se hizo; este dice <b>quién lo hizo</b>. Una fila por integrante activo de la unidad, incluidos los que <b>no reportaron nada</b>: esos son los que hay que mirar.</p></div>
+  <div class="bloque"><h3>El periodo</h3>
+    <p>Tres botones: <b>Semana</b>, <b>Mes</b> y <b>Rango libre</b>. Con ‹ y › te mueves al periodo anterior o siguiente, y <i>Actual</i> vuelve a hoy. En rango libre pones las dos fechas que quieras.</p>
+    <p><b>La semana empieza el día que tú digas.</b> El selector <i>Semana desde</i> define si tu semana va de martes a martes, de lunes a lunes o como la manejen ustedes. Queda guardado para toda la unidad.</p></div>
+  <div class="bloque"><h3>Qué cuenta como actividad</h3>
+    <p>Los reportes <b>aprobados y pendientes</b>: quien mandó el suyo hizo el trabajo, aunque el revisor no haya pasado todavía. Los <b>devueltos y rechazados</b> salen en su propia columna, para que veas quién reporta mal sin que eso le cuente como actividad.</p>
+    <p>Se aplica sobre todo lo que ya está guardado, así que puedes consultar cualquier semana o mes pasado sin preparar nada.</p></div>
+  <div class="bloque"><h3>El mínimo esperado</h3>
+    <p>Pones cuántos reportes esperas de cada integrante en el periodo (uno para la semana, otro para el mes). Con eso cada quien queda como <b>Al día</b>, <b>Bajo el mínimo</b> o <b>Sin reportar</b>, y las filas se tiñen. <i>Guardar ajustes</i> deja ese mínimo y el día de inicio para todos.</p></div>
+  <div class="bloque"><h3>Sacarlo de la página</h3>
+    <p><b>⬇ Exportar</b> en PDF o imagen, <b>⬇ CSV</b> para abrirlo en Excel, y <b>📣 Publicar</b> manda al canal un resumen con los más activos y los que están pendientes de ponerse al día (no la tabla entera).</p>
+    <p>En <span class="ruta">Automatización → Tareas programadas</span> está <b>Reporte de actividad semanal</b>, que publica solo cada semana el balance de la semana que cerró.</p></div>
+</section>
+
 <section class="sec-panel" id="sec-automatizacion" data-titulo="Automatización" data-icono="⏰" data-grupo="Administración" data-permisos="gestion_reportes" hidden>
   <h2 class="sec">Automatización<small>Discord, tareas programadas y copia de seguridad</small></h2>
   <div class="bloque"><h3>Canales de Discord</h3>
@@ -277,7 +294,7 @@
     <p>Al lado del webhook hay una casilla <b>Hilo</b>. Déjala vacía y se publica en el canal; pon el id de un hilo y se publica dentro de ese hilo. Para sacar el id: en Discord, Ajustes → Avanzado → <i>Modo desarrollador</i>, luego clic derecho sobre el hilo → <b>Copiar ID</b>.</p>
     <div class="ojo">El hilo tiene que estar en el mismo canal del webhook y no puede estar archivado. Si se archiva por inactividad, los envíos fallan hasta que alguien lo reabra.</div>
     <div class="tip">Si pegas el enlace con el <code>?thread_id=</code> ya dentro, la página lo separa sola y lo pone en su casilla. El hilo va aparte a propósito: así editar y borrar anuncios desde el panel sigue funcionando.</div></div>
-  <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b>, <b>Ranking mensual</b> (otorga las insignias) y <b>Avance semanal del ranking</b> (cómo va la cosa a mitad de mes, sin repartir insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato.</p>
+  <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b>, <b>Ranking mensual</b> (otorga las insignias), <b>Avance semanal del ranking</b> y <b>Reporte de actividad semanal</b> (cómo va la cosa a mitad de mes, sin repartir insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato.</p>
     <p><b>👁 Vista previa</b> te muestra el mensaje exacto que se enviaría, con los datos reales de hoy, sin publicarlo. Desde ahí puedes <b>descargarlo como imagen</b> o copiar el texto, por si quieres mandarlo a mano o guardarlo.</p></div>
   <div class="bloque"><h3>Formularios públicos (sin cuenta)</h3>
     <p>Dos páginas abiertas, pensadas para quien todavía no puede entrar:</p>
@@ -301,7 +318,7 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=ee07482d"></script>
+<script type="module" src="js/app-manuales.js?v=3438b73e"></script>
 </body>
 </html>  <div class="bloque"><h3>El mensaje en Discord</h3><p>Al guardar con <i>Publicar en Discord</i> el anuncio sale al canal de anuncios y la página recuerda ese mensaje. En el menú ⋯ del anuncio: <b>🔄 Actualizar en Discord</b> reescribe el mensaje donde está, sin moverlo (también ocurre al guardar cambios con la casilla marcada); <b>📤 Reenviar al canal</b> borra el mensaje viejo y publica uno nuevo al final, para que vuelva a quedar a la vista de todos — es como moverlo abajo, y estrena identificador; y <b>🧹 Borrar de Discord</b> lo retira del canal sin tocar el tablón. Eliminar el anuncio borra también su mensaje.</p></div>
 

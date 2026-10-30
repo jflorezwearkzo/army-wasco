@@ -14,9 +14,15 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=af455008"></script>
+<script src="../js/tema.js?v=2dce114a"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
+  .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
+  .barra-act .gr{display:flex;gap:6px;align-items:center}
+  .barra-act button.on{border-color:var(--gold);color:var(--gold)}
+  #tbAct td.est b{font-weight:700}
+  #tbAct tr.inactivo{background:rgba(255,120,120,.06)}
+  #tbAct tr.bajo{background:rgba(240,194,77,.06)}
   main{max-width:1400px;margin:0 auto;padding:16px 20px 30px}
   h1{color:var(--gold);margin:6px 0 14px;font-size:26px}
   .panel{display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px;align-items:start}
@@ -466,6 +472,36 @@
   </section>
 
   <!-- ===================== AUDITORÍA ===================== -->
+  <section id="t-actividad">
+    <div class="caja">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">Reporte de actividad
+        <span style="display:flex;gap:6px;align-items:center;font-weight:400;font-size:13px">
+          <select id="aFormato" style="width:auto"><option value="pdf">PDF</option><option value="png">Imagen PNG</option></select>
+          <button type="button" class="primary sm" id="aExportar" title="Descarga el reporte de actividad">⬇ Exportar</button>
+          <button type="button" class="ghost sm" id="aCsv" title="Descarga la tabla como CSV">⬇ CSV</button>
+          <button type="button" class="ghost sm" id="aDiscord" title="Publica el resumen de actividad en el canal de Discord">📣 Publicar</button>
+        </span></h3>
+      <p class="muted" style="margin:0 0 10px;font-size:13px">Mide la actividad de cada integrante en el periodo que elijas. Cuentan los reportes <b>aprobados y pendientes</b>; los devueltos y rechazados se muestran aparte. Incluye a quien no reportó nada.</p>
+      <div class="barra-act">
+        <span class="gr"><button type="button" class="ghost sm" data-ap="semana">Semana</button><button type="button" class="ghost sm" data-ap="mes">Mes</button><button type="button" class="ghost sm" data-ap="libre">Rango libre</button></span>
+        <span class="gr"><button type="button" class="ghost sm" id="aAnt" title="Periodo anterior">‹</button><button type="button" class="ghost sm" id="aHoy">Actual</button><button type="button" class="ghost sm" id="aSig" title="Periodo siguiente">›</button></span>
+        <span class="gr"><label style="margin:0">Desde</label><input id="aDesde" type="date" style="width:auto">
+          <label style="margin:0">Hasta</label><input id="aHasta" type="date" style="width:auto"></span>
+        <span class="gr"><label style="margin:0" title="Con qué día arranca la semana: de martes a martes, de lunes a lunes…">Semana desde</label>
+          <select id="aDiaIni" style="width:auto"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select></span>
+        <span class="gr"><label style="margin:0" title="Cuántos reportes se esperan de cada integrante en el periodo">Mínimo</label>
+          <input id="aMin" type="number" min="0" max="99" style="width:70px">
+          <button type="button" class="ghost sm" id="aGuardarCfg" title="Guarda el día de inicio y los mínimos para todos">Guardar ajustes</button></span>
+      </div>
+      <p class="muted" id="aRango" style="margin:10px 0 0;font-size:13px"></p>
+      <div class="kpis" id="aKpis"></div>
+      <div style="overflow:auto;margin-top:14px">
+        <table id="aTabla"><thead><tr><th>Integrante</th><th>Rol</th><th>Reportes</th><th>Días</th><th>Bajas</th><th>Patrull.</th><th>Reclut.</th><th>AKs</th><th>Particip.</th><th>Devueltos</th><th>Último</th><th>Estado</th></tr></thead><tbody id="tbAct"></tbody></table>
+      </div>
+      <p class="muted" id="aNota" style="margin-top:10px;font-size:12px"></p>
+    </div>
+  </section>
+
   <section id="t-resumen">
     <div class="caja">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">Resumen de actividad
@@ -554,6 +590,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=23d4198e"></script>
+<script type="module" src="../js/app-admin.js?v=d91cb2de"></script>
 </body>
 </html>

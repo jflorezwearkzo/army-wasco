@@ -327,8 +327,18 @@ Cuatro etapas (`ruta.html` + `src/app-ruta.js`), iguales para todas las unidades
 
 **Excepción por persona.** `ruta_usuario(usuario_id, activa, motivo, cambiado_por)`: sin fila se sigue el ajuste general, con fila manda la fila en los dos sentidos. `ruta_activa_para(usuario)` resuelve el estado efectivo y es lo que miran `mi_sesion`, `mi_ruta` y `firmar_ruta`. Se cambia con `ruta_para_usuario(usuario, activa, motivo)` — `activa = null` quita la excepción — que exige `puedo_gestionar_ruta()` (permiso de usuarios, misma organización y rol dentro de los permisos propios) y audita `ruta_usuario`.
 
+## Reporte de actividad
+
+Pestaña **Actividad** del panel (permiso `historial`). Responde a "quién está reportando y quién no", que es distinto de lo que mide el Resumen.
+
+- `actividad(desde, hasta)` devuelve una fila por miembro activo de `mi_org()`, **incluidos los que no reportaron** (ceros). Cuentan como actividad los estados `aprobado` y `pendiente`; `devuelto` y `rechazado` van en columnas aparte. Calcula también días activos, bajas, patrullajes, reclutamientos, AKs, participaciones y la fecha del último reporte del periodo.
+- Periodo: semana, mes o rango libre, con navegación ‹ ›. El **día en que empieza la semana** y los **mínimos esperados** (semanal y mensual) viven en `configuracion` clave `actividad`, por organización.
+- Export a PDF/PNG con `dibujarActividad()` (en `resumen-export.js`, que ahora acepta `cab.titulo` y `cab.unidad`), CSV, y publicación manual a Discord con el resumen de los más activos y los pendientes.
+- Tarea programada `actividad_semanal`: publica el balance de la semana que acaba de cerrar. `ejecutar_programada` quedó como envoltura de `ejecutar_programada_base` para no reescribir la función entera; **cuidado con los valores por defecto**, porque cron la llama con un solo argumento.
+
 ## Deuda conocida
 
+- La clave de `configuracion` y la de `discord_canales` pasaron a ser únicas por organización; cualquier función SECURITY DEFINER que las lea debe filtrar por `org_id`.
 - `supabase/schema.sql` quedó desactualizado frente al modelo multi-organización: sirve como referencia histórica, no para recrear la base desde cero. La fuente de verdad son las migraciones aplicadas en Supabase.
 - Quedan funciones SQL pensadas para una sola organización (`expediente`, `ranking_calc`, `turnos_lista`, `ejecutar_programada`, insignias): funcionan porque hoy solo la PM las usa en serio, pero habrá que pasarlas por `mi_org()`.
 - Las versiones de dos argumentos de `discord_enviar`, `discord_enviar_formulario` y `ejecutar_programada` quedaron renombradas a `*_obsoleta` para resolver una ambigüedad de sobrecarga; se pueden borrar cuando nadie las llame.

@@ -54,8 +54,8 @@ function nuevaPagina(pags, cab){
   let x = M;
   if(escudo){ g.drawImage(escudo, M, 38, 74, 74); x = M + 94; }
   g.fillStyle = C.oro; g.font = `bold 14px ${F}`; g.letterSpacing = '4px';
-  g.fillText('ARMY DE WASCO · POLICÍA MILITAR', x, 60); g.letterSpacing = '0px';
-  g.fillStyle = C.texto; g.font = `italic bold 36px ${F}`; g.fillText('RESUMEN DE ACTIVIDAD', x, 100);
+  g.fillText(`ARMY DE WASCO · ${(cab.unidad || 'Policía Militar').toUpperCase()}`, x, 60); g.letterSpacing = '0px';
+  g.fillStyle = C.texto; g.font = `italic bold 36px ${F}`; g.fillText(cab.titulo || 'RESUMEN DE ACTIVIDAD', x, 100);
   g.fillStyle = C.tenue; g.font = `13px ${F}`; g.letterSpacing = '1px';
   g.fillText('INFORME GENERADO DESDE EL PANEL DE ADMINISTRACIÓN', x, 124); g.letterSpacing = '0px';
 
@@ -70,7 +70,7 @@ function nuevaPagina(pags, cab){
 function pies(pags, cab){
   pags.forEach((p,i) => { const g = p.g;
     g.fillStyle = C.borde2; g.fillRect(M, H-66, AN, 1);
-    g.fillStyle = C.tenue; g.font = `12px ${F}`; g.fillText('Documento interno · Policía Militar · Army de Wasco', M, H-40);
+    g.fillStyle = C.tenue; g.font = `12px ${F}`; g.fillText(`Documento interno · ${cab.unidad || 'Policía Militar'} · Army de Wasco`, M, H-40);
     g.textAlign = 'right'; g.fillStyle = C.muted; g.font = `bold 12px ${F}`;
     g.fillText(`PÁGINA ${i+1} DE ${pags.length}`, W-M, H-40); g.textAlign = 'left'; });
 }
@@ -321,3 +321,70 @@ export function resumenPDF(pags){
 }
 
 export function descargar(blob, nombre){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 30000); }
+
+// ---- Reporte de actividad por integrante ----
+// Una fila por persona, incluidas las que no reportaron: esas son las que hay que mirar.
+export async function dibujarActividad(filas, cab){
+  await cargarEscudo();
+  const pags = []; let p = nuevaPagina(pags, cab);
+  const min = +cab.minimo || 0;
+  const clase = r => r.reportes === 0 ? 'inactivo' : (min > 0 && r.reportes < min ? 'bajo' : 'ok');
+  const COLOR = { ok:'#5fd38d', bajo:C.oro, inactivo:'#e08585' };
+  const ETIQ  = { ok:'Al día', bajo:'Bajo el mínimo', inactivo:'Sin reportar' };
+
+  const n = k => filas.filter(r => clase(r) === k).length;
+  const total = filas.reduce((a,r) => a + r.reportes, 0);
+  const kpis = [[filas.length,'Integrantes'],[n('ok'),'Al día'],[n('bajo'),'Bajo el mínimo'],[n('inactivo'),'Sin reportar'],
+                [total,'Reportes'],[filas.length ? (total/filas.length).toFixed(1) : '0','Promedio']];
+  const ancho = (AN - 5*10) / 6;
+  kpis.forEach(([v,l],i) => { const g = p.g, x = M + i*(ancho+10);
+    g.fillStyle = C.panel; redondo(g, x, p.y, ancho, 76, 10); g.fill();
+    g.strokeStyle = C.borde2; g.lineWidth = 1; redondo(g, x+.5, p.y+.5, ancho-1, 75, 10); g.stroke();
+    g.fillStyle = C.oro; g.font = `bold 28px ${F}`; g.textAlign = 'center';
+    g.fillText(String(v), x+ancho/2, p.y+42);
+    g.fillStyle = C.muted; g.font = `12px ${F}`; g.fillText(l, x+ancho/2, p.y+64); g.textAlign = 'left'; });
+  p.y += 76 + 26;
+
+  if(min > 0){
+    p.g.fillStyle = C.tenue; p.g.font = `13px ${F}`;
+    p.g.fillText(`Se espera un mínimo de ${min} reporte(s) por integrante en el periodo. Cuentan los aprobados y los pendientes.`, M, p.y);
+    p.y += 26;
+  }
+
+  const cols = [['Integrante',230,'l'],['Rol',110,'l'],['Rep.',52,'r'],['Días',48,'r'],['Bajas',54,'r'],
+                ['Patr.',52,'r'],['Recl.',52,'r'],['AKs',48,'r'],['Part.',50,'r'],['Último',80,'l'],['Estado',120,'l']];
+  const anchoTabla = Math.min(cols.reduce((a,c) => a + c[1], 0), AN);
+  const cabecera = () => {
+    const g = p.g;
+    g.fillStyle = C.oro; g.font = `bold 13px ${F}`; g.letterSpacing = '1px';
+    let x = M; cols.forEach(([t,w,al]) => { g.textAlign = al === 'r' ? 'right' : 'left';
+      g.fillText(t.toUpperCase(), al === 'r' ? x+w-8 : x, p.y); x += w; });
+    g.textAlign = 'left'; g.letterSpacing = '0px'; p.y += 10;
+    g.fillStyle = C.borde; g.fillRect(M, p.y, anchoTabla, 1); p.y += 22;
+  };
+  cabecera();
+  for(const r of filas){
+    if(p.y > H - 110){ p = nuevaPagina(pags, cab); p.g.fillStyle = C.muted; p.g.font = `bold 13px ${F}`;
+      p.g.fillText('(continuación)', M, p.y); p.y += 26; cabecera(); }
+    const g = p.g, k = clase(r);
+    if(k !== 'ok'){ g.fillStyle = k === 'inactivo' ? 'rgba(224,133,133,.08)' : 'rgba(240,194,77,.07)';
+      g.fillRect(M-6, p.y-16, anchoTabla+12, 26); }
+    const valores = [[r.rango, r.nombre || r.usuario].filter(Boolean).join(' '), r.rol || '—',
+      String(r.reportes), String(r.dias_activos), String(r.bajas), String(r.patrullajes),
+      String(r.reclutamientos), String(r.aks), String(r.participaciones),
+      r.ultimo ? String(r.ultimo).split('-').reverse().join('-') : '—', ETIQ[k]];
+    let x = M;
+    cols.forEach(([,w,al], i) => {
+      const esEstado = i === cols.length - 1;
+      g.fillStyle = esEstado ? COLOR[k] : (i === 0 ? C.texto : C.muted);
+      g.font = `${i === 0 || esEstado ? 'bold ' : ''}13px ${F}`;
+      g.textAlign = al === 'r' ? 'right' : 'left';
+      g.fillText(recortar(g, valores[i], w-10), al === 'r' ? x+w-8 : x, p.y);
+      x += w;
+    });
+    g.textAlign = 'left';
+    p.y += 24;
+  }
+  pies(pags, cab);
+  return pags.map(x => x.cv);
+}
