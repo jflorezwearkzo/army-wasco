@@ -188,6 +188,14 @@ Tablas `agenda_eventos` (con `canales text[]` e `imagen_path`), `agenda_asistenc
 
 La sección "Próximos eventos" sale en `calendario.html` encima de los horarios fijos, con los botones de confirmación y el recuento.
 
+## Ver como
+
+`ver_como(p_usuario, p_evento)` devuelve el perfil con el **rol, el estado y el rango de su membresía en la organización activa** (no la columna heredada `perfiles.rol_id`) más el estado de su ruta de aprendizaje. En el cliente, `aplicarVerComo` arma el `yo` suplantado y le pasa la organización del administrador y la ruta de esa persona; sin eso la página se queda sin cabeceras ni menú.
+
+Los dos modos de solo lectura (rol "Read Only" y "Ver como") comparten la lista blanca `RPC_LECTURA` de `src/auth.js`: lo que no esté ahí queda bloqueado. **Al añadir una función de consulta nueva hay que añadirla a esa lista**, o en esos modos fallará en silencio. Las escrituras, las funciones Edge y el almacenamiento están cortados en ambos casos.
+
+La franja de aviso (`.pm-vc`) va fija abajo: arriba competía con la barra superior pegada y acababa tapándola.
+
 ## Tareas programadas (Automatización)
 
 Admin → Automatización → Tareas programadas: **Recordatorio de turnos de hoy** (quién tiene turno y quién no ha reportado), **Cierre del día**, **Resumen semanal** (día y hora) y **Ranking mensual** (día 1). Cada una se activa/desactiva, se le fija la hora (Colombia) y tiene "▶ Ejecutar ahora". Corren dentro de Postgres con pg_cron y publican por pg_net en el canal de Discord correspondiente (`discord_canales`): no hay Edge Function ni secretos de por medio. RPCs `programar`, `ejecutar_programada`; configuración en `configuracion.programadas`; quedan en Auditoría como `programada_*`.

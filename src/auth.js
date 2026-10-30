@@ -82,10 +82,7 @@ export function blindarSoloLectura(yo){
     for(const m of ['upload','remove','move','copy','createSignedUploadUrl']) b[m] = no;
     return b; };
   const rpc = sb.rpc.bind(sb);
-  const LECTURAS = ['permisos_efectivos','mi_sesion','mis_orgs','tengo_permiso','ficha_usuario','expediente','ranking_mes',
-    'ranking_calc','insignias_lista','listar_integrantes','buscar_folios','turnos_lista','datos_ascensos','actividad_usuarios',
-    'puedo_usar_formulario','canales_discord'];
-  sb.rpc = (fn, args) => (LECTURAS.includes(fn) ? rpc(fn, args) : no());
+  sb.rpc = (fn, args) => (RPC_LECTURA.includes(fn) ? rpc(fn, args) : no());
   sb.functions.invoke = () => no();   // todas escriben o publican en Discord
   document.documentElement.dataset.soloLectura = '1';
 }
@@ -129,7 +126,14 @@ const K_VC = 'pm_ver_como';
 export const enVerComo = yo => !!(yo && yo._verComo);
 const ERR_VC = 'No disponible en modo "Ver como": estás viendo la página como otro usuario y no puedes hacer cambios.';
 const BLOQ = new Proxy(function(){}, { get:(t,k)=> k==='then' ? (res,rej)=>{ rej(new Error(ERR_VC)); } : ()=>BLOQ, apply:()=>BLOQ });
-const RPC_LECTURA = ['listar_integrantes','buscar_folios','ver_como'];
+// Funciones del servidor que solo consultan. Las comparten los dos modos de solo lectura
+// (el rol "Read Only" y "Ver como"): si una no está aquí, queda bloqueada, que es el lado
+// seguro cuando mañana se añada una función nueva.
+export const RPC_LECTURA = ['permisos_efectivos','mi_sesion','mis_orgs','tengo_permiso','ficha_usuario',
+  'expediente','ranking_mes','ranking_calc','insignias_lista','listar_integrantes','buscar_folios',
+  'turnos_lista','datos_ascensos','actividad','actividad_usuarios','puedo_usar_formulario',
+  'canales_discord','discord_resolver','ver_como','mi_rango_pm','puedo_sobre','puedo_gestionar_ruta',
+  'bajas_de','agenda_invitado'];
 function activarSoloLectura(){
   const of = sb.from.bind(sb);
   sb.from = t => { const b = of(t); for(const m of ['insert','update','upsert','delete']) b[m] = () => BLOQ; return b; };
@@ -148,6 +152,11 @@ async function aplicarVerComo(yoReal){
   const { data, error } = await sb.rpc('ver_como', { p_usuario: id });
   if(error || !data || !data.perfil){ try{ sessionStorage.removeItem(K_VC); }catch(e){} return yoReal; }
   const yo = { ...armarYo(data.perfil, data.rol, await permisosEfectivos(data.perfil.id)), _verComo:true, _real:yoReal };
+  // Sin esto la página se queda sin organización ni ruta: el menú, las cabeceras y el aviso de
+  // la ruta de aprendizaje dejarían de salir. La organización es la que está mirando el
+  // administrador; la ruta, la de esa persona.
+  yo.org = yoReal.org || null; yo.orgs = yoReal.orgs || [];
+  yo.ruta = data.ruta || { activa:false, puedo_activar:false, nivel:0 };
   activarSoloLectura();
   const pintar = () => {
     if(!document.body) return;
