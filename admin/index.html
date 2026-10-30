@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=5b4e3928"></script>
+<script src="../js/tema.js?v=b279dcbe"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -488,16 +488,11 @@
       <div class="err" id="pErr"></div>
     </div>
     <div class="caja" style="margin-top:18px" id="cajaEventos">
-      <h3>Aviso de eventos del día</h3>
-      <p class="muted" style="margin-top:0;font-size:13px">Avisa en Discord antes de cada horario del calendario (entrega aérea, incursión al arsenal…). El canal se configura arriba, en <b>Aviso de eventos del día</b>.</p>
-      <div class="barra-act">
-        <span class="gr"><label style="margin:0"><input type="checkbox" id="evActivo"> Activo</label></span>
-        <span class="gr"><label style="margin:0">Avisar</label><input type="number" id="evMin" min="1" max="240" style="width:80px"><span class="muted">minutos antes</span></span>
-        <span class="gr"><button type="button" class="ghost sm" id="evGuardar">Guardar</button>
-          <button type="button" class="ghost sm" id="evPrueba" title="Muestra los avisos que saldrían ahora mismo, sin enviarlos">👁 Vista previa</button></span>
-      </div>
-      <div id="evActs" style="margin-top:10px"></div>
-      <p class="muted" id="evNota" style="margin:8px 0 0;font-size:12px"></p>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Avisos de eventos del día</span>
+        <span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ghost sm" id="evPrueba" title="Muestra lo que saldría ahora mismo, sin enviarlo">👁 Vista previa</button><button type="button" class="primary sm" id="evNuevo">＋ Nuevo aviso</button></span></h3>
+      <p class="muted" style="margin-top:0;font-size:13px">Cada aviso publica en <b>su propio canal</b> de Discord antes de los horarios del calendario que tú elijas. Puedes tener uno para el arsenal, otro con todo, otro solo con la entrega aérea… Al crear uno aparece su canal en la lista de arriba, donde le pegas el webhook.</p>
+      <div id="evLista"></div>
+      <p class="muted" id="evNota" style="margin:10px 0 0;font-size:12px"></p>
       <div class="err" id="evErr"></div>
     </div>
     <dialog id="dlgPrevia" class="dlg-edit"><div class="caja">
@@ -649,6 +644,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=4a24c38c"></script>
+<script type="module" src="../js/app-admin.js?v=9aeb099e"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=5b4e3928"></script>
+<script src="js/tema.js?v=b279dcbe"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -300,10 +300,11 @@
     <div class="tip">Si pegas el enlace con el <code>?thread_id=</code> ya dentro, la página lo separa sola y lo pone en su casilla. El hilo va aparte a propósito: así editar y borrar anuncios desde el panel sigue funcionando.</div></div>
   <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b>, <b>Ranking mensual</b> (otorga las insignias), <b>Avance semanal del ranking</b> y <b>Reporte de actividad semanal</b> (cómo va la cosa a mitad de mes, sin repartir insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato.</p>
     <p><b>👁 Vista previa</b> te muestra el mensaje exacto que se enviaría, con los datos reales de hoy, sin publicarlo. Desde ahí puedes <b>descargarlo como imagen</b> o copiar el texto, por si quieres mandarlo a mano o guardarlo.</p></div>
-  <div class="bloque"><h3>Aviso de eventos del día</h3>
-    <p>Publica en Discord un recordatorio <b>X minutos antes</b> de cada horario del calendario de eventos. En <span class="ruta">Automatización → Aviso de eventos del día</span>: enciende el interruptor, escribe con cuántos minutos de antelación quieres el aviso y marca qué actividades se avisan. El mensaje sale al canal <b>Aviso de eventos del día</b>, así que primero pégale su webhook en la lista de canales.</p>
-    <p>Si dejas marcadas <b>todas</b> las actividades, también se avisarán las que se agreguen al calendario más adelante, sin tener que volver aquí. <b>👁 Vista previa</b> muestra lo que saldría en este momento; si no hay ningún horario dentro de la ventana, no muestra nada y eso es normal.</p>
-    <div class="tip">Cada horario se avisa una sola vez al día: aunque el reloj revise cada minuto, no se repite el mismo aviso.</div></div>
+  <div class="bloque"><h3>Avisos de eventos del día</h3>
+    <p>Publican en Discord un recordatorio <b>X minutos antes</b> de los horarios del calendario de eventos. Puedes tener <b>los que quieras</b>: uno solo para la incursión al arsenal, otro con todas las actividades, otro únicamente con la entrega aérea… Cada uno es independiente y tiene <b>su propio canal</b>.</p>
+    <p>En <span class="ruta">Automatización → Avisos de eventos del día</span> pulsa <b>＋ Nuevo aviso</b>, ponle nombre, los minutos de antelación y marca qué actividades entran. Al guardarlo aparece su canal en la lista de arriba (<i>Aviso de eventos · &lt;nombre&gt;</i>): ahí le pegas el webhook. Sin webhook el reloj corre pero no publica nada.</p>
+    <p>Si dejas marcadas <b>todas</b> las actividades, también se avisarán las que se agreguen al calendario más adelante, sin volver a tocar nada. <b>🗑 Borrar</b> quita el aviso y su canal. <b>👁 Vista previa</b> muestra lo que saldría en este momento en todos los avisos; si ningún horario cae dentro de la ventana no muestra nada, y eso es normal.</p>
+    <div class="tip">Cada aviso lleva su propia memoria: dos avisos distintos pueden anunciar el mismo horario sin pisarse, y ninguno repite el mismo horario dos veces el mismo día.</div></div>
   <div class="bloque"><h3>Formularios públicos (sin cuenta)</h3>
     <p>Dos páginas abiertas, pensadas para quien todavía no puede entrar:</p>
     <ul><li><b>Solicitar acceso</b> — nombre, rango y unidad. Para quien no tiene usuario.</li>
@@ -326,6 +327,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=25ce9b92"></script>
+<script type="module" src="js/app-manuales.js?v=8bb46206"></script>
 </body>
 </html>

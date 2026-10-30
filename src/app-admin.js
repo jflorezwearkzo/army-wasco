@@ -1320,40 +1320,95 @@ $('#aDiscord').onclick = async () => {
 // ====================== AVISO DE EVENTOS DEL DÍA ======================
 // Avisa en Discord X minutos antes de cada horario del calendario. El trabajo corre cada minuto
 // en el servidor y lleva memoria de lo ya avisado, así que no repite.
+let EV_ACTS = [];
 async function cargarEventos(){
   $('#cajaEventos').hidden = !PUEDE_TAREAS && !tiene(yo,'ver_todo');
-  const [{ data: cfgRow }, { data: acts }] = await Promise.all([
-    sb.from('configuracion').select('valor').eq('clave','eventos').maybeSingle(),
+  $('#evNuevo').hidden = !PUEDE_TAREAS;
+  const [{ data: avisos, error }, { data: acts }] = await Promise.all([
+    sb.from('eventos_avisos').select('id,nombre,canal,minutos,actividades,activo').order('id'),
     sb.from('actividades').select('id,nombre,icono').eq('activo', true).order('orden'),
   ]);
-  const c = (cfgRow && cfgRow.valor) || { activo:false, minutos:15, actividades:null };
-  $('#evActivo').checked = !!c.activo;
-  $('#evMin').value = c.minutos || 15;
-  const sel = Array.isArray(c.actividades) ? c.actividades.map(Number) : null;
-  $('#evActs').innerHTML = `<span class="muted" style="font-size:13px">Actividades que se avisan:</span><br>` +
-    (acts||[]).map(a => `<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 14px 0 0;font-size:14px">
-      <input type="checkbox" class="eva" value="${a.id}" ${(!sel || sel.includes(a.id)) ? 'checked' : ''}> ${esc(a.icono||'')} ${esc(a.nombre)}</label>`).join('')
-    + (acts && acts.length ? '' : '<span class="muted">No hay actividades en el calendario.</span>');
-  ['#evActivo','#evMin','#evGuardar','.eva'].forEach(x => document.querySelectorAll(x).forEach(e => e.disabled = !PUEDE_TAREAS));
-  $('#evNota').textContent = c.activo
-    ? `Encendido: avisa ${c.minutos} minuto(s) antes de cada horario.`
-    : 'Apagado: no se envía ningún aviso.';
+  if(error){ $('#evErr').textContent = error.message; return; }
+  $('#evErr').textContent = ''; EV_ACTS = acts || [];
+  if(!EV_ACTS.length){ $('#evLista').innerHTML = '<p class="muted" style="font-size:13px">No hay actividades en el calendario, así que todavía no hay nada que avisar.</p>'; return; }
+  $('#evLista').innerHTML = (avisos || []).map(a => filaAviso(a)).join('')
+    || '<p class="muted" style="font-size:13px">Todavía no hay ningún aviso. Crea el primero con ＋ Nuevo aviso.</p>';
+  document.querySelectorAll('#evLista [data-ev-guardar]').forEach(b => b.onclick = () => guardarAviso(b.dataset.evGuardar));
+  document.querySelectorAll('#evLista [data-ev-borrar]').forEach(b => b.onclick = () => borrarAviso(b.dataset.evBorrar, b.dataset.nombre));
+  document.querySelectorAll('#evLista [data-ev-todas]').forEach(b => b.onclick = () => {
+    const caja = b.closest('[data-aviso]'); const marcar = caja.querySelectorAll('.eva:checked').length !== EV_ACTS.length;
+    caja.querySelectorAll('.eva').forEach(c => c.checked = marcar);
+  });
+  $('#evLista').querySelectorAll('input,button,select').forEach(e => { if(!PUEDE_TAREAS) e.disabled = true; });
+  const activos = (avisos || []).filter(a => a.activo).length;
+  $('#evNota').textContent = activos
+    ? `${activos} aviso(s) encendido(s). El servidor revisa cada minuto y no repite un horario ya avisado.`
+    : 'Ningún aviso encendido: no se envía nada.';
 }
-$('#evGuardar').onclick = async () => {
-  const todas = [...document.querySelectorAll('.eva')], marcadas = todas.filter(c => c.checked).map(c => +c.value);
-  // marcar todas equivale a "sin filtro": si mañana añades una actividad, también se avisa
-  const lista = marcadas.length === todas.length ? null : marcadas;
-  if(marcadas.length === 0 && $('#evActivo').checked){ $('#evErr').textContent = 'Marca al menos una actividad.'; return; }
-  const { error } = await sb.rpc('programar_eventos', { p_activo: $('#evActivo').checked, p_minutos: +$('#evMin').value || 15, p_actividades: lista });
-  $('#evErr').textContent = error ? error.message : '';
-  if(!error){ toast($('#evActivo').checked ? 'Aviso de eventos encendido.' : 'Aviso de eventos apagado.'); cargarEventos(); }
+// Una tarjeta por aviso: nombre, canal, antelación y qué actividades entran
+function filaAviso(a){
+  const sel = Array.isArray(a.actividades) ? a.actividades.map(Number) : null;
+  const nuevo = a.id == null;
+  return `<div class="caja" data-aviso="${nuevo ? '' : a.id}" style="background:var(--bg2);margin-bottom:10px">
+    <div class="barra-act">
+      <span class="gr"><label style="margin:0;white-space:nowrap"><input type="checkbox" class="ev-activo" ${a.activo ? 'checked' : ''}> Activo</label></span>
+      <span class="gr"><label style="margin:0">Nombre</label><input type="text" class="ev-nombre" maxlength="60" value="${esc(a.nombre || '')}" placeholder="Ej.: Solo arsenal" style="width:200px"></span>
+      <span class="gr"><label style="margin:0">Avisar</label><input type="number" class="ev-min" min="1" max="240" value="${a.minutos || 15}" style="width:80px"><span class="muted">minutos antes</span></span>
+      <span class="gr"><button type="button" class="ghost sm" data-ev-guardar="${nuevo ? 'nuevo' : a.id}">Guardar</button>
+        ${nuevo ? '' : `<button type="button" class="ghost sm" data-ev-borrar="${a.id}" data-nombre="${esc(a.nombre || '')}" title="Borra el aviso y su canal">🗑 Borrar</button>`}</span>
+    </div>
+    <div style="margin-top:10px">
+      <span class="muted" style="font-size:13px">Actividades que entran en este aviso:</span>
+      <button type="button" class="ghost sm" data-ev-todas="1" style="margin-left:8px">Marcar / desmarcar todas</button><br>
+      ${EV_ACTS.map(x => `<label style="display:inline-flex;align-items:center;gap:6px;margin:6px 14px 0 0;font-size:14px;white-space:nowrap">
+        <input type="checkbox" class="eva" value="${x.id}" ${(!sel || sel.includes(x.id)) ? 'checked' : ''}> ${esc(x.icono || '')} ${esc(x.nombre)}</label>`).join('')}
+    </div>
+    <p class="muted" style="margin:8px 0 0;font-size:12px">${nuevo
+      ? 'Al guardar se crea su canal en la lista de arriba; pégale allí el webhook.'
+      : `Publica en el canal <b>${esc(a.canal)}</b> (arriba, en la lista de canales, va su webhook).`}</p>
+  </div>`;
+}
+$('#evNuevo').onclick = () => {
+  if($('#evLista').querySelector('[data-aviso=""]')) return;   // solo una tarjeta nueva a la vez
+  $('#evLista').insertAdjacentHTML('beforeend', filaAviso({ id:null, nombre:'', minutos:15, actividades:null, activo:true }));
+  const caja = $('#evLista').lastElementChild;
+  caja.querySelector('[data-ev-guardar]').onclick = () => guardarAviso('nuevo');
+  caja.querySelector('[data-ev-todas]').onclick = () => {
+    const marcar = caja.querySelectorAll('.eva:checked').length !== EV_ACTS.length;
+    caja.querySelectorAll('.eva').forEach(c => c.checked = marcar);
+  };
+  caja.querySelector('.ev-nombre').focus();
 };
+async function guardarAviso(id){
+  const caja = id === 'nuevo' ? $('#evLista [data-aviso=""]') : $(`#evLista [data-aviso="${id}"]`);
+  if(!caja) return;
+  const todas = [...caja.querySelectorAll('.eva')], marcadas = todas.filter(c => c.checked).map(c => +c.value);
+  const activo = caja.querySelector('.ev-activo').checked;
+  if(!caja.querySelector('.ev-nombre').value.trim()){ $('#evErr').textContent = 'Ponle un nombre al aviso.'; return; }
+  if(!marcadas.length && activo){ $('#evErr').textContent = 'Marca al menos una actividad.'; return; }
+  // marcarlas todas equivale a "sin filtro": si mañana añades una actividad, también se avisa
+  const lista = marcadas.length === todas.length ? null : marcadas;
+  const { error } = await sb.rpc('guardar_aviso_evento', {
+    p_id: id === 'nuevo' ? null : +id, p_nombre: caja.querySelector('.ev-nombre').value.trim(),
+    p_minutos: +caja.querySelector('.ev-min').value || 15, p_actividades: lista, p_activo: activo });
+  $('#evErr').textContent = error ? error.message : '';
+  if(!error){ toast(id === 'nuevo' ? 'Aviso creado. Ponle el webhook a su canal.' : 'Aviso guardado.'); cargarAutomatizacion(); }
+}
 $('#evPrueba').onclick = async () => {
   const { data, error } = await sb.rpc('avisar_eventos', { p_enviar: false });
   if(error){ $('#evErr').textContent = error.message; return; }
-  const avisos = (data && data.avisos) || [];
   $('#evErr').textContent = '';
+  const avisos = (data && data.avisos) || [];
   $('#evNota').textContent = avisos.length
-    ? `Ahora mismo saldría: ${avisos.map(a => (a.title||'') + ' — ' + String(a.description||'').replace(/\*\*/g,'').replace(/\n/g,' · ')).join(' | ')}`
+    ? 'Ahora mismo saldría — ' + avisos.map(a => {
+        const e = a.embed || a;   // por si quedara algún formato viejo
+        return `[${a.aviso || 'aviso'}] ${e.title || ''} · ${String(e.description || '').replace(/\*\*/g,'').replace(/\n/g,' · ')}`;
+      }).join('  |  ')
     : 'Ahora mismo no hay ningún horario dentro de la ventana de aviso. Es lo normal: solo coincide en el minuto exacto.';
 };
+async function borrarAviso(id, nombre){
+  if(!confirm(`¿Borrar el aviso "${nombre}"? También se borra su canal de Discord de la lista.`)) return;
+  const { error } = await sb.rpc('borrar_aviso_evento', { p_id: +id });
+  $('#evErr').textContent = error ? error.message : '';
+  if(!error){ toast('Aviso borrado.'); cargarAutomatizacion(); }
+}
