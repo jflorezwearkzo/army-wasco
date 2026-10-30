@@ -24,7 +24,7 @@ export async function iniciarSesion(usuario, password, captchaToken){
 }
 export async function cerrarSesion(todas=false){ try{ localStorage.removeItem(K_ACT); }catch(e){} await sb.auth.signOut(todas ? { scope:'global' } : undefined); location.href = RAIZ + 'login.html' + (todas ? '?motivo=todas' : ''); }
 // ---------- Cierre de sesión por inactividad ----------
-export const INACTIVIDAD_MIN = 120;                 // minutos sin actividad -> cierra sesión
+export const INACTIVIDAD_MIN = 60 * 24 * 7;         // minutos sin actividad (7 días) -> cierra sesión
 const K_ACT = 'pm_ultima_actividad';
 export function marcarActividad(){ try{ localStorage.setItem(K_ACT, String(Date.now())); }catch(e){} }
 function vigilarInactividad(){

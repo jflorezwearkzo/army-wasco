@@ -339,7 +339,7 @@ Todos los formularios guardan automáticamente lo escrito en el navegador (`loca
 
 ## Seguridad operativa
 
-- **Cierre por inactividad**: 2 horas sin actividad (clic, teclado, scroll) cierran la sesión en todas las páginas protegidas; el login muestra el motivo.
+- **Cierre por inactividad**: 7 días sin actividad (clic, teclado, scroll) cierran la sesión en todas las páginas protegidas; el login muestra el motivo. Se cambia en `INACTIVIDAD_MIN` (`src/auth.js`), y el texto que lo anuncia está además en `app-login.js`, `cuenta.html` y los manuales.
 - **Cerrar sesión en todos mis dispositivos**: en Mi cuenta (revoca todos los refresh tokens del usuario).
 - **Intentos de acceso con cuentas inactivas**: quedan en auditoría (`login_inactivo`, máximo uno por minuto por usuario) y el panel de Usuarios muestra un aviso con los de los últimos 7 días (requiere ver auditoría).
 - **Exportar CSV**: botones en Historial y Auditoría; descargan lo que está filtrado (UTF-8 con BOM, separador `;`, abre directo en Excel).
