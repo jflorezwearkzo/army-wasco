@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
   // aparecen al instante en ese servidor; sin él se registran globales y Discord tarda
   // hasta una hora en repartirlos.
   if (body.accion === "registrar_comandos") {
-    const { data: puedeReg } = await caller.rpc("tengo_permiso", { p: "gestion_reportes" });
+    const { data: puedeReg } = await caller.rpc("tengo_permiso", { p: "bot" });
     if (!puedeReg) return json(403, { error: "Sin permiso para configurar el bot" });
     const token = Deno.env.get("DISCORD_BOT_TOKEN");
     const appId = Deno.env.get("DISCORD_APP_ID") ?? "1562937253351919627";

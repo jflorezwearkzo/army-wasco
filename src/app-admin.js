@@ -6,9 +6,9 @@ import { requerir, barraUsuario, tiene, sb, esc, notificarDiscord, avisoDiscord,
 const yo = await requerir(); barraUsuario(yo);
 const $ = s => document.querySelector(s);
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
-const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','permisos_granulares','ver_como','organizaciones','ver_todo'];
+const PERMS = ['usuarios','asignar_roles','reset_password','crear_roles','crear_reportes','gestion_reportes','disenar_formularios','historial','eliminar_historial','auditoria','aprobar_reportes','sanciones','turnos','ver_turnos','anuncios','ver_anuncios','permisos_granulares','bot','ver_como','organizaciones','ver_todo'];
 const NOMBRE_PERM = { usuarios:'Gestión de usuarios', asignar_roles:'Asignación de roles', reset_password:'Restablecer contraseñas',
-  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', permisos_granulares:'Permisos granulares por usuario (ficha de usuario)', ver_como:'Ver la página como otro usuario (solo lectura)', organizaciones:'Control de TODAS las organizaciones', ver_todo:'Ver todo (solo lectura)' };
+  crear_roles:'Creación de roles', crear_reportes:'Creación de reportes', gestion_reportes:'Gestión de reportes', disenar_formularios:'Creación de formularios (diseñador)', historial:'Ver historial', eliminar_historial:'Eliminar historial', auditoria:'Ver auditoría', aprobar_reportes:'Revisar y aprobar reportes', sanciones:'Sanciones y advertencias', turnos:'Turnos: asignar y editar', ver_turnos:'Turnos: solo ver la agenda', anuncios:'Anuncios: publicar y editar', ver_anuncios:'Anuncios: solo ver el tablón y quién lo leyó', permisos_granulares:'Permisos granulares por usuario (ficha de usuario)', bot:'Configurar el bot de Discord', ver_como:'Ver la página como otro usuario (solo lectura)', organizaciones:'Control de TODAS las organizaciones', ver_todo:'Ver todo (solo lectura)' };
 const TABS = [
   ['usuarios',    'Usuarios',    ['usuarios','asignar_roles','reset_password','permisos_granulares'], 'Identidad', '👤'],
   ['roles',       'Roles y permisos', ['crear_roles'], 'Identidad', '🛡️'],
@@ -762,7 +762,7 @@ async function cargarAutomatizacion(){
     : `<span class="muted" style="font-size:12px">${valor ? 'hilo '+esc(valor) : 'canal'}</span>`;
   // Publicar con el bot en vez del webhook: hace falta el id del canal de Discord. Es lo que
   // permite que el mensaje lleve botones, porque un webhook corriente no puede llevarlos.
-  const campoBot = c => EDITA
+  const campoBot = c => tiene(yo, 'bot')
     ? `<label style="display:flex;align-items:center;gap:6px;white-space:nowrap">
          <input type="checkbox" data-vbot="${esc(c.clave)}" ${c.via_bot ? 'checked' : ''} style="width:16px;height:16px;flex:0 0 auto;padding:0">
          <input type="text" inputmode="numeric" data-cid="${esc(c.clave)}" value="${esc(c.canal_id || '')}" placeholder="Id del canal" style="width:150px" title="Clic derecho sobre el canal en Discord → Copiar ID"></label>`
@@ -1672,7 +1672,10 @@ const BOT_AVISOS = [
   ['turno',             '🚔 Le asignaron un turno'],
   ['bienvenida',        '👋 Bienvenida al crear su cuenta'],
 ];
+const PUEDE_BOT = tiene(yo, 'bot');
 async function cargarBotConfig(){
+  $('#cajaBot').hidden = !PUEDE_BOT && !tiene(yo, 'ver_todo');
+  if(!PUEDE_BOT && !tiene(yo,'ver_todo')) return;
   const { data } = await sb.rpc('bot_config', { p_org: (yo.org && yo.org.id) || 'pm' });
   BOT_CFG = data || {};
   const opciones = sel => '<option value="">Cualquiera</option>' +
@@ -1690,10 +1693,10 @@ async function cargarBotConfig(){
   const av = BOT_CFG.avisos || {};
   $('#botAvisos').innerHTML = BOT_AVISOS.map(([clave, texto]) => `<label class="chip">
     <input type="checkbox" class="ba" value="${clave}" ${av[clave] && av[clave].activo ? 'checked' : ''}> ${esc(texto)}</label>`).join('');
-  if(!PUEDE_TAREAS) $('#tbBot').querySelectorAll('input,select').forEach(e => e.disabled = true);
-  if(!PUEDE_TAREAS) $('#botAvisos').querySelectorAll('input').forEach(e => e.disabled = true);
+  if(!PUEDE_BOT){ $('#tbBot').querySelectorAll('input,select').forEach(e => e.disabled = true);
+    $('#botAvisos').querySelectorAll('input').forEach(e => e.disabled = true); }
   await cargarBotRoles();
-  $('#botGuardarCfg').disabled = !PUEDE_TAREAS;
+  ['#botGuardarCfg','#botRegistrar','#botGuild'].forEach(x => { const e = $(x); if(e) e.disabled = !PUEDE_BOT; });
 }
 $('#botGuardarCfg').onclick = async () => {
   const valor = {};
@@ -1719,7 +1722,7 @@ async function cargarBotRoles(){
     <td>${esc(r.nombre)}</td>
     <td><input type="text" inputmode="numeric" maxlength="20" class="br" data-rango="${esc(r.nombre)}" value="${esc(por[r.nombre] || '')}" placeholder="Id del rol" style="width:200px"></td></tr>`).join('')
     || '<tr><td colspan="2" class="muted">No hay Rangos PM definidos.</td></tr>';
-  if(!PUEDE_TAREAS){ ['#botSync','#botSyncGuild','#botGuardarRoles'].forEach(x => $(x).disabled = true);
+  if(!PUEDE_BOT){ ['#botSync','#botSyncGuild','#botGuardarRoles'].forEach(x => $(x).disabled = true);
     $('#tbBotRoles').querySelectorAll('input').forEach(e => e.disabled = true); }
 }
 $('#botGuardarRoles').onclick = async () => {

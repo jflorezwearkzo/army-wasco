@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=4df7a284"></script>
+<script src="js/tema.js?v=86c22b90"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -290,8 +290,12 @@
     <p>En <span class="ruta">Automatización → Tareas programadas</span> está <b>Reporte de actividad semanal</b>, que publica solo cada semana el balance de la semana que cerró.</p></div>
 </section>
 
-<section class="sec-panel" id="sec-mensajes" data-titulo="Escribir a alguien" data-icono="✉️" data-grupo="Administración" data-permisos="usuarios,anuncios" hidden>
-  <h2 class="sec">Escribir a una persona<small>Menciones y mensajes privados por Discord</small></h2>
+<section class="sec-panel" id="sec-mensajes" data-titulo="Bot de Discord" data-icono="🤖" data-grupo="Administración" data-permisos="usuarios,anuncios,bot" hidden>
+  <h2 class="sec">Bot de Discord<small>Mensajes, comandos, avisos y roles</small></h2>
+  <div class="bloque" data-solo="bot"><h3>Quién puede tocar el bot</h3>
+    <p>Todo lo que configura el bot —los comandos, sus permisos, los avisos automáticos, por qué canales publica y la sincronización de roles— pide el permiso <b>Configurar el bot de Discord</b>. Sin él no se ve ni se puede cambiar nada de esto, aunque la persona gestione reportes.</p>
+    <p>Se otorga como cualquier otro: desde <span class="ruta">Roles y permisos</span> a todo un rol, o desde la ficha de una persona concreta. Lo heredaron los roles que ya configuraban la automatización.</p>
+    <div class="ojo">Es un permiso serio: quien lo tenga puede cambiar a qué canales va todo lo que publica el clan, encender avisos privados a todo el mundo y mover roles de Discord. Dalo con cuentagotas.</div></div>
   <div class="bloque"><h3>Primero: su identificador de Discord</h3>
     <p>No se puede avisar a nadie sin saber cuál es su cuenta de Discord. Cada quien lo pone desde <span class="ruta">Mi cuenta → Tu Discord</span>, y quien gestiona usuarios también puede ponerlo desde la ficha del integrante.</p>
     <p>Para sacarlo: en Discord, <b>Ajustes → Avanzado → Modo desarrollador</b>; luego clic derecho sobre la persona → <b>Copiar ID</b>. Son entre 17 y 20 dígitos.</p>
@@ -404,6 +408,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=f567f44a"></script>
+<script type="module" src="js/app-manuales.js?v=df78f56f"></script>
 </body>
 </html>

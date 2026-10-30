@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=4df7a284"></script>
+<script src="../js/tema.js?v=86c22b90"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -34,8 +34,13 @@
   nav#tabs button.on{background:var(--avisobg);color:var(--gold);border:1px solid var(--avisoline);font-weight:700}
   nav#tabs .tag{margin-left:auto}
   /* Las casillas heredan width:100% de los campos; en la agenda deben ser casillas de verdad */
-  #dlgEvento input[type=checkbox],#agCanales input[type=checkbox],#agRangos input[type=checkbox]{width:16px;height:16px;flex:0 0 auto;accent-color:var(--gold);padding:0}
-  #dlgEvento .lineaChk{display:flex;align-items:center;gap:8px;margin:10px 0 4px;color:var(--muted);font-size:13px}
+  /* Las casillas heredan width:100% de los campos; donde van en línea deben ser casillas de verdad */
+  #dlgEvento input[type=checkbox],#agCanales input[type=checkbox],#agRangos input[type=checkbox],
+  #cajaBot input[type=checkbox],#botAvisos input[type=checkbox],.lineaChk input[type=checkbox]{width:16px;height:16px;flex:0 0 auto;accent-color:var(--gold);padding:0}
+  .lineaChk{display:flex;align-items:center;gap:8px;margin:10px 0 4px;color:var(--muted);font-size:13px;flex-wrap:wrap}
+  .lineaChk input[type=text],.lineaChk input[type=number]{width:auto}
+  #botAvisos .chip{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:6px 12px;margin:0;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+  #botAvisos .chip:has(input:checked){border-color:var(--gold);color:var(--gold)}
   #agRangos .chip{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:6px 12px;margin:0;font-size:14px;color:var(--text);display:inline-flex;align-items:center;gap:6px}
   #agRangos .chip:has(input:checked){border-color:var(--gold);color:var(--gold)}
   #agCanales .chip{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:6px 12px;margin:0;font-size:14px;color:var(--text)}
@@ -731,6 +736,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=e3059b3f"></script>
+<script type="module" src="../js/app-admin.js?v=916e22e1"></script>
 </body>
 </html>
