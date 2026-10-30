@@ -48,6 +48,32 @@ Deno.serve(async (req: Request) => {
   try { i = JSON.parse(cuerpo); } catch { return new Response("json inválido", { status: 400 }); }
 
   if (i.type === 1) return new Response(JSON.stringify({ type: 1 }), { headers: { "Content-Type": "application/json" } });
+
+  // ---- Botones de los mensajes (asistir a un evento de la agenda) ----
+  if (i.type === 3) {
+    const admin3 = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } });
+    const id3 = i.member?.user?.id ?? i.user?.id ?? null;
+    const [accion, valor, evento] = String(i.data?.custom_id ?? "").split(":");
+    if (accion !== "asistir") return responder("Ese botón ya no hace nada.");
+    const { data: r } = await admin3.rpc("agenda_responder_discord",
+      { p_discord: id3, p_evento: Number(evento), p_respuesta: valor });
+    if (!r?.ok) {
+      const motivos: Record<string, string> = {
+        sin_enlace: "No te reconozco. Entra en la plataforma, ve a **Mi cuenta → Tu Discord** y pon tu identificador.",
+        inactivo: "Tu cuenta del clan está inactiva.",
+        no_existe: "Ese evento ya no existe.",
+        cancelado: "Ese evento está cancelado.",
+        otra_unidad: "Ese evento no es de tu unidad.",
+        no_convocado: `Ese evento es solo para ${r?.rangos ?? "otros rangos"}.`,
+      };
+      return responder(motivos[r?.motivo ?? ""] ?? "No se pudo registrar tu respuesta.");
+    }
+    return responder(valor === "si"
+      ? `✅ Apuntado a **${r.titulo}**. Van ${r.si} confirmados.`
+      : `❌ Anotado: no puedes ir a **${r.titulo}**.`);
+  }
+
   if (i.type !== 2) return new Response(JSON.stringify({ type: 4, data: { content: "No sé qué hacer con eso.", flags: 64 } }), { headers: { "Content-Type": "application/json" } });
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -235,6 +261,37 @@ Deno.serve(async (req: Request) => {
       ].join("\n"),
       footer: { text: "El detalle completo está en la página Ruta de aprendizaje" },
     });
+  }
+
+  // ---------------- /convocar ----------------
+  if (nombre === "convocar") {
+    const titulo = String(opcion(i, "titulo") ?? "").trim();
+    const cuando = String(opcion(i, "cuando") ?? "").trim();   // AAAA-MM-DD HH:MM en hora del servidor
+    const lugar = opcion(i, "lugar");
+    const m = cuando.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/);
+    if (!m) return responder("La fecha va así: `2026-11-01 20:00` (hora del servidor, UTC).");
+    const inicia = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]));
+    if (isNaN(inicia.getTime())) return responder("Esa fecha no existe. Compruébala.");
+    if (inicia.getTime() < Date.now()) return responder("Esa fecha ya pasó.");
+    const { data: r, error } = await admin.rpc("agenda_guardar_discord", {
+      p_discord: quienId, p_titulo: titulo, p_lugar: lugar ? String(lugar) : null,
+      p_inicia_en: inicia.toISOString(),
+    });
+    if (error) return responder(`No se pudo crear: ${error.message}`);
+    if (!r?.ok) return responder("No se pudo crear el evento.");
+    return responder(`📅 Evento **${titulo}** creado para <t:${Math.floor(inicia.getTime() / 1000)}:F>.\nEntra en la plataforma para elegir canales, convocados y publicarlo.`);
+  }
+
+  // ---------------- /anuncio ----------------
+  if (nombre === "anuncio") {
+    const titulo = String(opcion(i, "titulo") ?? "").trim();
+    const texto = String(opcion(i, "texto") ?? "").trim();
+    if (!titulo || !texto) return responder("Hacen falta el título y el texto.");
+    const { data: r, error } = await admin.rpc("anuncio_guardar_discord",
+      { p_discord: quienId, p_titulo: titulo, p_cuerpo: texto });
+    if (error) return responder(`No se pudo publicar: ${error.message}`);
+    if (!r?.ok) return responder("No se pudo publicar el anuncio.");
+    return responder(`📣 Anuncio **${titulo}** publicado en el tablón${r.discord ? " y en Discord" : ""}.`);
   }
 
   return responder("Ese comando todavía no hace nada.");

@@ -53,6 +53,17 @@ Deno.serve(async (req: Request) => {
       { name: "pendientes", description: "Reportes pendientes de revisión", type: 1 },
       { name: "quien", description: "Ficha rápida de un integrante", type: 1,
         options: [{ name: "usuario", description: "La persona", type: 6, required: true }] },
+      { name: "convocar", description: "Crear un evento en la agenda", type: 1,
+        options: [
+          { name: "titulo", description: "De qué es el evento", type: 3, required: true },
+          { name: "cuando", description: "Fecha y hora del servidor: 2026-11-01 20:00", type: 3, required: true },
+          { name: "lugar", description: "Dónde (opcional)", type: 3, required: false },
+        ] },
+      { name: "anuncio", description: "Publicar un anuncio en el tablón y en Discord", type: 1,
+        options: [
+          { name: "titulo", description: "Título del anuncio", type: 3, required: true },
+          { name: "texto", description: "Contenido", type: 3, required: true },
+        ] },
       { name: "mensaje", description: "Mandar un privado a un integrante", type: 1,
         options: [
           { name: "usuario", description: "A quién", type: 6, required: true },
