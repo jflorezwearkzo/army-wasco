@@ -1328,7 +1328,7 @@ async function cargarEventos(){
   $('#cajaEventos').hidden = !PUEDE_TAREAS && !tiene(yo,'ver_todo');
   $('#evNuevo').hidden = !PUEDE_TAREAS;
   const [{ data: avisos, error }, { data: acts }] = await Promise.all([
-    sb.from('eventos_avisos').select('id,nombre,canal,minutos,actividades,activo').order('id'),
+    sb.from('eventos_avisos').select('id,nombre,canal,minutos,actividades,activo,mencion').order('id'),
     sb.from('actividades').select('id,nombre,icono').eq('activo', true).order('orden'),
   ]);
   if(error){ $('#evErr').textContent = error.message; return; }
@@ -1344,8 +1344,9 @@ async function cargarEventos(){
   });
   $('#evLista').querySelectorAll('input,button,select').forEach(e => { if(!PUEDE_TAREAS) e.disabled = true; });
   const activos = (avisos || []).filter(a => a.activo).length;
+  const conMencion = (avisos || []).filter(a => a.activo && a.mencion && a.mencion !== 'ninguna').length;
   $('#evNota').textContent = activos
-    ? `${activos} aviso(s) encendido(s). El servidor revisa cada minuto y no repite un horario ya avisado.`
+    ? `${activos} aviso(s) encendido(s)${conMencion ? `, ${conMencion} con mención general` : ''}. El servidor revisa cada minuto y no repite un horario ya avisado.`
     : 'Ningún aviso encendido: no se envía nada.';
 }
 // Una tarjeta por aviso: nombre, canal, antelación y qué actividades entran
@@ -1357,6 +1358,12 @@ function filaAviso(a){
       <span class="gr"><label style="margin:0;white-space:nowrap"><input type="checkbox" class="ev-activo" ${a.activo ? 'checked' : ''}> Activo</label></span>
       <span class="gr"><label style="margin:0">Nombre</label><input type="text" class="ev-nombre" maxlength="60" value="${esc(a.nombre || '')}" placeholder="Ej.: Solo arsenal" style="width:200px"></span>
       <span class="gr"><label style="margin:0">Avisar</label><input type="number" class="ev-min" min="1" max="240" value="${a.minutos || 15}" style="width:80px"><span class="muted">minutos antes</span></span>
+      <span class="gr"><label style="margin:0;white-space:nowrap">Mención</label>
+        <select class="ev-men" style="width:auto" title="Pone un aviso general al principio del mensaje">
+          <option value="ninguna" ${(a.mencion||'ninguna')==='ninguna' ? 'selected' : ''}>Ninguna</option>
+          <option value="everyone" ${a.mencion==='everyone' ? 'selected' : ''}>@everyone</option>
+          <option value="here" ${a.mencion==='here' ? 'selected' : ''}>@here</option>
+        </select></span>
       <span class="gr"><button type="button" class="ghost sm" data-ev-guardar="${nuevo ? 'nuevo' : a.id}">Guardar</button>
         ${nuevo ? '' : `<button type="button" class="ghost sm" data-ev-borrar="${a.id}" data-nombre="${esc(a.nombre || '')}" title="Borra el aviso y su canal">🗑 Borrar</button>`}</span>
     </div>
@@ -1373,7 +1380,7 @@ function filaAviso(a){
 }
 $('#evNuevo').onclick = () => {
   if($('#evLista').querySelector('[data-aviso=""]')) return;   // solo una tarjeta nueva a la vez
-  $('#evLista').insertAdjacentHTML('beforeend', filaAviso({ id:null, nombre:'', minutos:15, actividades:null, activo:true }));
+  $('#evLista').insertAdjacentHTML('beforeend', filaAviso({ id:null, nombre:'', minutos:15, actividades:null, activo:true, mencion:'ninguna' }));
   const caja = $('#evLista').lastElementChild;
   caja.querySelector('[data-ev-guardar]').onclick = () => guardarAviso('nuevo');
   caja.querySelector('[data-ev-todas]').onclick = () => {
@@ -1393,7 +1400,8 @@ async function guardarAviso(id){
   const lista = marcadas.length === todas.length ? null : marcadas;
   const { error } = await sb.rpc('guardar_aviso_evento', {
     p_id: id === 'nuevo' ? null : +id, p_nombre: caja.querySelector('.ev-nombre').value.trim(),
-    p_minutos: +caja.querySelector('.ev-min').value || 15, p_actividades: lista, p_activo: activo });
+    p_minutos: +caja.querySelector('.ev-min').value || 15, p_actividades: lista, p_activo: activo,
+    p_mencion: caja.querySelector('.ev-men').value });
   $('#evErr').textContent = error ? error.message : '';
   if(!error){ toast(id === 'nuevo' ? 'Aviso creado. Ponle el webhook a su canal.' : 'Aviso guardado.'); cargarAutomatizacion(); }
 }
