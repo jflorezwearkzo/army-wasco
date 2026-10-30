@@ -1661,6 +1661,7 @@ const BOT_COMANDOS = [
   ['turnos',      '/turnos · turnos de la semana'],
   ['ranking',     '/ranking · top del mes'],
   ['pendientes',  '/pendientes · lo que falta por revisar'],
+  ['pregunta',    '/pregunta · consulta el reglamento con IA'],
   ['quien',       '/quien · ficha de un integrante'],
   ['mensaje',     '/mensaje · privado a un integrante'],
 ];
@@ -1687,7 +1688,9 @@ async function cargarBotConfig(){
       <td><b>/${clave}</b></td>
       <td class="muted" style="font-size:12px">${esc(texto.replace(/^\/\w+ · /, ''))}</td>
       <td><input type="checkbox" class="bc-act" ${c.activo !== false ? 'checked' : ''}></td>
-      <td><select class="bc-perm" style="width:auto">${opciones(c.permiso)}</select></td>
+      <td><select class="bc-perm" style="width:auto">${opciones(c.permiso)}</select>
+        ${clave === 'pregunta' ? `<br><label style="margin:6px 0 0;font-size:12px">Tope por persona y día
+          <input type="number" id="bcLimite" min="1" max="100" value="${c.limite_dia || 10}" style="width:70px;margin-left:6px"></label>` : ''}</td>
     </tr>`;
   }).join('');
   const av = BOT_CFG.avisos || {};
@@ -1703,6 +1706,7 @@ $('#botGuardarCfg').onclick = async () => {
   document.querySelectorAll('#tbBot tr[data-cmd]').forEach(tr => {
     valor[tr.dataset.cmd] = { activo: tr.querySelector('.bc-act').checked,
                               permiso: tr.querySelector('.bc-perm').value || null };
+    if(tr.dataset.cmd === 'pregunta') valor.pregunta.limite_dia = +($('#bcLimite') || {}).value || 10;
   });
   valor.avisos = {};
   document.querySelectorAll('#botAvisos .ba').forEach(c => valor.avisos[c.value] = { activo: c.checked });

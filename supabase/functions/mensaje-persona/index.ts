@@ -53,6 +53,8 @@ Deno.serve(async (req: Request) => {
       { name: "pendientes", description: "Reportes pendientes de revisión", type: 1 },
       { name: "quien", description: "Ficha rápida de un integrante", type: 1,
         options: [{ name: "usuario", description: "La persona", type: 6, required: true }] },
+      { name: "pregunta", description: "Pregunta sobre el reglamento (responde la IA citando la regla)", type: 1,
+        options: [{ name: "texto", description: "Qué quieres saber", type: 3, required: true }] },
       { name: "convocar", description: "Crear un evento en la agenda", type: 1,
         options: [
           { name: "titulo", description: "De qué es el evento", type: 3, required: true },

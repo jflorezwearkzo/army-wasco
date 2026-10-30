@@ -35,6 +35,30 @@ const responderEmbed = (embed: Record<string, unknown>, publico = false) =>
   new Response(JSON.stringify({ type: 4, data: { embeds: [embed], ...(publico ? {} : { flags: 64 }) } }),
     { headers: { "Content-Type": "application/json" } });
 
+// El reglamento se lee de la página publicada y se guarda en la base unas horas: una sola
+// fuente de verdad, y si cambia el reglamento la IA lo nota sola en el siguiente refresco.
+async function conocimiento(admin: any, clave: string): Promise<string | null> {
+  const { data: fila } = await admin.from("bot_conocimiento").select("texto, actualizado_en").eq("clave", clave).maybeSingle();
+  const fresco = fila && (Date.now() - new Date(fila.actualizado_en).getTime()) < 6 * 3600 * 1000;
+  if (fresco) return fila.texto;
+  try {
+    const r = await fetch(`https://pmwasco.zylarion.io/${clave}.html`, { headers: { "Cache-Control": "no-cache" } });
+    if (!r.ok) return fila?.texto ?? null;
+    const html = await r.text();
+    const texto = html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<\/(tr|p|h\d|li|div)>/gi, "\n").replace(/<\/td>/gi, " · ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/&#?\w+;/g, " ")
+      .replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim().slice(0, 60000);
+    if (texto.length < 500) return fila?.texto ?? null;   // algo salió mal: mejor lo viejo que nada
+    await admin.from("bot_conocimiento").upsert({ clave, texto, actualizado_en: new Date().toISOString() })
+      .then(() => {}, () => {});
+    return texto;
+  } catch { return fila?.texto ?? null; }
+}
+
 const opcion = (i: Record<string, any>, nombre: string) =>
   (i.data?.options ?? []).find((o: Record<string, any>) => o.name === nombre)?.value ?? null;
 
@@ -192,6 +216,65 @@ Deno.serve(async (req: Request) => {
       p_registro: otro.perfil.usuario, p_detalle: { origen: "bot", titulo: embed.title },
     }).then(() => {}, () => {});
     return responder(`✅ Mensaje enviado a **${otro.perfil.nombre ?? otro.perfil.usuario}**.`);
+  }
+
+  // ---------------- /pregunta (reglamento, con IA) ----------------
+  // La IA no "sabe" el reglamento: se le entrega el texto y se le obliga a responder solo con
+  // lo que ahí dice y a citar la regla. Si no está, lo dice en vez de inventarse una sanción.
+  if (nombre === "pregunta") {
+    const texto = String(opcion(i, "texto") ?? "").trim().slice(0, 400);
+    if (!texto) return responder("Escribe la pregunta.");
+    const { data: cupo } = await admin.rpc("bot_pregunta_registrar",
+      { p_discord: quienId, p_limite: regla.limite_dia ?? 10 });
+    if (!cupo?.ok) {
+      return responder(cupo?.motivo === "tope"
+        ? `Ya hiciste tus ${cupo.limite} preguntas de hoy. Mañana se reinicia.`
+        : "No te reconozco. Pon tu Discord en **Mi cuenta → Tu Discord**.");
+    }
+
+    // Discord corta a los 3 segundos, así que se contesta "pensando" y se completa después
+    const token = i.token;
+    const trabajo = (async () => {
+      const responderLuego = (contenido: string) =>
+        fetch(`${API}/webhooks/${APP_ID}/${token}/messages/@original`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: contenido, allowed_mentions: { parse: [] } }),
+        }).then(() => {}, () => {});
+      try {
+        const reglamento = await conocimiento(admin, "reglamento");
+        if (!reglamento) return responderLuego("No pude leer el reglamento ahora mismo. Inténtalo en un rato.");
+        const { data: sec } = await admin.from("secretos").select("valor").eq("clave", "GEMINI_API_KEY").maybeSingle();
+        if (!sec?.valor) return responderLuego("Falta la clave de la IA, avisa al liderazgo.");
+        // La clave va en cabecera, nunca en la dirección: las direcciones acaban en registros
+        const r = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+          { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": sec.valor },
+            signal: AbortSignal.timeout(30000),
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text:
+                "Eres el asistente del reglamento del Army de Wasco (servidor One State). " +
+                "Respondes SOLO con lo que diga el reglamento que se te entrega. Cita siempre la regla " +
+                "(por ejemplo RP9.1) y su castigo tal como está escrito, sin cambiar las cifras. " +
+                "Si lo que preguntan no está en el reglamento, dilo claramente y sugiere preguntar al liderazgo: " +
+                "NO inventes reglas, sanciones ni tiempos. Responde en español, en menos de 900 caracteres, " +
+                "sin saludos ni despedidas." }] },
+              contents: [{ role: "user", parts: [{ text:
+                `REGLAMENTO:\n${reglamento}\n\nPREGUNTA: ${texto}` }] }],
+              generationConfig: { temperature: 0.1, maxOutputTokens: 500 },
+            }) });
+        if (!r.ok) return responderLuego(`La IA no respondió (${r.status}). Inténtalo de nuevo en un momento.`);
+        const j = await r.json();
+        const salida = j?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (!salida) return responderLuego("La IA no devolvió respuesta. Inténtalo de nuevo.");
+        await responderLuego(`**${texto}**\n\n${salida.slice(0, 1500)}\n\n_Respuesta orientativa generada a partir del reglamento publicado. Ante la duda, manda el liderazgo._`);
+      } catch (e) {
+        await responderLuego("Algo falló al consultar el reglamento: " + String((e as Error).message ?? e).slice(0, 120));
+      }
+    })();
+    // @ts-ignore: EdgeRuntime existe en Supabase; si no, se espera antes de contestar
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) EdgeRuntime.waitUntil(trabajo);
+    else await trabajo;
+    return new Response(JSON.stringify({ type: 5, data: { flags: 64 } }), { headers: { "Content-Type": "application/json" } });
   }
 
   // ---------------- /misreportes ----------------

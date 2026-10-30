@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=0115730d"></script>
+<script src="js/tema.js?v=cdd679d2"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -317,10 +317,16 @@
       <li><b>/quien</b> — ficha rápida de un integrante: usuario, rol, rango y estado.</li>
       <li><b>/mensaje</b> — manda un privado a un integrante.</li>
       <li><b>/convocar</b> — crea un evento en la agenda. Nace sin canales ni convocados: se termina de preparar y se publica desde la plataforma.</li>
-      <li><b>/anuncio</b> — publica un anuncio en el tablón y en Discord de una vez.</li></ul>
+      <li><b>/anuncio</b> — publica un anuncio en el tablón y en Discord de una vez.</li>
+      <li><b>/pregunta</b> — consulta el reglamento con ayuda de la IA.</li></ul>
     <p>En <span class="ruta">Automatización → Bot de Discord</span> decides <b>cuáles están encendidos</b> y <b>qué permiso hace falta para cada uno</b>. "Cualquiera" quiere decir cualquier integrante activo con su Discord enlazado; si eliges un permiso, solo lo podrán usar quienes lo tengan en la plataforma. Los ajustes son por unidad: PM y EEA pueden tener configuraciones distintas.</p>
     <p>El bot sabe quién eres por tu identificador de Discord: si no lo tienes puesto, te lo dirá y no hará nada más. Las respuestas solo las ves tú, aunque uses el comando en un canal lleno de gente.</p>
     <div class="tip">Los comandos se registran desde <span class="ruta">Automatización → Bot de Discord</span>. Si pones el id del servidor aparecen al momento solo ahí; sin id se registran globales y Discord tarda hasta una hora.</div></div>
+  <div class="bloque" data-solo="bot"><h3>/pregunta: el reglamento con ayuda de la IA</h3>
+    <p>Alguien escribe <i>/pregunta ¿qué sanción tiene el mass drive-by?</i> y el bot contesta citando la regla y su castigo. <b>La IA no se sabe el reglamento de memoria</b>: se le entrega el texto del reglamento publicado y se le obliga a responder solo con lo que ahí dice. Si la pregunta no está cubierta, lo dice y manda a preguntar al liderazgo, en vez de inventarse una sanción.</p>
+    <p>El texto se lee de la página del reglamento y se refresca solo cada pocas horas, así que al cambiar el reglamento la respuesta cambia con él. No hay una segunda copia que mantener.</p>
+    <p>Viene <b>apagado</b> y con un <b>tope por persona y día</b> (10 de fábrica), que se ajusta en su fila de la tabla de comandos. El tope existe porque la cuota de la IA es limitada y compartida con el análisis de los reportes.</p>
+    <div class="ojo">La respuesta sale marcada como orientativa. Para sancionar vale el reglamento, no lo que diga el bot.</div></div>
   <div class="bloque"><h3>Publicar con el bot (y botones de verdad)</h3>
     <p>Cada canal, en <span class="ruta">Automatización → Canales</span>, tiene ahora una casilla <b>Por el bot</b> y un hueco para el <b>id del canal</b> de Discord (clic derecho sobre el canal → Copiar ID).</p>
     <p>Con la casilla marcada, ese canal deja de usar el webhook y publica el bot. La ventaja: los mensajes pueden llevar <b>botones</b>. Los eventos de la agenda salen entonces con <b>✅ Asisto</b> y <b>❌ No puedo</b> pulsables, sin tener que abrir la web. Sin marcar, todo sigue por webhook como siempre, con los enlaces de confirmación.</p>
@@ -408,6 +414,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=7b4319c5"></script>
+<script type="module" src="js/app-manuales.js?v=52188660"></script>
 </body>
 </html>
