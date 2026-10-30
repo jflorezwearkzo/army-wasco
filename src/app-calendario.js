@@ -74,12 +74,13 @@ function tick(){
 // Reuniones, operaciones especiales… Tienen fecha, hora y lugar, y cada quien confirma si va.
 // Los horarios fijos del servidor (entrega aérea, arsenal) son otra cosa y no se tocan desde aquí.
 let AGENDA = [];
+const urlImagenEvento = p => /^https?:\/\//.test(p) ? p : sb.storage.from('anuncios').getPublicUrl(p).data.publicUrl;
 const fechaLarga = d => d.toLocaleString('es-CO', { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
 
 async function cargarAgenda(){
   const desde = new Date(Date.now() - 6 * 3600 * 1000).toISOString();   // los de hace un rato siguen a la vista
   const { data, error } = await sb.from('agenda_eventos')
-    .select('id,titulo,descripcion,lugar,inicia_en,duracion_min,cancelado')
+    .select('id,titulo,descripcion,lugar,inicia_en,duracion_min,cancelado,imagen_path')
     .gte('inicia_en', desde).order('inicia_en').limit(20);
   if(error || !data || !data.length){ $('#agenda').innerHTML = ''; return; }
   AGENDA = data;
@@ -100,6 +101,7 @@ async function cargarAgenda(){
       <p class="det">🕒 ${dosD(d.getUTCHours())}:${dosD(d.getUTCMinutes())} UTC del servidor${e.duracion_min ? ` · dura ${e.duracion_min} min` : ''}
         ${e.lugar ? `<br>📍 ${esc(e.lugar)}` : ''}</p>
       ${e.descripcion ? `<p class="des">${esc(e.descripcion)}</p>` : ''}
+      ${e.imagen_path ? `<img class="portada" src="${esc(urlImagenEvento(e.imagen_path))}" alt="">` : ''}
       ${e.cancelado ? '' : `<div class="resp" data-ev="${e.id}">
         <button type="button" class="ghost${m === 'si' ? ' on' : ''}" data-r="si">✅ Asisto</button>
         <button type="button" class="ghost${m === 'no' ? ' on' : ''}" data-r="no">❌ No puedo</button>

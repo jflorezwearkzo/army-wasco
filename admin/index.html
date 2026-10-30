@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=b725d182"></script>
+<script src="../js/tema.js?v=e9c85351"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -33,6 +33,11 @@
   nav#tabs button:hover{background:var(--panel3)}
   nav#tabs button.on{background:var(--avisobg);color:var(--gold);border:1px solid var(--avisoline);font-weight:700}
   nav#tabs .tag{margin-left:auto}
+  /* Las casillas heredan width:100% de los campos; en la agenda deben ser casillas de verdad */
+  #dlgEvento input[type=checkbox],#agCanales input[type=checkbox]{width:16px;height:16px;flex:0 0 auto;accent-color:var(--gold);padding:0}
+  #dlgEvento .lineaChk{display:flex;align-items:center;gap:8px;margin:10px 0 4px;color:var(--muted);font-size:13px}
+  #agCanales .chip{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:6px 12px;margin:0;font-size:14px;color:var(--text)}
+  #agCanales .chip:has(input:checked){border-color:var(--gold);color:var(--gold)}
   .migas{font-size:13px;color:var(--muted);margin-bottom:10px}.migas b{color:var(--text);font-weight:400}
   /* --- Navegación en móvil: el mismo menú lateral, guardado en un cajón que se desliza --- */
   .nav-cab{display:none}
@@ -500,13 +505,16 @@
         <input id="agDur" type="number" min="5" max="1440" placeholder="60"></div>
     </div>
     <p class="muted" id="agLocal" style="margin:4px 0 0;font-size:12px"></p>
-    <label for="agCanal">Canal de Discord</label>
-    <select id="agCanal"></select>
-    <div class="dos" style="grid-template-columns:1fr 1fr;margin-top:10px">
-      <div><label style="margin:0;display:flex;gap:8px;align-items:center"><input type="checkbox" id="agRecordar" checked> Recordar antes del evento</label></div>
-      <div><label for="agMin">Minutos de antelación</label><input id="agMin" type="number" min="1" max="10080" value="60"></div>
-    </div>
-    <label style="margin-top:12px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="agMencion"> Avisar con @everyone al publicarlo</label>
+    <label>Imagen de portada (opcional)</label>
+    <input id="agImagen" type="file" accept="image/*">
+    <div id="agImgPrev" style="margin-top:8px"></div>
+    <label style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <span>¿Dónde se publica? <span class="muted" style="font-weight:400">(puedes marcar varios)</span></span>
+      <button type="button" class="ghost sm" id="agNuevoCanal">＋ Nuevo destino</button></label>
+    <div id="agCanales" class="chips"></div>
+    <div class="lineaChk"><input type="checkbox" id="agRecordar" checked><label for="agRecordar" style="margin:0">Recordar antes del evento</label>
+      <input id="agMin" type="number" min="1" max="10080" value="60" style="width:90px;margin-left:6px"><span>minutos antes</span></div>
+    <div class="lineaChk"><input type="checkbox" id="agMencion"><label for="agMencion" style="margin:0">Avisar con <b style="color:var(--gold)">@everyone</b> al publicarlo</label></div>
     <div class="fila" style="margin-top:14px">
       <button type="button" class="primary" id="agGuardar">Guardar y publicar</button>
       <button type="button" class="ghost" id="agSoloGuardar">Guardar sin publicar</button>
@@ -688,6 +696,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=db2f7360"></script>
+<script type="module" src="../js/app-admin.js?v=af788ff1"></script>
 </body>
 </html>

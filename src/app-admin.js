@@ -29,7 +29,7 @@ const TABS = [
 let roles = [], formularios = [], rangosPM = [], MEMB = {}, ORGS_TODAS = [];
 const VER_ORGS = esSuperadmin(yo);   // la columna de organizaciones es solo para quien manda en todas
 let ACT = [], ACT_CFG = { dia_inicio:2, min_semanal:2, min_mensual:8 }, ACT_MODO = 'semana';
-let AG_CANALES = [];
+let AG_CANALES = [], AG_DESTINOS = [], AG_IMG = null, AG_IMG_QUITAR = false;
 const PUEDE_AGENDA = tiene(yo, 'anuncios');
 let U_ORD='usuario', U_DESC=false, USUARIOS=[], ACTIV={}, SEL=new Set(), SANC=[], REQ={}, T_INICIO=null, T_VISTA='semana', ANUN=[], ANUN_IMG=null, ANUN_IMG_QUITAR=false;
 
@@ -1430,10 +1430,12 @@ const aCampoUTC = iso => {                    // Date -> valor del input, en UTC
 };
 async function cargarAgenda(){
   $('#agNuevo').style.display = PUEDE_AGENDA ? '' : 'none';
-  const [{ data: evs, error }, { data: dc }] = await Promise.all([
-    sb.from('agenda_eventos').select('id,titulo,lugar,inicia_en,duracion_min,canal,minutos_antes,recordar,recordado_en,cancelado,descripcion').order('inicia_en', { ascending:false }).limit(60),
+  const [{ data: evs, error }, { data: dc }, { data: dest }] = await Promise.all([
+    sb.from('agenda_eventos').select('id,titulo,lugar,inicia_en,duracion_min,canales,minutos_antes,recordar,recordado_en,cancelado,descripcion,imagen_path').order('inicia_en', { ascending:false }).limit(60),
     sb.rpc('canales_discord'),
+    sb.from('agenda_canales').select('id,nombre,canal').order('id'),
   ]);
+  AG_DESTINOS = dest || [];
   if(error){ $('#agErr').textContent = error.message; return; }
   $('#agErr').textContent = '';
   AG_CANALES = (dc && dc.canales) || [];
@@ -1443,13 +1445,13 @@ async function cargarAgenda(){
   const ahora = Date.now();
   $('#tbAgenda').innerHTML = (evs || []).map(e => {
     const d = new Date(e.inicia_en), pasado = d.getTime() < ahora, c = cu[e.id] || { si:0, no:0 };
-    const canal = AG_CANALES.find(x => x.clave === e.canal);
+    const suyos = (e.canales || []).map(c => (AG_CANALES.find(x => x.clave === c) || { nombre:c }).nombre);
     return `<tr${e.cancelado ? ' style="opacity:.55"' : ''}>
-      <td><b>${esc(e.titulo)}</b>${e.cancelado ? ' <span class="tag">Cancelado</span>' : pasado ? ' <span class="muted" style="font-size:12px">(ya pasó)</span>' : ''}
+      <td>${e.imagen_path ? `<img src="${esc(urlAnuncio(e.imagen_path))}" alt="" style="height:34px;border-radius:4px;border:1px solid var(--line2);display:block;margin-bottom:3px">` : ''}<b>${esc(e.titulo)}</b>${e.cancelado ? ' <span class="tag">Cancelado</span>' : pasado ? ' <span class="muted" style="font-size:12px">(ya pasó)</span>' : ''}
         ${e.descripcion ? `<br><span class="muted" style="font-size:12px">${esc(e.descripcion.slice(0,80))}${e.descripcion.length>80?'…':''}</span>` : ''}</td>
       <td style="white-space:nowrap">${esc(new Date(e.inicia_en).toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' }))}<br><span class="muted" style="font-size:12px">${aCampoUTC(e.inicia_en).replace('T',' ')} UTC</span></td>
       <td>${esc(e.lugar || '—')}</td>
-      <td>${canal ? esc(canal.nombre) : '<span class="muted">sin canal</span>'}</td>
+      <td>${suyos.length ? suyos.map(esc).join('<br>') : '<span class="muted">sin destino</span>'}</td>
       <td>${e.recordar ? `${e.minutos_antes} min antes${e.recordado_en ? ' · <span class="muted">enviado</span>' : ''}` : '<span class="muted">no</span>'}</td>
       <td>${c.si} sí · ${c.no} no</td>
       <td class="acc" style="text-align:right">${PUEDE_AGENDA ? botonMenu(e.id) : ''}</td>
@@ -1480,8 +1482,8 @@ async function publicarEvento(id, e){
   const mencion = confirm(`¿Avisar con @everyone al publicar «${e.titulo}»?\n\nAceptar = con @everyone · Cancelar = sin mención`);
   const { data, error } = await sb.rpc('agenda_publicar', { p_id: id, p_mencion: mencion });
   if(error){ $('#agErr').textContent = error.message; return; }
-  if(data && data.ok) toast('Publicado en Discord.');
-  else toast(data && data.motivo === 'sin_canal' ? 'Ese evento no tiene canal elegido.' : 'No se pudo publicar: ' + ((data && data.motivo) || '?'), true);
+  if(data && data.ok) toast(`Publicado en ${data.enviados} canal(es).`);
+  else toast(data && data.motivo === 'sin_canal' ? 'Ese evento no tiene ningún destino marcado.' : 'No se pudo publicar en ningún canal.', true);
 }
 function abrirEvento(e){
   const nuevo = !e;
@@ -1495,8 +1497,9 @@ function abrirEvento(e){
   $('#agMin').value = nuevo ? 60 : e.minutos_antes;
   $('#agRecordar').checked = nuevo ? true : e.recordar;
   $('#agMencion').checked = false;
-  $('#agCanal').innerHTML = '<option value="">— sin canal (no se publica) —</option>' +
-    AG_CANALES.map(c => `<option value="${esc(c.clave)}" ${!nuevo && e.canal === c.clave ? 'selected' : ''}>${esc(c.nombre)}${c.tiene_webhook ? '' : ' (sin webhook)'}</option>`).join('');
+  pintarDestinos(nuevo ? [] : (e.canales || []));
+  AG_IMG = null; AG_IMG_QUITAR = false; $('#agImagen').value = '';
+  agImgPrev(nuevo || !e.imagen_path ? null : urlAnuncio(e.imagen_path));
   $('#agErr2').textContent = '';
   mostrarHoraLocal();
   $('#dlgEvento').showModal();
@@ -1515,18 +1518,83 @@ async function guardarEvento(publicar){
   if(!$('#agNombre').value.trim()){ $('#agErr2').textContent = 'Ponle un título.'; return; }
   if(!d){ $('#agErr2').textContent = 'Falta la fecha y la hora.'; return; }
   const id = $('#agId').value ? +$('#agId').value : null;
+  const canales = [...document.querySelectorAll('#agCanales .agc:checked')].map(x => x.value);
+  let ruta = null;
+  if(AG_IMG){
+    ruta = `agenda/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${AG_IMG.type==='image/webp'?'webp':'jpg'}`;
+    const up = await sb.storage.from('anuncios').upload(ruta, AG_IMG, { contentType: AG_IMG.type });
+    if(up.error){ $('#agErr2').textContent = 'No se pudo subir la imagen: ' + up.error.message; return; }
+  }
   const { data, error } = await sb.rpc('agenda_guardar', {
     p_id: id, p_titulo: $('#agNombre').value.trim(), p_descripcion: $('#agDesc').value.trim() || null,
     p_lugar: $('#agLugar').value.trim() || null, p_inicia_en: d.toISOString(),
-    p_duracion: +$('#agDur').value || null, p_canal: $('#agCanal').value || null,
-    p_minutos: +$('#agMin').value || 60, p_recordar: $('#agRecordar').checked });
+    p_duracion: +$('#agDur').value || null, p_canales: canales,
+    p_minutos: +$('#agMin').value || 60, p_recordar: $('#agRecordar').checked,
+    p_imagen: ruta, p_quitar_imagen: AG_IMG_QUITAR });
   if(error){ $('#agErr2').textContent = error.message; return; }
-  if(publicar && $('#agCanal').value){
+  if(publicar && canales.length){
     const { data: pub } = await sb.rpc('agenda_publicar', { p_id: data.id, p_mencion: $('#agMencion').checked });
-    toast(pub && pub.ok ? 'Evento guardado y publicado en Discord.' : 'Evento guardado, pero no se pudo publicar: ' + ((pub && pub.motivo) || '?'), !(pub && pub.ok));
+    toast(pub && pub.ok ? `Evento guardado y publicado en ${pub.enviados} canal(es).` : 'Evento guardado, pero no se pudo publicar en ningún canal.', !(pub && pub.ok));
   } else toast('Evento guardado.');
   $('#dlgEvento').close();
   cargarAgenda();
 }
 $('#agGuardar').onclick = () => guardarEvento(true);
 $('#agSoloGuardar').onclick = () => guardarEvento(false);
+
+// --- Destinos de la agenda: se marcan varios y se pueden crear los que hagan falta ---
+function pintarDestinos(marcados){
+  const esDeAgenda = c => AG_DESTINOS.some(d => d.canal === c.clave);
+  const fila = c => `<label class="chip" style="display:inline-flex;align-items:center;gap:6px">
+    <input type="checkbox" class="agc" value="${esc(c.clave)}" ${marcados.includes(c.clave) ? 'checked' : ''}>
+    ${esc(c.nombre)}${c.tiene_webhook ? '' : ' <span class="muted" style="font-size:11px">(sin webhook)</span>'}
+    ${esDeAgenda(c) ? `<button type="button" class="ghost sm" data-borrar-dest="${esc(c.clave)}" title="Borrar este destino" style="padding:0 6px;line-height:1.4">✕</button>` : ''}
+  </label>`;
+  const propios = AG_CANALES.filter(esDeAgenda), generales = AG_CANALES.filter(c => !esDeAgenda(c));
+  $('#agCanales').innerHTML = (propios.length ? propios.map(fila).join('') : '')
+    + (generales.length ? `<span class="muted" style="width:100%;font-size:12px;margin-top:6px">Otros canales ya configurados:</span>` + generales.map(fila).join('') : '');
+  document.querySelectorAll('#agCanales [data-borrar-dest]').forEach(b => b.onclick = async ev2 => {
+    ev2.preventDefault(); ev2.stopPropagation();
+    const d = AG_DESTINOS.find(x => x.canal === b.dataset.borrarDest); if(!d) return;
+    if(!confirm(`¿Borrar el destino "${d.nombre}"? También se quita su canal de la lista de Automatización.`)) return;
+    const { error } = await sb.rpc('agenda_canal_borrar', { p_id: d.id });
+    if(error){ $('#agErr2').textContent = error.message; return; }
+    const marcados = [...document.querySelectorAll('#agCanales .agc:checked')].map(x => x.value);
+    await recargarCanales(); pintarDestinos(marcados.filter(x => x !== b.dataset.borrarDest));
+  });
+}
+async function recargarCanales(){
+  const [{ data: dc }, { data: dest }] = await Promise.all([sb.rpc('canales_discord'), sb.from('agenda_canales').select('id,nombre,canal').order('id')]);
+  AG_CANALES = (dc && dc.canales) || []; AG_DESTINOS = dest || [];
+}
+$('#agNuevoCanal').onclick = async () => {
+  const nombre = prompt('Nombre del destino (por ejemplo: Eventos oficiales, Avisos de tropa):');
+  if(!nombre || !nombre.trim()) return;
+  const { error } = await sb.rpc('agenda_canal_guardar', { p_id: null, p_nombre: nombre.trim() });
+  if(error){ $('#agErr2').textContent = error.message; return; }
+  const marcados = [...document.querySelectorAll('#agCanales .agc:checked')].map(x => x.value);
+  await recargarCanales();
+  const nuevoCanal = AG_DESTINOS[AG_DESTINOS.length - 1];
+  pintarDestinos(marcados.concat(nuevoCanal ? [nuevoCanal.canal] : []));
+  toast('Destino creado. Pégale el webhook en Automatización → Canales.');
+};
+function agImgPrev(url){
+  $('#agImgPrev').innerHTML = url
+    ? `<img src="${esc(url)}" alt="" style="max-height:140px;border-radius:8px;border:1px solid var(--line2);display:block">
+       <button type="button" class="ghost sm" id="agImgQuitar" style="margin-top:6px">Quitar imagen</button>`
+    : '';
+  const q = $('#agImgQuitar');
+  if(q) q.onclick = () => { AG_IMG = null; AG_IMG_QUITAR = true; $('#agImagen').value = ''; agImgPrev(null); };
+}
+$('#agImagen').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const img = await cargarFoto(f, 1600);
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth || img.width; c.height = img.naturalHeight || img.height;
+    c.getContext('2d').drawImage(img, 0, 0);
+    let b = await new Promise(r => c.toBlob(r, 'image/webp', 0.9));
+    if(!b || b.type !== 'image/webp') b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+    AG_IMG = b; AG_IMG_QUITAR = false; agImgPrev(URL.createObjectURL(b));
+  }catch(x){ $('#agErr2').textContent = 'No se pudo leer la imagen.'; }
+};
