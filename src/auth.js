@@ -152,7 +152,8 @@ async function aplicarVerComo(yoReal){
   const pintar = () => {
     if(!document.body) return;
     const s = document.createElement('style'); s.textContent = `
-.pm-vc{position:sticky;top:0;z-index:200;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;padding:8px 14px;background:var(--gold);color:var(--gold-text);font:600 13px "Roboto Condensed",Arial,sans-serif;border-bottom:2px solid #a8831f}
+.pm-vc{position:fixed;left:0;right:0;bottom:0;z-index:200;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;padding:10px 14px;background:var(--gold);color:var(--gold-text);font:600 13px "Roboto Condensed",Arial,sans-serif;border-top:2px solid #a8831f;box-shadow:0 -6px 20px rgba(0,0,0,.35)}
+body.pm-modo-vc{padding-bottom:var(--vc-h,56px)}
 .pm-vc b{font-weight:800}.pm-vc .rl{opacity:.75;font-weight:500}
 .pm-vc button{background:var(--gold-text);color:var(--gold);border:0;border-radius:6px;padding:5px 10px;font:inherit;cursor:pointer}
 body.pm-modo-vc #btnExport,body.pm-modo-vc button[type=submit]{opacity:.5;cursor:not-allowed}`;
@@ -226,8 +227,8 @@ export function barraUsuario(yo){
     const s = document.createElement('style'); s.id = 'barraCss';
     s.textContent = `
 /* Pegada arriba en todas las páginas: siempre se puede volver al inicio o abrir el menú.
-   --vc-h es la altura del aviso de "Ver como" cuando está puesto; si no, 0. */
-.barra{display:flex;gap:14px;align-items:center;padding:8px 20px;background:var(--barra);border-bottom:1px solid var(--line3);font:13px "Roboto Condensed",Arial,sans-serif;color:var(--muted);position:sticky;top:var(--vc-h,0px);z-index:150}
+   El aviso de "Ver como" ya no estorba: vive abajo, fijo. */
+.barra{display:flex;gap:14px;align-items:center;padding:8px 20px;background:var(--barra);border-bottom:1px solid var(--line3);font:13px "Roboto Condensed",Arial,sans-serif;color:var(--muted);position:sticky;top:0;z-index:150}
 .barra a{color:var(--muted);text-decoration:none}
 .barra a.oro{color:var(--gold)}
 .barra .inicio{margin-right:auto}
@@ -284,13 +285,9 @@ export function barraUsuario(yo){
   document.body.prepend(b);
   // Las páginas que tienen cosas pegadas debajo (menú del panel, selector de sección)
   // necesitan saber cuánto ocupa la barra; cambia al rotar el móvil o al plegarse el menú.
-  const medir = () => {
-    document.documentElement.style.setProperty('--barra-h', b.offsetHeight + 'px');
-    const vc = document.querySelector('.pm-vc');
-    if(vc) document.documentElement.style.setProperty('--vc-h', vc.offsetHeight + 'px');
-  };
+  const medir = () => document.documentElement.style.setProperty('--barra-h', b.offsetHeight + 'px');
   medir();
-  if(window.ResizeObserver){ const ro = new ResizeObserver(medir); ro.observe(b); const vc = document.querySelector('.pm-vc'); if(vc) ro.observe(vc); }
+  if(window.ResizeObserver) new ResizeObserver(medir).observe(b);
   window.addEventListener('resize', medir);
 }
 
