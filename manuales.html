@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=3eb3d80b"></script>
+<script src="js/tema.js?v=4df7a284"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -311,10 +311,23 @@
       <li><b>/ranking</b> — el top del mes en curso.</li>
       <li><b>/pendientes</b> — lo que falta por revisar.</li>
       <li><b>/quien</b> — ficha rápida de un integrante: usuario, rol, rango y estado.</li>
-      <li><b>/mensaje</b> — manda un privado a un integrante.</li></ul>
+      <li><b>/mensaje</b> — manda un privado a un integrante.</li>
+      <li><b>/convocar</b> — crea un evento en la agenda. Nace sin canales ni convocados: se termina de preparar y se publica desde la plataforma.</li>
+      <li><b>/anuncio</b> — publica un anuncio en el tablón y en Discord de una vez.</li></ul>
     <p>En <span class="ruta">Automatización → Bot de Discord</span> decides <b>cuáles están encendidos</b> y <b>qué permiso hace falta para cada uno</b>. "Cualquiera" quiere decir cualquier integrante activo con su Discord enlazado; si eliges un permiso, solo lo podrán usar quienes lo tengan en la plataforma. Los ajustes son por unidad: PM y EEA pueden tener configuraciones distintas.</p>
     <p>El bot sabe quién eres por tu identificador de Discord: si no lo tienes puesto, te lo dirá y no hará nada más. Las respuestas solo las ves tú, aunque uses el comando en un canal lleno de gente.</p>
     <div class="tip">Los comandos se registran desde <span class="ruta">Automatización → Bot de Discord</span>. Si pones el id del servidor aparecen al momento solo ahí; sin id se registran globales y Discord tarda hasta una hora.</div></div>
+  <div class="bloque"><h3>Publicar con el bot (y botones de verdad)</h3>
+    <p>Cada canal, en <span class="ruta">Automatización → Canales</span>, tiene ahora una casilla <b>Por el bot</b> y un hueco para el <b>id del canal</b> de Discord (clic derecho sobre el canal → Copiar ID).</p>
+    <p>Con la casilla marcada, ese canal deja de usar el webhook y publica el bot. La ventaja: los mensajes pueden llevar <b>botones</b>. Los eventos de la agenda salen entonces con <b>✅ Asisto</b> y <b>❌ No puedo</b> pulsables, sin tener que abrir la web. Sin marcar, todo sigue por webhook como siempre, con los enlaces de confirmación.</p>
+    <div class="tip">El bot tiene que estar en ese canal y poder escribir en él. Si algo no sale, míralo en <b>Ver cola de envíos</b>, que dice qué pasó con cada mensaje.</div></div>
+  <div class="bloque"><h3>Avisos automáticos por privado</h3>
+    <p>En <span class="ruta">Automatización → Bot de Discord</span> puedes encender avisos que el bot manda solo a la persona interesada: cuando le <b>devuelven o rechazan un reporte</b> (con el motivo), cuando le ponen una <b>sanción</b>, cuando le <b>asignan un turno</b> y una <b>bienvenida</b> al crear su cuenta.</p>
+    <p>Vienen todos apagados. Solo le llegan a quien tenga su Discord puesto, y si alguien tiene cerrados los privados se reintenta tres veces y queda anotado en la cola en vez de perderse.</p></div>
+  <div class="bloque"><h3>Roles y apodos de Discord</h3>
+    <p>El bot puede mantener el <b>rol de Discord</b> al día con el Rango PM de la plataforma, y dejar el apodo como "Rango Nombre". Se configura al final de la caja del bot: el id del servidor y, para cada Rango PM, el id del rol de Discord que le corresponde (Ajustes del servidor → Roles → clic derecho → Copiar ID).</p>
+    <p>Solo toca los roles que apuntes ahí: los que repartas a mano se quedan como están. Un rango sin id no se toca.</p>
+    <div class="ojo">Para que el bot pueda repartir un rol, <b>su propio rol tiene que estar por encima</b> de ese en la lista de roles del servidor. Si queda debajo, Discord se lo niega; lo verás en la cola como <i>rol del bot demasiado bajo</i>.</div></div>
   <div class="bloque"><h3>Cuándo no llega</h3>
     <ul><li><b>Sin bot configurado</b> — los privados no funcionan hasta que el liderazgo ponga el bot. Mientras tanto, usa la mención.</li>
       <li><b>Privados cerrados</b> — Discord deja que cada quien bloquee los mensajes de miembros del servidor. Si los tiene cerrados, te lo dirá y tendrás que mencionarle.</li>
@@ -391,6 +404,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=928960c0"></script>
+<script type="module" src="js/app-manuales.js?v=f567f44a"></script>
 </body>
 </html>

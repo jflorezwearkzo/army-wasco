@@ -71,6 +71,39 @@ Deno.serve(async (req: Request) => {
             }).then(() => {}, () => {});
           }
         }
+      } else if (t.tipo === "sync_rol") {
+        // Pone el rol de Discord que corresponde al Rango PM y quita los demás que gestionamos.
+        // Nunca toca roles que no estén en la tabla: lo que el liderazgo reparta a mano se respeta.
+        const p = (t.payload ?? {}) as Record<string, any>;
+        const { data: mapa } = await admin.from("bot_roles").select("rango_pm, rol_id").eq("org_id", t.org_id);
+        const nuestros = (mapa ?? []).map((m) => m.rol_id);
+        const toca = (mapa ?? []).find((m) => m.rango_pm === p.rango_pm)?.rol_id ?? null;
+        if (!nuestros.length) motivo = "sin_mapa_de_roles";
+        else {
+          const g = await fetch(`${API}/guilds/${p.guild}/members/${p.discord_id}`, { headers: cab });
+          if (g.status === 404) motivo = "no_esta_en_el_servidor";
+          else if (!g.ok) motivo = `discord_${g.status}`;
+          else {
+            const miembro = await g.json();
+            const tiene: string[] = miembro?.roles ?? [];
+            const quitar = nuestros.filter((r) => tiene.includes(r) && r !== toca);
+            const poner = toca && p.activo !== false && !tiene.includes(toca) ? toca : null;
+            for (const r of quitar) {
+              const d = await fetch(`${API}/guilds/${p.guild}/members/${p.discord_id}/roles/${r}`, { method: "DELETE", headers: cab });
+              if (!d.ok && d.status !== 404) motivo = `quitar_${d.status}`;
+            }
+            if (poner) {
+              const a = await fetch(`${API}/guilds/${p.guild}/members/${p.discord_id}/roles/${poner}`, { method: "PUT", headers: cab });
+              if (!a.ok) motivo = a.status === 403 ? "rol_del_bot_demasiado_bajo" : `poner_${a.status}`;
+            }
+            if (!motivo && p.apodo) {
+              // El apodo es un extra: si falla (por ejemplo con el dueño del servidor) no se da por fallido
+              await fetch(`${API}/guilds/${p.guild}/members/${p.discord_id}`, {
+                method: "PATCH", headers: cab, body: JSON.stringify({ nick: String(p.apodo).slice(0, 32) }),
+              }).then(() => {}, () => {});
+            }
+          }
+        }
       } else motivo = "tipo_desconocido";
     } catch (e) { motivo = String((e as Error).message ?? e).slice(0, 120); }
 

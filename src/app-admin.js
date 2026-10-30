@@ -760,6 +760,13 @@ async function cargarAutomatizacion(){
   const campoHilo = (attr, clave, valor) => EDITA
     ? `<input type="text" inputmode="numeric" data-${attr}="${esc(clave)}" value="${esc(valor||'')}" placeholder="Canal" title="Id del hilo. Vacío = el canal directamente. Modo desarrollador → clic derecho en el hilo → Copiar ID." style="width:150px">`
     : `<span class="muted" style="font-size:12px">${valor ? 'hilo '+esc(valor) : 'canal'}</span>`;
+  // Publicar con el bot en vez del webhook: hace falta el id del canal de Discord. Es lo que
+  // permite que el mensaje lleve botones, porque un webhook corriente no puede llevarlos.
+  const campoBot = c => EDITA
+    ? `<label style="display:flex;align-items:center;gap:6px;white-space:nowrap">
+         <input type="checkbox" data-vbot="${esc(c.clave)}" ${c.via_bot ? 'checked' : ''} style="width:16px;height:16px;flex:0 0 auto;padding:0">
+         <input type="text" inputmode="numeric" data-cid="${esc(c.clave)}" value="${esc(c.canal_id || '')}" placeholder="Id del canal" style="width:150px" title="Clic derecho sobre el canal en Discord → Copiar ID"></label>`
+    : `<span class="muted" style="font-size:12px">${c.via_bot ? 'por el bot' : 'por webhook'}</span>`;
   // Si pegan el enlace con ?thread_id=…, se separa solo: el id al campo de hilo y el enlace limpio
   const separarHilo = (campoW, campoH) => {
     const w = campoW.value.trim(); const i = w.indexOf('?'); if(i < 0) return;
@@ -777,6 +784,7 @@ async function cargarAutomatizacion(){
   $('#tbCanales').innerHTML = (data||[]).map(c => `<tr data-id="${esc(c.clave)}"><td><b>${esc(c.nombre)}</b><br><span class="muted" style="font-size:12px">${esc(c.clave)}</span>${enlacePublico(c)}</td>
     <td>${campoWh('wh', c.clave, c.webhook, c.tiene_webhook)}</td>
     <td>${campoHilo('hilo', c.clave, c.hilo)}</td>
+    <td>${campoBot(c)}</td>
     <td><input type="checkbox" data-on="${esc(c.clave)}" ${c.activo?'checked':''} ${EDITA?'':'disabled'}></td>
     <td style="white-space:nowrap">${EDITA ? `<button class="ghost sm" data-cg="${esc(c.clave)}">Guardar</button> <button class="ghost sm" data-cp="${esc(c.clave)}" title="Envía un mensaje de prueba al canal">Probar</button>` : ''} <span class="muted" data-cm="${esc(c.clave)}" style="font-size:12px"></span></td></tr>`).join('');
   const guardar = async clave => {
@@ -785,7 +793,12 @@ async function cargarAutomatizacion(){
     const w = cw.value.trim(), h = ch.value.trim();
     if(w && !/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }
     if(h && !/^[0-9]{5,25}$/.test(h)){ m.textContent='El hilo es solo el id (números). Modo desarrollador → clic derecho en el hilo → Copiar ID.'; return false; }
-    const { error } = await sb.from('discord_canales').update({ webhook: w || null, hilo: h || null, activo: $(`[data-on="${clave}"]`).checked, actualizado_en: new Date().toISOString() }).eq('clave', clave).eq('org_id', ORG_ID);
+    const cid = ($(`[data-cid="${clave}"]`) || {}).value, vbot = ($(`[data-vbot="${clave}"]`) || {}).checked;
+    if(cid && !/^[0-9]{17,20}$/.test(cid.trim())){ m.textContent='El id del canal son solo números (17 a 20 dígitos).'; return false; }
+    if(vbot && !cid){ m.textContent='Para publicar por el bot hace falta el id del canal.'; return false; }
+    const { error } = await sb.from('discord_canales').update({ webhook: w || null, hilo: h || null,
+      canal_id: (cid || '').trim() || null, via_bot: !!vbot,
+      activo: $(`[data-on="${clave}"]`).checked, actualizado_en: new Date().toISOString() }).eq('clave', clave).eq('org_id', ORG_ID);
     m.textContent = error ? 'Error: '+error.message : 'Guardado.'; return !error;
   };
   document.querySelectorAll('[data-cg]').forEach(b => b.onclick = () => guardar(b.dataset.cg));
@@ -1652,6 +1665,13 @@ const BOT_COMANDOS = [
   ['mensaje',     '/mensaje · privado a un integrante'],
 ];
 let BOT_CFG = {};
+const BOT_AVISOS = [
+  ['reporte_devuelto',  '↩️ Le devolvieron un reporte (con el motivo)'],
+  ['reporte_rechazado', '❌ Le rechazaron un reporte (con el motivo)'],
+  ['sancion',           '⚠️ Le pusieron una sanción o advertencia'],
+  ['turno',             '🚔 Le asignaron un turno'],
+  ['bienvenida',        '👋 Bienvenida al crear su cuenta'],
+];
 async function cargarBotConfig(){
   const { data } = await sb.rpc('bot_config', { p_org: (yo.org && yo.org.id) || 'pm' });
   BOT_CFG = data || {};
@@ -1667,7 +1687,12 @@ async function cargarBotConfig(){
       <td><select class="bc-perm" style="width:auto">${opciones(c.permiso)}</select></td>
     </tr>`;
   }).join('');
+  const av = BOT_CFG.avisos || {};
+  $('#botAvisos').innerHTML = BOT_AVISOS.map(([clave, texto]) => `<label class="chip">
+    <input type="checkbox" class="ba" value="${clave}" ${av[clave] && av[clave].activo ? 'checked' : ''}> ${esc(texto)}</label>`).join('');
   if(!PUEDE_TAREAS) $('#tbBot').querySelectorAll('input,select').forEach(e => e.disabled = true);
+  if(!PUEDE_TAREAS) $('#botAvisos').querySelectorAll('input').forEach(e => e.disabled = true);
+  await cargarBotRoles();
   $('#botGuardarCfg').disabled = !PUEDE_TAREAS;
 }
 $('#botGuardarCfg').onclick = async () => {
@@ -1676,7 +1701,58 @@ $('#botGuardarCfg').onclick = async () => {
     valor[tr.dataset.cmd] = { activo: tr.querySelector('.bc-act').checked,
                               permiso: tr.querySelector('.bc-perm').value || null };
   });
+  valor.avisos = {};
+  document.querySelectorAll('#botAvisos .ba').forEach(c => valor.avisos[c.value] = { activo: c.checked });
   const { error } = await sb.rpc('guardar_bot_config', { p_valor: valor });
   $('#botErr').textContent = error ? error.message : '';
   if(!error){ toast('Permisos del bot guardados.'); BOT_CFG = valor; }
+};
+
+// --- Roles y apodos de Discord por Rango PM ---
+async function cargarBotRoles(){
+  if(!rangosPM.length) rangosPM = (await sb.from('rangos_pm').select('*').order('orden')).data || [];
+  const { data: mapa } = await sb.from('bot_roles').select('rango_pm,rol_id');
+  const por = {}; (mapa || []).forEach(m => por[m.rango_pm] = m.rol_id);
+  $('#botSync').checked = !!BOT_CFG.sincronizar;
+  $('#botSyncGuild').value = BOT_CFG.guild || '';
+  $('#tbBotRoles').innerHTML = rangosPM.map(r => `<tr>
+    <td>${esc(r.nombre)}</td>
+    <td><input type="text" inputmode="numeric" maxlength="20" class="br" data-rango="${esc(r.nombre)}" value="${esc(por[r.nombre] || '')}" placeholder="Id del rol" style="width:200px"></td></tr>`).join('')
+    || '<tr><td colspan="2" class="muted">No hay Rangos PM definidos.</td></tr>';
+  if(!PUEDE_TAREAS){ ['#botSync','#botSyncGuild','#botGuardarRoles'].forEach(x => $(x).disabled = true);
+    $('#tbBotRoles').querySelectorAll('input').forEach(e => e.disabled = true); }
+}
+$('#botGuardarRoles').onclick = async () => {
+  const guild = $('#botSyncGuild').value.trim();
+  if($('#botSync').checked && !guild){ $('#botErr').textContent = 'Para sincronizar hace falta el id del servidor.'; return; }
+  const mapa = {}; let malo = null;
+  document.querySelectorAll('#tbBotRoles .br').forEach(i => {
+    const v = i.value.trim(); if(!v) return;
+    if(!/^[0-9]{17,20}$/.test(v)) malo = i.dataset.rango; else mapa[i.dataset.rango] = v;
+  });
+  if(malo){ $('#botErr').textContent = `El id del rol de "${malo}" son solo números (17 a 20 dígitos).`; return; }
+  const r1 = await sb.rpc('guardar_bot_roles', { p_guild: guild || null, p_mapa: mapa });
+  if(r1.error){ $('#botErr').textContent = r1.error.message; return; }
+  const r2 = await sb.rpc('bot_sincronizar', { p_activo: $('#botSync').checked });
+  $('#botErr').textContent = r2.error ? r2.error.message : '';
+  if(!r2.error){ toast(`Guardado: ${r1.data.rangos} rango(s) enlazados.`); cargarBotConfig(); }
+};
+
+// La cola dice qué mandó el bot y qué no: útil cuando alguien dice "a mí no me llegó"
+$('#botVerCola').onclick = async () => {
+  const { data, error } = await sb.from('bot_cola')
+    .select('id,tipo,titulo,canal,estado,motivo,intentos,creado_en,enviado_en')
+    .order('id', { ascending:false }).limit(25);
+  if(error){ $('#botErr').textContent = error.message; return; }
+  if(!data || !data.length){ $('#botCola').innerHTML = '<p class="muted" style="font-size:13px">La cola está vacía: no hay nada pendiente ni enviado hace poco.</p>'; return; }
+  const motivos = { sin_discord:'esa persona no tiene Discord puesto', privados_cerrados:'tiene cerrados los privados',
+                    sin_canal_id:'al canal le falta el id', sin_bot:'falta el token del bot' };
+  const tag = e => e === 'enviado' ? '<span class="tag on">enviado</span>'
+                 : e === 'fallido' ? '<span class="tag off">fallido</span>' : '<span class="tag">pendiente</span>';
+  $('#botCola').innerHTML = `<div class="tscroll"><table><thead><tr><th>Cuándo</th><th>Tipo</th><th>Asunto</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>` +
+    data.map(t => `<tr><td class="muted" style="white-space:nowrap">${new Date(t.creado_en).toLocaleString('es-CO')}</td>
+      <td>${t.tipo === 'privado' ? 'privado' : 'canal ' + esc(t.canal || '')}</td>
+      <td>${esc(t.titulo || '—')}</td><td>${tag(t.estado)}</td>
+      <td class="muted" style="font-size:12px">${t.motivo ? esc(motivos[t.motivo] || t.motivo) + (t.intentos ? ` · ${t.intentos} intento(s)` : '') : ''}</td></tr>`).join('') +
+    '</tbody></table></div>';
 };

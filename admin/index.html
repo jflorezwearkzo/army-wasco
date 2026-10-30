@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=3eb3d80b"></script>
+<script src="../js/tema.js?v=4df7a284"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -533,7 +533,7 @@
     <div class="caja">
       <h3>Canales de Discord</h3>
       <p class="muted" style="margin-top:0;font-size:13px">Cada propósito tiene su propio canal (webhook). Los reportes de cada formulario se configuran en Formularios; aquí van los avisos generales. Los enlaces nunca se muestran a los usuarios.</p>
-      <table><thead><tr><th>Canal</th><th>Webhook</th><th title="Opcional: id del hilo dentro del canal. Vacío = el canal directamente.">Hilo</th><th>Activo</th><th></th></tr></thead><tbody id="tbCanales"></tbody></table>
+      <table><thead><tr><th>Canal</th><th>Webhook</th><th title="Opcional: id del hilo dentro del canal. Vacío = el canal directamente.">Hilo</th><th title="Id del canal de Discord. Con él y la casilla marcada, publica el bot en vez del webhook, y los mensajes pueden llevar botones.">Por el bot</th><th>Activo</th><th></th></tr></thead><tbody id="tbCanales"></tbody></table>
       <h4 style="margin:18px 0 6px;color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:1px">Canales por formulario (reportes sellados)</h4>
       <p class="muted" style="margin:0 0 8px;font-size:13px">Cada formulario publica sus reportes en su propio canal. Es lo mismo que el campo "Webhook de Discord" al editar el formulario.</p>
       <table><thead><tr><th>Formulario</th><th>Webhook</th><th title="Opcional: id del hilo dentro del canal. Vacío = el canal directamente.">Hilo</th><th>Publicar</th><th></th></tr></thead><tbody id="tbCanalesForm"></tbody></table>
@@ -557,7 +557,21 @@
       <h4 style="margin:16px 0 4px;color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:1px">Qué puede hacer cada quien</h4>
       <p class="muted" style="margin:0 0 8px;font-size:12px">Apaga los comandos que no quieras y elige qué permiso hace falta para cada uno. <b>Cualquiera</b> significa cualquier integrante activo que tenga su Discord enlazado.</p>
       <div class="tscroll"><table><thead><tr><th>Comando</th><th>Qué hace</th><th>Activo</th><th>Permiso necesario</th></tr></thead><tbody id="tbBot"></tbody></table></div>
-      <div class="fila" style="margin-top:10px"><button type="button" class="ghost sm" id="botGuardarCfg">Guardar permisos</button></div>
+      <h4 style="margin:16px 0 4px;color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:1px">Avisos automáticos por privado</h4>
+      <p class="muted" style="margin:0 0 8px;font-size:12px">El bot escribe solo a la persona interesada cuando pasa algo. Solo le llega a quien tenga su Discord puesto. Empiezan todos apagados.</p>
+      <div id="botAvisos" class="chips"></div>
+      <div class="fila" style="margin-top:12px"><button type="button" class="ghost sm" id="botGuardarCfg">Guardar permisos y avisos</button>
+        <button type="button" class="ghost sm" id="botVerCola">Ver cola de envíos</button></div>
+      <div id="botCola" style="margin-top:10px"></div>
+      <h4 style="margin:18px 0 4px;color:var(--gold);font-size:13px;text-transform:uppercase;letter-spacing:1px">Roles y apodos de Discord</h4>
+      <p class="muted" style="margin:0 0 8px;font-size:12px">El bot puede poner a cada quien el rol de Discord que corresponde a su Rango PM, y dejarle el apodo como "Rango Nombre". Solo toca los roles que apuntes aquí: lo que repartas a mano se respeta.</p>
+      <div class="lineaChk"><input type="checkbox" id="botSync"><label for="botSync" style="margin:0">Mantener sincronizados roles y apodos</label>
+        <label style="margin:0 0 0 14px;white-space:nowrap">Servidor</label>
+        <input id="botSyncGuild" inputmode="numeric" maxlength="20" placeholder="Id del servidor" style="width:190px"></div>
+      <div class="tscroll"><table><thead><tr><th>Rango PM</th><th>Id del rol en Discord</th></tr></thead><tbody id="tbBotRoles"></tbody></table></div>
+      <p class="muted" style="margin:8px 0 0;font-size:12px">El id del rol se saca en Discord: Ajustes del servidor → Roles → clic derecho sobre el rol → Copiar ID. Deja vacío el rango que no quieras tocar.</p>
+      <div class="ojo" style="margin-top:8px;font-size:12px">Para que el bot pueda repartir un rol, <b>su propio rol tiene que estar por encima</b> de ese en la lista de roles del servidor. Si queda debajo, Discord se lo niega y lo verás en la cola.</div>
+      <div class="fila" style="margin-top:10px"><button type="button" class="ghost sm" id="botGuardarRoles">Guardar roles</button></div>
       <div class="err" id="botErr"></div>
     </div>
     <div class="caja" style="margin-top:18px" id="cajaEventos">
@@ -717,6 +731,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=24f049bd"></script>
+<script type="module" src="../js/app-admin.js?v=e3059b3f"></script>
 </body>
 </html>
