@@ -2,7 +2,10 @@
 // resumen, recordatorios). Los webhooks nunca salen al navegador: se leen aquí con la clave de servicio.
 // Cuerpo: { canal, texto?, embed?, prueba?, origen?: { tabla, id } } publica y registra el mensaje en discord_mensajes.
 //         { canal, accion: "editar", mensaje_id, texto?, embed? } edita un mensaje enviado antes por la página.
-//         { canal, accion: "borrar", mensaje_id } lo borra. Quien llama debe tener alguno de los permisos que publican avisos.
+//         { canal, accion: "borrar", mensaje_id } lo borra.
+//         { canal, accion: "republicar", mensaje_id, texto?, embed?, origen? } borra el viejo y publica
+//           uno nuevo al final del canal: el mensaje "se mueve" y estrena id.
+//         Quien llama debe tener alguno de los permisos que publican avisos.
 // (sin el import de tipos de jsr: solo aportaba tipados y a veces no responde al compilar)
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -35,6 +38,7 @@ Deno.serve(async (req: Request) => {
   const auth = req.headers.get("Authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return json(401, { error: "Sin sesión" });
   let body: { canal?: string; texto?: string; embed?: Record<string, unknown>; prueba?: boolean; origen?: { tabla?: string; id?: string | number }; accion?: string; mensaje_id?: string };
+  let republicado: { mensaje_id: string } | null = null;
   try { body = await req.json(); } catch { return json(400, { error: "Cuerpo inválido" }); }
   const canal = String(body.canal ?? "").trim();
   if (!canal) return json(400, { error: "Falta el canal" });
@@ -58,18 +62,24 @@ Deno.serve(async (req: Request) => {
   if (!cfg.webhook || (!cfg.activo && !body.prueba)) return json(200, { ok: false, motivo: "sin_webhook" });
 
   // ---- Editar o borrar un mensaje enviado antes por la página ----
-  if (body.accion === "editar" || body.accion === "borrar") {
+  if (body.accion === "editar" || body.accion === "borrar" || body.accion === "republicar") {
     const mid = String(body.mensaje_id ?? "").trim(); if (!/^\d+$/.test(mid)) return json(400, { error: "Falta mensaje_id" });
     const { data: reg } = await admin.from("discord_mensajes").select("id, origen_tabla, origen_id").eq("canal", canal).eq("mensaje_id", mid).maybeSingle();
     if (!reg) return json(404, { error: "Ese mensaje no fue enviado por la página" });
     const urlMsg = urlMensaje(cfg.webhook, cfg.hilo, mid);
-    if (body.accion === "borrar") {
+    if (body.accion === "borrar" || body.accion === "republicar") {
       const r = await fetch(urlMsg, { method: "DELETE" });
       if (!r.ok && r.status !== 404) return json(502, { error: `Discord respondió ${r.status}: ${(await r.text()).slice(0, 200)}` });
       await admin.from("discord_mensajes").delete().eq("id", reg.id);
-      await admin.rpc("auditar_evento", { p_usuario_id: me.user.id, p_accion: "discord_borrado", p_tabla: "discord_canales", p_registro: canal, p_detalle: { mensaje_id: mid, origen: reg.origen_tabla, origen_id: reg.origen_id } }).then(() => {}, () => {});
-      return json(200, { ok: true });
-    }
+      if (body.accion === "borrar") {
+        await admin.rpc("auditar_evento", { p_usuario_id: me.user.id, p_accion: "discord_borrado", p_tabla: "discord_canales", p_registro: canal, p_detalle: { mensaje_id: mid, origen: reg.origen_tabla, origen_id: reg.origen_id } }).then(() => {}, () => {});
+        return json(200, { ok: true });
+      }
+      // Republicar: el viejo ya se fue; abajo se publica uno nuevo con el origen del anterior,
+      // así que el anuncio conserva su enlace con el mensaje y estrena id al final del canal.
+      body.origen = body.origen ?? { tabla: reg.origen_tabla ?? undefined, id: reg.origen_id ?? undefined };
+      republicado = { mensaje_id: mid };
+    } else {
     const cambios: Record<string, unknown> = {};
     if (body.texto !== undefined) cambios.content = String(body.texto ?? "").slice(0, 1900);
     if (body.embed && typeof body.embed === "object") cambios.embeds = [{ color: 0xf0c24d, ...body.embed }];
@@ -79,6 +89,7 @@ Deno.serve(async (req: Request) => {
     await admin.from("discord_mensajes").update({ titulo: (body.embed as Record<string, unknown> | undefined)?.title ?? reg.origen_tabla }).eq("id", reg.id).then(() => {}, () => {});
     await admin.rpc("auditar_evento", { p_usuario_id: me.user.id, p_accion: "discord_editado", p_tabla: "discord_canales", p_registro: canal, p_detalle: { mensaje_id: mid, origen: reg.origen_tabla, origen_id: reg.origen_id, titulo: (body.embed as Record<string, unknown> | undefined)?.title ?? null } }).then(() => {}, () => {});
     return json(200, { ok: true });
+    }
   }
 
   const { data: orgRow } = await admin.from("organizaciones").select("nombre").eq("id", org).maybeSingle();
@@ -94,6 +105,7 @@ Deno.serve(async (req: Request) => {
   if (!resp.ok) return json(502, { error: `Discord respondió ${resp.status}: ${(await resp.text()).slice(0, 200)}` });
   let mensajeId: string | null = null; try { mensajeId = (await resp.json())?.id ?? null; } catch { /* sin id */ }
   if (!body.prueba) await admin.from("discord_mensajes").insert({ canal, origen_tabla: body.origen?.tabla ?? null, origen_id: body.origen?.id != null ? String(body.origen.id) : null, mensaje_id: mensajeId, titulo: (body.embed as Record<string, unknown> | undefined)?.title ?? String(body.texto ?? "").slice(0, 120) }).then(() => {}, () => {});
-  if (!body.prueba) await admin.rpc("auditar_evento", { p_usuario_id: me.user.id, p_accion: "discord_aviso", p_tabla: "discord_canales", p_registro: canal, p_detalle: { texto: String(body.texto ?? "").slice(0, 200), titulo: (body.embed as Record<string, unknown> | undefined)?.title ?? null } }).then(() => {}, () => {});
+  if (republicado) await admin.rpc("auditar_evento", { p_usuario_id: me.user.id, p_accion: "discord_republicado", p_tabla: "discord_canales", p_registro: canal, p_detalle: { antes: republicado.mensaje_id, ahora: mensajeId } }).then(() => {}, () => {});
+  if (!body.prueba && !republicado) await admin.rpc("auditar_evento", { p_usuario_id: me.user.id, p_accion: "discord_aviso", p_tabla: "discord_canales", p_registro: canal, p_detalle: { texto: String(body.texto ?? "").slice(0, 200), titulo: (body.embed as Record<string, unknown> | undefined)?.title ?? null } }).then(() => {}, () => {});
   return json(200, { ok: true, mensaje_id: mensajeId });
 });
