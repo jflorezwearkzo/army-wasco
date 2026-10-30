@@ -219,7 +219,9 @@ export function barraUsuario(yo){
   if(!document.getElementById('barraCss')){
     const s = document.createElement('style'); s.id = 'barraCss';
     s.textContent = `
-.barra{display:flex;gap:14px;align-items:center;padding:8px 20px;background:var(--barra);border-bottom:1px solid var(--line3);font:13px "Roboto Condensed",Arial,sans-serif;color:var(--muted);position:relative;z-index:50}
+/* Pegada arriba en todas las páginas: siempre se puede volver al inicio o abrir el menú.
+   --vc-h es la altura del aviso de "Ver como" cuando está puesto; si no, 0. */
+.barra{display:flex;gap:14px;align-items:center;padding:8px 20px;background:var(--barra);border-bottom:1px solid var(--line3);font:13px "Roboto Condensed",Arial,sans-serif;color:var(--muted);position:sticky;top:var(--vc-h,0px);z-index:150}
 .barra a{color:var(--muted);text-decoration:none}
 .barra a.oro{color:var(--gold)}
 .barra .inicio{margin-right:auto}
@@ -274,6 +276,16 @@ export function barraUsuario(yo){
   b.querySelector('#btnTema').onclick = e => { e.preventDefault(); if(window.pmTema) window.pmTema.alternar(); };
   b.querySelector('#btnSalir').onclick = e => { e.preventDefault(); try{ sessionStorage.removeItem(K_VC); }catch(x){} cerrarSesion(); };
   document.body.prepend(b);
+  // Las páginas que tienen cosas pegadas debajo (menú del panel, selector de sección)
+  // necesitan saber cuánto ocupa la barra; cambia al rotar el móvil o al plegarse el menú.
+  const medir = () => {
+    document.documentElement.style.setProperty('--barra-h', b.offsetHeight + 'px');
+    const vc = document.querySelector('.pm-vc');
+    document.documentElement.style.setProperty('--vc-h', (vc ? vc.offsetHeight : 0) + 'px');
+  };
+  medir();
+  if(window.ResizeObserver){ const ro = new ResizeObserver(medir); ro.observe(b); const vc = document.querySelector('.pm-vc'); if(vc) ro.observe(vc); }
+  window.addEventListener('resize', medir);
 }
 
 // Paso 1: registra el reporte (el servidor sella identidad, rango y Rango PM y asigna el folio).

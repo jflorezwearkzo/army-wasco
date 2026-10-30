@@ -14,12 +14,12 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=28f54664"></script>
+<script src="js/tema.js?v=d7db5550"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
   .layout{display:grid;grid-template-columns:250px 1fr;gap:22px;align-items:start}
-  .lateral{position:sticky;top:60px;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:10px 8px}
+  .lateral{position:sticky;top:calc(var(--barra-h,44px) + var(--vc-h,0px) + 14px);background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:10px 8px}
   .lateral .grp{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 10px 4px}
   .lateral a{display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;padding:7px 10px;border-radius:7px;font-size:14px}
   .lateral a span{width:20px;text-align:center}
@@ -70,7 +70,7 @@
   <div class="bloque"><h3>Barra superior</h3>
     <p><span class="ruta">Mi cuenta</span> contraseña, verificación en dos pasos, instalar la app y <b>Mis reportes</b>. <span class="ruta">Mi expediente</span> tu hoja de vida en el Army. <span class="ruta">Ranking</span> tablero del mes. <span class="ruta">Eventos del día</span> horarios del servidor. <span class="ruta">Reglamento</span> normas y macros. <span class="ruta">🌗 Tema</span> cambia entre oscuro y claro. <span class="ruta">Salir</span> cierra tu sesión en este dispositivo.</p>
     <p><b>¿Perteneces a más de una unidad?</b> A la izquierda de la barra aparece un selector con tus unidades. Al cambiar, toda la página cambia con él: formularios, reportes, ranking, anuncios y turnos son los de esa unidad. Si solo estás en una, el selector no aparece.</p>
-    <div class="tip">La sesión se cierra sola tras 2 horas sin actividad. En el celular, la barra se pliega en el botón con tu nombre.</div></div>
+    <div class="tip">La barra queda <b>pegada arriba</b> en todas las páginas, así que siempre tienes a mano Inicio y el menú aunque estés al final de una lista larga. La sesión se cierra sola tras 2 horas sin actividad. En el celular, la barra se pliega en el botón con tu nombre.</div></div>
 </section>
 
 <section class="sec-panel" id="sec-reportes" data-titulo="Enviar un reporte" data-icono="📝" data-grupo="Para todos" data-permisos="*" hidden>
@@ -328,6 +328,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=7144168d"></script>
+<script type="module" src="js/app-manuales.js?v=dcf921b3"></script>
 </body>
 </html>
