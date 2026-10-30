@@ -178,6 +178,18 @@ Permisos **Anuncios: publicar y editar** (`anuncios`) y **Anuncios: solo ver** (
 
 `ranking.html` (enlace "Ranking" en la barra): podio por categoría (reportes, bajas, patrullajes, reclutamientos, AKs, participaciones), tabla completa ordenable, selector de mes y Salón de insignias. Solo cuentan reportes aprobados (RPC `ranking_mes`). La tarea `ranking_mensual` publica el top 3 del mes anterior en Discord el día 1 y otorga la insignia 🥇 de cada categoría (`insignias`).
 
+## Mensajes a una persona
+
+`perfiles.discord_id` (17–20 dígitos, único, validado por CHECK y por la RPC `guardar_discord_id(p_usuario, p_discord)`, que solo deja tocar el propio salvo con permiso de `usuarios`). Lo pone cada quien en Mi cuenta o un gestor desde la ficha.
+
+Edge Function **`mensaje-persona`** con dos modos: `mencion` publica en un canal de `discord_canales` con `<@id>` y `allowed_mentions.users` acotado a esa persona (no hace falta bot), y `privado` abre un DM con el bot (`POST /users/@me/channels` → `POST /channels/<id>/messages`) usando el secreto `DISCORD_BOT_TOKEN`. Sin ese secreto devuelve `sin_bot` en vez de fallar, y traduce los rechazos de Discord a motivos entendibles (`privados_cerrados`, `demasiado_rapido`). Exige permiso de `usuarios` o `anuncios`, comprueba que la persona pertenece a la organización de quien llama, firma el mensaje con el rango y el nombre del remitente y audita `mensaje_mencion` / `mensaje_privado`.
+
+Para que los privados funcionen hace falta una aplicación de Discord con bot invitado al servidor (ámbito `bot`, permiso *Send Messages*) y su token en los secretos de Supabase como `DISCORD_BOT_TOKEN`.
+
+## Páginas legales
+
+`privacidad.html` y `terminos.html` (enlazadas desde la barra, el login y los dos formularios públicos). Hay que mantenerlas al día cuando cambie qué datos se guardan o a dónde se envían: Discord las exige para publicar una aplicación.
+
 ## Agenda de eventos
 
 Admin → **Agenda** (permiso `anuncios`): eventos puntuales con título, descripción, lugar, fecha y hora, duración, canal de Discord propio y recordatorio configurable. Nada que ver con `actividades`/`actividades_horarios`, que son los horarios fijos del servidor y no se editan desde la interfaz.

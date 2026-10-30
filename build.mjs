@@ -20,7 +20,7 @@ for (const f of readdirSync('src').filter(f => f.endsWith('.js'))) {
 // Rompe-caché: las páginas referencian js/<archivo>.js?v=<hash> para que un cambio se vea de inmediato
 const ver = {};
 for (const f of readdirSync('js')) ver[f] = createHash('sha1').update(readFileSync(`js/${f}`)).digest('hex').slice(0, 8);
-const pages = ['index.html', 'login.html', 'cuenta.html', 'expediente.html', 'ranking.html', 'calendario.html', 'ruta.html', 'acceso.html', 'recuperar.html', 'manuales.html', 'reglamento.html', 'sin-conexion.html', 'admin/index.html', 'admin/usuario.html', 'admin/rol.html', 'admin/formulario.html', 'reportes/bajas/index.html', 'reportes/reclutamiento/index.html', 'reportes/patrullaje/index.html', 'reportes/toma-territorio/index.html', 'reportes/plantilla/index.html', 'admin/disenador.html', 'privacidad.html'];
+const pages = ['index.html', 'login.html', 'cuenta.html', 'expediente.html', 'ranking.html', 'calendario.html', 'ruta.html', 'acceso.html', 'recuperar.html', 'manuales.html', 'reglamento.html', 'sin-conexion.html', 'admin/index.html', 'admin/usuario.html', 'admin/rol.html', 'admin/formulario.html', 'reportes/bajas/index.html', 'reportes/reclutamiento/index.html', 'reportes/patrullaje/index.html', 'reportes/toma-territorio/index.html', 'reportes/plantilla/index.html', 'admin/disenador.html', 'privacidad.html', 'terminos.html'];
 for (const p of pages) {
   let html = readFileSync(p, 'utf8');
   html = html.replace(/(src="(?:\.\.\/)*js\/)([a-z0-9-]+\.js)(\?v=[0-9a-f]+)?"/g, (m, pre, file) => `${pre}${file}?v=${ver[file]}"`);

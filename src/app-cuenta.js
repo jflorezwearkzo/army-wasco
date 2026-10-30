@@ -87,3 +87,20 @@
     ok.textContent='Verificación en dos pasos desactivada.'; await estado();
   };
 })();
+
+// ---- Tu Discord: lo pone cada quien, y sirve para que puedan avisarte por ahí ----
+{
+  const $d = s => document.querySelector(s);
+  const pintarDc = v => { $d('#dcId').value = v || ''; $d('#dcQuitar').style.display = v ? '' : 'none'; };
+  const { data: mio } = await sb.from('perfiles').select('discord_id').eq('id', yo.id).maybeSingle();
+  pintarDc(mio && mio.discord_id);
+  const guardarDc = async valor => {
+    $d('#dcErr').textContent = ''; $d('#dcOk').textContent = '';
+    const { data, error } = await sb.rpc('guardar_discord_id', { p_usuario: yo.id, p_discord: valor });
+    if(error){ $d('#dcErr').textContent = error.message; return; }
+    pintarDc(data && data.discord_id);
+    $d('#dcOk').textContent = (data && data.discord_id) ? 'Guardado. Ya pueden avisarte por Discord.' : 'Quitado.';
+  };
+  $d('#dcGuardar').onclick = () => guardarDc($d('#dcId').value.trim());
+  $d('#dcQuitar').onclick = () => guardarDc(null);
+}

@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Usuario · Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=2180bc90"></script>
+<script src="../js/tema.js?v=3733b126"></script>
 <link rel="stylesheet" href="../estilos.css">
 <link rel="stylesheet" href="ficha.css">
 </head>
@@ -26,6 +26,13 @@
     <div class="lateral">
       <div class="caja"><h3>Cuenta</h3><div class="kv" id="kvCuenta"></div></div>
       <div class="caja"><h3>Actividad</h3><div class="kv" id="kvAct"></div></div>
+      <div class="caja" id="cajaDiscord" hidden>
+        <h3>Discord</h3>
+        <div class="kv" id="kvDiscord"></div>
+        <div class="fila" style="margin-top:10px"><button type="button" class="ghost sm" id="dcEditar">Cambiar identificador</button>
+          <button type="button" class="ghost sm" id="dcEscribir">✉️ Escribirle</button></div>
+        <div class="err" id="dcErr" style="margin-top:6px"></div>
+      </div>
       <div class="caja"><h3>Notas del administrador <button type="button" class="ghost sm" id="nGuardar" style="display:none">Guardar</button></h3><textarea id="notas" rows="4" placeholder="Solo lo ven quienes administran usuarios" style="font-size:13px"></textarea></div>
     </div>
     <div>
@@ -53,6 +60,22 @@
   </div>
   <div class="err" id="err"></div>
   <div class="toast" id="toast"></div>
+<dialog id="dlgMensaje" class="dlg-edit"><div class="caja">
+  <div class="cab-dlg"><button type="button" class="ghost sm volver" data-close="dlgMensaje">← Volver</button><h3 id="mTitulo">Escribir a…</h3><button type="button" class="cerrar" data-close="dlgMensaje" aria-label="Cerrar">✕</button></div>
+  <label for="mAsunto">Asunto (opcional)</label>
+  <input id="mAsunto" maxlength="120" placeholder="Ej.: Reunión 1 a 1">
+  <label for="mTexto">Mensaje</label>
+  <textarea id="mTexto" rows="6" maxlength="1800" placeholder="Escribe aquí lo que quieres decirle…"></textarea>
+  <label for="mModo">¿Cómo se lo mando?</label>
+  <select id="mModo">
+    <option value="privado">Mensaje privado (lo ve solo esa persona)</option>
+    <option value="mencion">Mencionarle en un canal (lo ve quien entre al canal)</option>
+  </select>
+  <div id="mCanalCaja" hidden><label for="mCanal">Canal</label><select id="mCanal"></select></div>
+  <p class="muted" id="mNota" style="font-size:12px;margin:8px 0 0"></p>
+  <div class="fila" style="margin-top:14px"><button type="button" class="primary" id="mEnviar">Enviar</button><button type="button" class="ghost" data-close="dlgMensaje">Cancelar</button></div>
+  <div class="err" id="mErr"></div>
+</div></dialog>
 </main>
 <dialog id="dlgEditar">
   <h3 style="margin:0 0 6px;color:var(--gold)">Editar usuario</h3>
@@ -76,6 +99,6 @@
     <div class="err" id="rpErr"></div>
   </form>
 </dialog>
-<script type="module" src="../js/app-usuario.js?v=26d4d4e7"></script>
+<script type="module" src="../js/app-usuario.js?v=dbc4aae0"></script>
 </body>
 </html>

@@ -7,6 +7,9 @@ const $ = s => document.querySelector(s);
 const ID = new URLSearchParams(location.search).get('id') || '';
 const PERMS = [['usuarios','Gestión de usuarios'],['asignar_roles','Asignación de roles'],['reset_password','Restablecer contraseñas'],['crear_roles','Creación de roles'],['crear_reportes','Creación de reportes'],['gestion_reportes','Gestión de reportes'],['disenar_formularios','Creación de formularios (diseñador)'],['historial','Ver historial'],['eliminar_historial','Eliminar historial'],['auditoria','Ver auditoría'],['aprobar_reportes','Revisar y aprobar reportes'],['sanciones','Sanciones y advertencias'],['turnos','Turnos: asignar y editar'],['ver_turnos','Turnos: solo ver la agenda'],['anuncios','Anuncios: publicar y editar'],['ver_anuncios','Anuncios: solo ver'],['permisos_granulares','Permisos granulares por usuario'],['ver_como','Ver la página como otro usuario (solo Administrador)'],['organizaciones','Control de TODAS las organizaciones (solo Administrador)'],['ver_todo','Ver todo (solo lectura): abre todas las secciones sin poder cambiar nada']];
 const fmt = iso => iso ? new Date(iso).toLocaleString('es-CO') : '—';
+// Mensajes a la persona (se declaran aquí arriba porque la ficha los usa al pintarse)
+const PUEDE_ESCRIBIR = tiene(yo, 'usuarios') || tiene(yo, 'anuncios');
+let DESTINO = null, CANALES_MSG = [];
 const fmtD = iso => iso ? String(iso).slice(0,10).split('-').reverse().join('-') : '—';
 let toastT=null; const toast = (t, err=false) => { const e=$('#toast'); e.textContent=t; e.className='toast on'+(err?' err':''); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('on'),3200); };
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => document.getElementById(b.dataset.close).close());
@@ -32,6 +35,7 @@ async function cargar(){
   const bp = $('#bPass'); if(bp) bp.onclick = () => { $('#fReset').reset(); $('#rpErr').textContent=''; $('#dlgPass').showModal(); };
   const bm = $('#bMfa'); if(bm) bm.onclick = async () => { if(!confirm(`${p.usuario} tiene la verificación en dos pasos activa. ¿Quitarla? Podrá entrar solo con su contraseña. Queda en Auditoría.`)) return; const { data: r, error: e } = await sb.functions.invoke('reset-mfa', { body:{ usuario_id: p.id } }); if(e || !r || r.error){ toast('No se pudo quitar: '+(e ? e.message : (r&&r.error)||''), true); return; } toast('Verificación en dos pasos eliminada.'); cargar(); };
   $('#kvCuenta').innerHTML = [['Usuario', p.usuario], ['Correo de acceso', F.correo || '—'], ['Rol', rol.nombre || 'Sin rol'], ['Rango', p.rango || '—'], ['Rango PM', rol.rango_pm || '—'], ['Último acceso', fmt(F.ultimo_acceso)], ['Verificación 2 pasos', +F.mfa > 0 ? '🔐 Activa' : 'Desactivada'], ['En el Army desde', fmtD(p.creado_en)]].map(([k,v]) => `<span>${esc(k)}</span><span>${esc(String(v))}</span>`).join('');
+  pintarDiscord(p);
   $('#kvAct').innerHTML = [['Reportes aprobados', F.reportes], ['Último reporte', fmtD(F.ultimo_reporte)], ['Advertencias activas', F.advertencias], ['Turnos próximos', F.turnos_proximos]].map(([k,v]) => `<span>${esc(k)}</span><span>${esc(String(v ?? 0))}</span>`).join('');
   $('#notas').value = p.notas_admin || ''; $('#notas').disabled = !PUEDE_GRAN || propio; $('#nGuardar').style.display = (PUEDE_GRAN && !propio) ? '' : 'none';
   // Permisos
@@ -106,4 +110,69 @@ $('#fEditar').onsubmit = async e => {
   const { error } = await sb.rpc('guardar_miembro', args); $('#eOk').disabled = false;
   if(error){ $('#eErr').textContent = error.message; return; }
   $('#dlgEditar').close(); toast('Usuario actualizado.'); cargar();
+};
+
+
+// ====================== DISCORD Y MENSAJES A LA PERSONA ======================
+// Dos formas de llegar a alguien: mencionarle en un canal (no hace falta bot) o un privado
+// de verdad (lo manda el bot del servidor). Las dos necesitan su identificador de Discord.
+function pintarDiscord(p){
+  DESTINO = p;
+  const caja = $('#cajaDiscord'); if(!caja) return;
+  caja.hidden = !PUEDE_ESCRIBIR;
+  if(!PUEDE_ESCRIBIR) return;
+  $('#kvDiscord').innerHTML = [['Identificador', p.discord_id || '— sin poner —']]
+    .map(([k,v]) => `<span>${esc(k)}</span><span>${esc(String(v))}</span>`).join('');
+  $('#dcEscribir').disabled = !p.discord_id;
+  $('#dcEscribir').title = p.discord_id ? 'Mandarle un mensaje por Discord'
+    : 'Esta persona todavía no tiene su Discord puesto';
+  $('#dcEditar').style.display = tiene(yo, 'usuarios') ? '' : 'none';
+}
+$('#dcEditar').onclick = async () => {
+  const v = prompt('Identificador de Discord (solo números, 17 a 20 dígitos). Déjalo vacío para quitarlo.\n\nPara sacarlo: en Discord, Ajustes → Avanzado → Modo desarrollador, y luego clic derecho sobre la persona → Copiar ID.', DESTINO.discord_id || '');
+  if(v === null) return;
+  const { error } = await sb.rpc('guardar_discord_id', { p_usuario: DESTINO.id, p_discord: v.trim() || null });
+  $('#dcErr').textContent = error ? error.message : '';
+  if(!error){ toast('Discord actualizado.'); cargar(); }
+};
+$('#dcEscribir').onclick = async () => {
+  if(!CANALES_MSG.length){
+    const { data } = await sb.rpc('canales_discord');
+    CANALES_MSG = (data && data.canales) || [];
+  }
+  $('#mTitulo').textContent = `Escribir a ${nombreCompleto(DESTINO)}`;
+  $('#mAsunto').value = ''; $('#mTexto').value = ''; $('#mModo').value = 'privado';
+  $('#mCanal').innerHTML = CANALES_MSG.map(c => `<option value="${esc(c.clave)}">${esc(c.nombre)}${c.tiene_webhook ? '' : ' (sin webhook)'}</option>`).join('');
+  $('#mErr').textContent = '';
+  modoMensaje();
+  $('#dlgMensaje').showModal();
+  $('#mTexto').focus();
+};
+function modoMensaje(){
+  const priv = $('#mModo').value === 'privado';
+  $('#mCanalCaja').hidden = priv;
+  $('#mNota').textContent = priv
+    ? 'Le llega en privado, solo lo ve esa persona. Necesita que el bot esté puesto y que tenga abiertos los mensajes de miembros del servidor; si los tiene cerrados, te lo diré.'
+    : 'Se publica en el canal con una mención, así que le suena la notificación, pero el mensaje lo puede leer cualquiera que entre a ese canal.';
+}
+$('#mModo').onchange = modoMensaje;
+$('#mEnviar').onclick = async () => {
+  const texto = $('#mTexto').value.trim();
+  if(!texto){ $('#mErr').textContent = 'Escribe el mensaje.'; return; }
+  $('#mEnviar').disabled = true;
+  const { data, error } = await sb.functions.invoke('mensaje-persona', { body: {
+    usuario_id: DESTINO.id, texto, titulo: $('#mAsunto').value.trim() || null,
+    modo: $('#mModo').value, canal: $('#mModo').value === 'mencion' ? $('#mCanal').value : null } });
+  $('#mEnviar').disabled = false;
+  if(error){ $('#mErr').textContent = error.message; return; }
+  if(data && data.ok){ $('#dlgMensaje').close(); toast(data.modo === 'privado' ? 'Mensaje privado enviado.' : `Publicado en ${data.canal} mencionándole.`); return; }
+  const motivos = {
+    sin_discord: 'Esa persona no tiene su Discord puesto.',
+    sin_webhook: 'Ese canal no tiene webhook configurado (Automatización → Canales).',
+    sin_bot: 'Todavía no está puesto el bot de Discord, así que no se pueden mandar privados. Mientras tanto, puedes mencionarle en un canal.',
+    privados_cerrados: 'Esa persona tiene cerrados los mensajes privados de miembros del servidor. Tendrás que mencionarle en un canal.',
+    demasiado_rapido: 'Discord está limitando el ritmo de envío. Espera un momento y vuelve a intentarlo.',
+    sin_canal_privado: 'Discord no dejó abrir la conversación privada.',
+  };
+  $('#mErr').textContent = motivos[data && data.motivo] || ('No se pudo enviar: ' + ((data && data.motivo) || 'sin respuesta'));
 };

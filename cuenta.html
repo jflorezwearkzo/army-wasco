@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Mi cuenta · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=2180bc90"></script>
+<script src="js/tema.js?v=3733b126"></script>
 <link rel="stylesheet" href="estilos.css">
 <style> main{max-width:520px;margin:30px auto;padding:0 20px} </style>
 </head>
@@ -31,6 +31,15 @@
       <span class="muted" id="mTotal"></span>
     </div>
     <div style="overflow:auto"><table><thead><tr><th>Folio</th><th>Fecha</th><th>Formulario</th><th>Resumen</th><th>Registrado</th><th>Imagen</th></tr></thead><tbody id="tbMis"></tbody></table></div>
+  </div>
+  <div class="caja" style="margin-top:16px">
+    <h3>Tu Discord</h3>
+    <p class="muted" style="margin-top:0;font-size:13px">Sirve para que el liderazgo pueda avisarte por Discord (una convocatoria, un recordatorio de turno). Si lo dejas vacío, no se te podrá avisar por ahí.</p>
+    <label for="dcId">Identificador de Discord</label>
+    <input id="dcId" inputmode="numeric" maxlength="20" placeholder="Solo números, 17 a 20 dígitos">
+    <p class="muted" style="font-size:12px;margin:6px 0 0">Para sacarlo: en Discord, <b>Ajustes → Avanzado → Modo desarrollador</b>. Luego, en la lista de miembros, clic derecho sobre tu nombre → <b>Copiar ID</b>.</p>
+    <div class="fila" style="margin-top:12px"><button type="button" class="primary" id="dcGuardar">Guardar</button><button type="button" class="ghost" id="dcQuitar">Quitar</button></div>
+    <div class="err" id="dcErr"></div><div class="ok" id="dcOk"></div>
   </div>
   <div class="caja" style="margin-top:16px" id="caja2fa">
     <h3 style="margin-top:0">🔐 Verificación en dos pasos (opcional)</h3>
@@ -72,6 +81,6 @@
     <button type="button" class="secondary" id="btnTodas">Cerrar sesión en todos mis dispositivos</button>
   </div>
 </main>
-<script type="module" src="js/app-cuenta.js?v=5bb6d735"></script>
+<script type="module" src="js/app-cuenta.js?v=d682453d"></script>
 </body>
 </html>

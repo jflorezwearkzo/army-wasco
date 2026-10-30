@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=2180bc90"></script>
+<script src="js/tema.js?v=3733b126"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -290,6 +290,23 @@
     <p>En <span class="ruta">Automatización → Tareas programadas</span> está <b>Reporte de actividad semanal</b>, que publica solo cada semana el balance de la semana que cerró.</p></div>
 </section>
 
+<section class="sec-panel" id="sec-mensajes" data-titulo="Escribir a alguien" data-icono="✉️" data-grupo="Administración" data-permisos="usuarios,anuncios" hidden>
+  <h2 class="sec">Escribir a una persona<small>Menciones y mensajes privados por Discord</small></h2>
+  <div class="bloque"><h3>Primero: su identificador de Discord</h3>
+    <p>No se puede avisar a nadie sin saber cuál es su cuenta de Discord. Cada quien lo pone desde <span class="ruta">Mi cuenta → Tu Discord</span>, y quien gestiona usuarios también puede ponerlo desde la ficha del integrante.</p>
+    <p>Para sacarlo: en Discord, <b>Ajustes → Avanzado → Modo desarrollador</b>; luego clic derecho sobre la persona → <b>Copiar ID</b>. Son entre 17 y 20 dígitos.</p>
+    <div class="tip">Es opcional. Quien no lo ponga simplemente no recibirá avisos por esa vía, y puede quitarlo cuando quiera.</div></div>
+  <div class="bloque"><h3>Las dos formas de llegarle</h3>
+    <p>En <span class="ruta">Administración → Usuarios → (abrir la ficha) → ✉️ Escribirle</span>:</p>
+    <ul><li><b>Mensaje privado</b> — le llega al privado, solo lo ve esa persona. Lo manda el bot del clan.</li>
+      <li><b>Mencionarle en un canal</b> — se publica en el canal que elijas con una mención, así que le suena la notificación, pero el mensaje lo lee cualquiera que entre a ese canal.</li></ul>
+    <p>En los dos casos el mensaje va firmado con tu rango y tu nombre: nadie recibe un aviso anónimo. Y los dos quedan en Auditoría.</p></div>
+  <div class="bloque"><h3>Cuándo no llega</h3>
+    <ul><li><b>Sin bot configurado</b> — los privados no funcionan hasta que el liderazgo ponga el bot. Mientras tanto, usa la mención.</li>
+      <li><b>Privados cerrados</b> — Discord deja que cada quien bloquee los mensajes de miembros del servidor. Si los tiene cerrados, te lo dirá y tendrás que mencionarle.</li>
+      <li><b>Sin Discord puesto</b> — el botón sale apagado hasta que esa persona (o tú) añada su identificador.</li></ul></div>
+</section>
+
 <section class="sec-panel" id="sec-agenda" data-titulo="Agenda" data-icono="📅" data-grupo="Administración" data-permisos="anuncios" hidden>
   <h2 class="sec">Agenda de eventos<small>Reuniones y operaciones con fecha, hora y lugar</small></h2>
   <div class="bloque"><h3>Qué es y qué no es</h3>
@@ -360,6 +377,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=51256754"></script>
+<script type="module" src="js/app-manuales.js?v=721f585b"></script>
 </body>
 </html>
