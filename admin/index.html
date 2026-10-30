@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Administración · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=3733b126"></script>
+<script src="../js/tema.js?v=90a5edfd"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   .barra-act{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -545,6 +545,17 @@
       <table><thead><tr><th>Tarea</th><th>Canal</th><th>Activa</th><th>Hora</th><th></th><th></th><th></th></tr></thead><tbody id="tbProg"></tbody></table>
       <div class="err" id="pErr"></div>
     </div>
+    <div class="caja" style="margin-top:18px" id="cajaBot">
+      <h3>Bot de Discord</h3>
+      <p class="muted" style="margin-top:0;font-size:13px">El bot permite usar comandos dentro de Discord: <b>/mensaje</b> (privado a un integrante), <b>/eventos</b>, <b>/agenda</b> y <b>/quien</b>. Quien los usa se identifica por su Discord, así que solo funcionan para quien lo tenga puesto en su ficha, y <b>/mensaje</b> además pide permiso de usuarios o anuncios.</p>
+      <div class="barra-act">
+        <span class="gr"><label style="margin:0;white-space:nowrap">Servidor (opcional)</label>
+          <input id="botGuild" inputmode="numeric" maxlength="20" placeholder="Id del servidor" style="width:190px" title="Con el id del servidor los comandos aparecen al instante solo ahí. Vacío = globales, y Discord tarda hasta una hora."></span>
+        <span class="gr"><button type="button" class="ghost sm" id="botRegistrar">Registrar comandos</button></span>
+      </div>
+      <p class="muted" id="botNota" style="margin:8px 0 0;font-size:12px">Con el id del servidor los comandos aparecen al momento y solo en él; sin id se registran globales y Discord tarda hasta una hora en repartirlos.</p>
+      <div class="err" id="botErr"></div>
+    </div>
     <div class="caja" style="margin-top:18px" id="cajaEventos">
       <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Avisos de eventos del día</span>
         <span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ghost sm" id="evPrueba" title="Muestra lo que saldría ahora mismo, sin enviarlo">👁 Vista previa</button><button type="button" class="primary sm" id="evNuevo">＋ Nuevo aviso</button></span></h3>
@@ -702,6 +713,6 @@
 </dialog>
 <dialog id="dlg"><img id="dlgImg" alt=""><div class="fila" style="margin-top:10px"><a id="dlgDl" class="primary" style="text-decoration:none;text-align:center;padding:10px" download>Descargar</a><button type="button" class="ghost" data-close="dlg">Cerrar</button></div></dialog>
 
-<script type="module" src="../js/app-admin.js?v=15e52cd5"></script>
+<script type="module" src="../js/app-admin.js?v=3abfe52d"></script>
 </body>
 </html>

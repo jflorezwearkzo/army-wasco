@@ -1619,3 +1619,21 @@ function pintarRangos(marcados){
     || '<span class="muted" style="font-size:13px">No hay Rangos PM definidos (Roles y permisos → Rangos PM).</span>';
 }
 $('#agRangosNinguno').onclick = () => document.querySelectorAll('#agRangos .agr').forEach(c => c.checked = false);
+
+// --- Bot de Discord: registrar los comandos (el token vive en el servidor) ---
+$('#botRegistrar').onclick = async () => {
+  const guild = $('#botGuild').value.trim();
+  if(guild && !/^[0-9]{17,20}$/.test(guild)){ $('#botErr').textContent = 'El id del servidor son solo números (17 a 20 dígitos).'; return; }
+  $('#botErr').textContent = ''; $('#botRegistrar').disabled = true;
+  const { data, error } = await sb.functions.invoke('mensaje-persona', { body: { accion:'registrar_comandos', guild_id: guild || null } });
+  $('#botRegistrar').disabled = false;
+  if(error){ $('#botErr').textContent = error.message; return; }
+  if(data && data.ok){
+    $('#botNota').textContent = `${data.comandos} comando(s) registrados (${data.ambito}). ${data.ambito === 'servidor' ? 'Ya deberían aparecer al escribir "/" en ese servidor.' : 'Discord puede tardar hasta una hora en repartirlos.'}`;
+    toast('Comandos registrados.');
+  } else if(data && data.motivo === 'sin_bot'){
+    $('#botErr').textContent = 'Falta el token del bot. Ponlo en Supabase como DISCORD_BOT_TOKEN y vuelve a intentarlo.';
+  } else {
+    $('#botErr').textContent = 'Discord no aceptó el registro: ' + ((data && (data.detalle || data.motivo)) || 'sin respuesta');
+  }
+};

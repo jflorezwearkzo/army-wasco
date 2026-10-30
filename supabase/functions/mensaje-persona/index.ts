@@ -24,13 +24,8 @@ Deno.serve(async (req: Request) => {
   const auth = req.headers.get("Authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return json(401, { error: "Sin sesión" });
 
-  let body: { usuario_id?: string; texto?: string; modo?: string; canal?: string; titulo?: string };
+  let body: { usuario_id?: string; texto?: string; modo?: string; canal?: string; titulo?: string; accion?: string; guild_id?: string };
   try { body = await req.json(); } catch { return json(400, { error: "Cuerpo inválido" }); }
-  const modo = body.modo === "privado" ? "privado" : "mencion";
-  const texto = String(body.texto ?? "").trim().slice(0, 1800);
-  if (!texto) return json(400, { error: "El mensaje está vacío" });
-  if (!body.usuario_id) return json(400, { error: "Falta la persona" });
-
   const url = Deno.env.get("SUPABASE_URL")!, anon = Deno.env.get("SUPABASE_ANON_KEY")!,
         service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const admin = createClient(url, service, { auth: { persistSession: false } });
@@ -38,12 +33,58 @@ Deno.serve(async (req: Request) => {
   const { data: me } = await caller.auth.getUser();
   if (!me?.user) return json(401, { error: "Sesión inválida" });
 
+  // ---------- Registrar los comandos del bot en Discord ----------
+  // Se hace desde aquí porque es el único sitio con el token. Con guild_id los comandos
+  // aparecen al instante en ese servidor; sin él se registran globales y Discord tarda
+  // hasta una hora en repartirlos.
+  if (body.accion === "registrar_comandos") {
+    const { data: puedeReg } = await caller.rpc("tengo_permiso", { p: "gestion_reportes" });
+    if (!puedeReg) return json(403, { error: "Sin permiso para configurar el bot" });
+    const token = Deno.env.get("DISCORD_BOT_TOKEN");
+    const appId = Deno.env.get("DISCORD_APP_ID") ?? "1562937253351919627";
+    if (!token) return json(200, { ok: false, motivo: "sin_bot" });
+    const COMANDOS = [
+      { name: "eventos", description: "Horarios fijos del servidor para hoy", type: 1 },
+      { name: "agenda", description: "Próximos eventos a los que estás convocado", type: 1 },
+      { name: "quien", description: "Ficha rápida de un integrante", type: 1,
+        options: [{ name: "usuario", description: "La persona", type: 6, required: true }] },
+      { name: "mensaje", description: "Mandar un privado a un integrante", type: 1,
+        options: [
+          { name: "usuario", description: "A quién", type: 6, required: true },
+          { name: "texto", description: "Qué quieres decirle", type: 3, required: true },
+          { name: "asunto", description: "Título del mensaje (opcional)", type: 3, required: false },
+        ] },
+    ];
+    const guild = String(body.guild_id ?? "").trim();
+    const destino = guild
+      ? `${API}/applications/${appId}/guilds/${guild}/commands`
+      : `${API}/applications/${appId}/commands`;
+    const r = await fetch(destino, {
+      method: "PUT",
+      headers: { "Authorization": `Bot ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(COMANDOS),
+    });
+    const txt = await r.text();
+    if (!r.ok) return json(200, { ok: false, motivo: `discord_${r.status}`, detalle: txt.slice(0, 300) });
+    let cuantos = 0; try { cuantos = (JSON.parse(txt) as unknown[]).length; } catch { /* da igual */ }
+    await admin.rpc("auditar_evento", {
+      p_usuario_id: me.user.id, p_accion: "bot_comandos", p_tabla: "discord_canales",
+      p_registro: guild || "global", p_detalle: { comandos: cuantos },
+    }).then(() => {}, () => {});
+    return json(200, { ok: true, comandos: cuantos, ambito: guild ? "servidor" : "global" });
+  }
+
   let permitido = false;
   for (const p of ["usuarios", "anuncios"]) {
     const { data } = await caller.rpc("tengo_permiso", { p });
     if (data) { permitido = true; break; }
   }
   if (!permitido) return json(403, { error: "Sin permiso para escribir a los integrantes" });
+
+  const modo = body.modo === "privado" ? "privado" : "mencion";
+  const texto = String(body.texto ?? "").trim().slice(0, 1800);
+  if (!texto) return json(400, { error: "El mensaje está vacío" });
+  if (!body.usuario_id) return json(400, { error: "Falta la persona" });
 
   // La persona debe ser de una organización del que llama, y tener su Discord puesto
   const { data: miOrg } = await caller.rpc("mi_org");
