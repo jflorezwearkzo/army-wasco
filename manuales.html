@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=cdd679d2"></script>
+<script src="js/tema.js?v=011d04df"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -263,6 +263,13 @@
   <div class="bloque" data-solo="anuncios"><h3>Publicar</h3>
     <ol><li><span class="ruta">Administración → Anuncios → ＋ Nuevo anuncio</span>.</li><li>Título, contenido, una imagen opcional, fecha de caducidad, <i>📌 Fijar arriba</i>, <i>Visible</i> y <i>Publicar en Discord al guardar</i>.</li><li>Guardar. Aparece en el inicio de todos como NUEVO hasta que cada uno lo marque leído.</li></ol></div>
   <div class="bloque"><h3>El mensaje en Discord</h3><p>Al guardar con <i>Publicar en Discord</i> el anuncio sale al canal de anuncios y la página recuerda ese mensaje. En el menú ⋯ del anuncio: <b>🔄 Actualizar en Discord</b> reescribe el mensaje donde está, sin moverlo (también ocurre al guardar cambios con la casilla marcada); <b>📤 Reenviar al canal</b> borra el mensaje viejo y publica uno nuevo al final, para que vuelva a quedar a la vista de todos — es como moverlo abajo, y estrena identificador; y <b>🧹 Borrar de Discord</b> lo retira del canal sin tocar el tablón. Eliminar el anuncio borra también su mensaje.</p></div>
+  <div class="bloque" data-solo="anuncios"><h3>Horas que cada quien ve en la suya</h3>
+    <p>Dentro del texto de un anuncio puedes poner una marca de tiempo y cada persona la verá <b>en su propio reloj</b>, tanto en el tablón como en Discord. Se escribe así, con el instante en segundos:</p>
+    <ul><li><code>&lt;t:1793498400:F&gt;</code> → <i>sábado, 1 de noviembre de 2026, 02:00</i> (fecha y hora completas)</li>
+      <li><code>&lt;t:1793498400:t&gt;</code> → solo la hora</li>
+      <li><code>&lt;t:1793498400:R&gt;</code> → <b>cuenta atrás</b>: "en 2 horas y 33 minutos", y se actualiza sola</li></ul>
+    <p>Para sacar el número: en Discord escribe <code>/tiempo</code> de cualquier bot de marcas, o pídemelo. Lo mismo vale para los eventos de la agenda, que ya lo usan.</p>
+    <div class="tip">Es la forma honesta de dar una hora a gente de varios países: nadie tiene que restar nada ni equivocarse con el huso.</div></div>
   <div class="bloque"><h3>Seguimiento</h3><p>La columna <i>Leído por</i> muestra cuántos lo han marcado frente al total de activos. Con ⋯ puedes editar, publicar en Discord, ocultar, fijar o eliminar.</p></div>
 </section>
 
@@ -414,6 +421,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=52188660"></script>
+<script type="module" src="js/app-manuales.js?v=a2628ab2"></script>
 </body>
 </html>

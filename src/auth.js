@@ -212,6 +212,54 @@ export async function mensajesDiscord(tabla, id=null){
 // Pone el nombre de la organización activa donde corresponde (cabeceras y título de la pestaña).
 // La ruta de aprendizaje solo sale en el menú cuando está encendida; mientras no lo esté, la ve
 // únicamente quien puede encenderla.
+// ---- Marcas de tiempo al estilo de Discord: <t:1793498400:F> ----
+// El mismo texto sirve en Discord y en la página: allá lo pinta Discord, aquí lo pintamos
+// nosotros en la hora de quien mira, y la cuenta atrás (:R) se actualiza sola cada segundo.
+const FMT = {
+  t: { hour:'2-digit', minute:'2-digit' },
+  T: { hour:'2-digit', minute:'2-digit', second:'2-digit' },
+  d: { day:'2-digit', month:'2-digit', year:'numeric' },
+  D: { day:'numeric', month:'long', year:'numeric' },
+  f: { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' },
+  F: { weekday:'long', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' },
+};
+export function textoRelativo(seg){
+  const d = Math.abs(seg), futuro = seg > 0;
+  const partes = [[86400,'día','días'],[3600,'hora','horas'],[60,'minuto','minutos'],[1,'segundo','segundos']];
+  let resto = Math.floor(d), salida = [];
+  for(const [u, sing, plur] of partes){
+    const n = Math.floor(resto / u); resto -= n * u;
+    if(n > 0) salida.push(`${n} ${n === 1 ? sing : plur}`);
+    if(salida.length === 2) break;
+  }
+  if(!salida.length) salida = ['un momento'];
+  return (futuro ? 'en ' : 'hace ') + salida.join(' y ');
+}
+// Recibe texto YA escapado y devuelve HTML con las marcas convertidas
+export function marcasTiempo(txt){
+  return String(txt).replace(/&lt;t:(\d{1,12})(?::([tTdDfFR]))?&gt;/g, (_, ep, tipo) => {
+    const d = new Date(+ep * 1000);
+    if(isNaN(d.getTime())) return _;
+    if((tipo || 'f') === 'R')
+      return `<span class="t-rel" data-ep="${ep}">${esc(textoRelativo(+ep - Math.floor(Date.now()/1000)))}</span>`;
+    let s; try{ s = d.toLocaleString('es-CO', FMT[tipo || 'f']); }catch(e){ s = d.toLocaleString('es-CO'); }
+    return `<b class="t-abs" title="Tu hora local">${esc(s)}</b>`;
+  });
+}
+// Mantiene vivas las cuentas atrás que haya en la página
+let tickId = null;
+export function tickTiempos(){
+  const pintar = () => {
+    const ahora = Math.floor(Date.now()/1000);
+    const els = document.querySelectorAll('.t-rel');
+    if(!els.length) return;
+    els.forEach(e => e.textContent = textoRelativo(+e.dataset.ep - ahora));
+  };
+  pintar();
+  if(tickId) clearInterval(tickId);
+  tickId = setInterval(pintar, 1000);
+}
+
 export const rutaVisible = yo => !!(yo && yo.ruta && (yo.ruta.activa || yo.ruta.puedo_activar));
 
 export function marcaOrg(yo){

@@ -1,4 +1,4 @@
-  import { requerir, barraUsuario, puedeFormulario, sb, esc, avisoDiscord, nombreCompleto, rutaVisible } from './auth.js';
+  import { requerir, barraUsuario, puedeFormulario, sb, esc, avisoDiscord, nombreCompleto, rutaVisible, marcasTiempo, tickTiempos } from './auth.js';
   import { pendientes } from './ruta-pasos.js';
   const yo = await requerir(); barraUsuario(yo);
   { const er = document.getElementById('enlaceRuta'); if(er) er.hidden = !rutaVisible(yo); }
@@ -123,7 +123,8 @@ const urlAnu = p => /^https?:\/\//.test(p) ? p : sb.storage.from('anuncios').get
   if(!anuncios.length && !turnos.length) return;
   document.getElementById('tablon').style.display = '';
   const esc2 = esc;
-  document.getElementById('anuncios').innerHTML = anuncios.map(a => `<div class="anu ${vistos.has(a.id)?'':'nuevo'}" data-a="${a.id}"><h4>${a.fijado?'📌 ':''}${esc2(a.titulo)}</h4>${a.imagen_path?`<a href="${esc2(urlAnu(a.imagen_path))}" target="_blank" rel="noopener"><img src="${esc2(urlAnu(a.imagen_path))}" alt="" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--line2);display:block;margin:6px 0"></a>`:''}<p>${esc2(a.cuerpo||'')}</p><div class="f">${fmtF(a.publicado_en)}${vistos.has(a.id)?'':' · <a data-leer="'+a.id+'">Marcar como leído</a>'}</div></div>`).join('') || '<p class="muted" style="margin:0">Sin anuncios por ahora.</p>';
+  document.getElementById('anuncios').innerHTML = anuncios.map(a => `<div class="anu ${vistos.has(a.id)?'':'nuevo'}" data-a="${a.id}"><h4>${a.fijado?'📌 ':''}${esc2(a.titulo)}</h4>${a.imagen_path?`<a href="${esc2(urlAnu(a.imagen_path))}" target="_blank" rel="noopener"><img src="${esc2(urlAnu(a.imagen_path))}" alt="" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid var(--line2);display:block;margin:6px 0"></a>`:''}<p>${marcasTiempo(esc2(a.cuerpo||''))}</p><div class="f">${fmtF(a.publicado_en)}${vistos.has(a.id)?'':' · <a data-leer="'+a.id+'">Marcar como leído</a>'}</div></div>`).join('') || '<p class="muted" style="margin:0">Sin anuncios por ahora.</p>';
+  tickTiempos();
   document.querySelectorAll('[data-leer]').forEach(x => x.onclick = async () => { await sb.from('anuncios_vistos').insert({ anuncio_id: +x.dataset.leer, usuario_id: yo.id }); const d = x.closest('.anu'); d.classList.remove('nuevo'); x.remove(); });
   const dia = iso => ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(iso+'T00:00:00').getDay()];
   document.getElementById('turnos').innerHTML = turnos.map(t => `<div class="turno"><b>${t.fecha===hoyISO?'HOY':dia(t.fecha)+' '+fmtF(t.fecha).slice(0,5)}</b><span>${String(t.hora_inicio).slice(0,5)}${t.hora_fin?'–'+String(t.hora_fin).slice(0,5):''}</span>${t.notas?`<span class="muted">· ${esc2(t.notas)}</span>`:''}${t.reporte?'<span title="Reporte de patrullaje enviado">✅</span>':''}</div>`).join('') || '<p class="muted" style="margin:0">No tienes turnos asignados en los próximos 14 días.</p>';

@@ -204,6 +204,10 @@ Para que los privados funcionen hace falta una aplicación de Discord con bot in
 
 `privacidad.html` y `terminos.html` (enlazadas desde la barra, el login y los dos formularios públicos). Hay que mantenerlas al día cuando cambie qué datos se guardan o a dónde se envían: Discord las exige para publicar una aplicación.
 
+## Marcas de tiempo en los anuncios
+
+El cuerpo de un anuncio admite las marcas de Discord `<t:epoch:F|f|t|T|d|D|R>`. En Discord las pinta Discord; en el tablón las pinta `marcasTiempo(textoYaEscapado)` de `src/auth.js`, que sustituye sobre el texto **ya escapado** (busca `&lt;t:…&gt;`, así no abre un hueco de inyección) y deja `<b class="t-abs">` para las absolutas y `<span class="t-rel">` para la cuenta atrás, que `tickTiempos()` refresca cada segundo. Un mismo texto sirve en los dos sitios.
+
 ## Agenda de eventos
 
 Admin → **Agenda** (permiso `anuncios`): eventos puntuales con título, descripción, lugar, fecha y hora, duración, canal de Discord propio y recordatorio configurable. Nada que ver con `actividades`/`actividades_horarios`, que son los horarios fijos del servidor y no se editan desde la interfaz.
