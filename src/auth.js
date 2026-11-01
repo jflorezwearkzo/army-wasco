@@ -235,9 +235,16 @@ export function textoRelativo(seg){
   if(!salida.length) salida = ['un momento'];
   return (futuro ? 'en ' : 'hace ') + salida.join(' y ');
 }
-// Recibe texto YA escapado y devuelve HTML con las marcas convertidas
+// Recibe texto YA escapado y devuelve HTML con las marcas convertidas. También entiende los
+// títulos (#, ##, ###) y las negritas (**) de Discord, para que un mismo texto se vea bien
+// en los dos sitios y no queden almohadillas sueltas en el tablón.
 export function marcasTiempo(txt){
-  return String(txt).replace(/&lt;t:(\d{1,12})(?::([tTdDfFR]))?&gt;/g, (_, ep, tipo) => {
+  return String(txt)
+    .replace(/^###\s+(.+)$/gm, '<span class="an-h3">$1</span>')
+    .replace(/^##\s+(.+)$/gm,  '<span class="an-h2">$1</span>')
+    .replace(/^#\s+(.+)$/gm,   '<span class="an-h1">$1</span>')
+    .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')
+    .replace(/&lt;t:(\d{1,12})(?::([tTdDfFR]))?&gt;/g, (_, ep, tipo) => {
     const d = new Date(+ep * 1000);
     if(isNaN(d.getTime())) return _;
     if((tipo || 'f') === 'R')
