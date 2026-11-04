@@ -99,6 +99,10 @@ function textoDe(c, v){ if(v==null) return ''; if(c.tipo==='fecha') return fmtFe
 // ---------- Construcción del formulario HTML ----------
 export const OPCIONES_UNIDAD = ['Alta','Media','Baja','Nula'];
 export const opcionesDe = c => (c.opciones && c.opciones.length) ? c.opciones : (c.tipo==='unidad' ? OPCIONES_UNIDAD : []);
+export const MEDALLA = '🎖️';
+// La primera opción vale todas las medallas y la última ninguna: Alta 3, Media 2, Baja 1, Nula 0.
+export const medallasDe = (ops, valor) => { const i=ops.indexOf(valor); return i<0 ? -1 : ops.length-1-i; };
+export const medallas = n => n<0 ? '—' : MEDALLA.repeat(n);
 // Color de cada opción en el dibujo: la primera verde, la última roja, las de en medio ámbar.
 export function colorOpcion(ops, valor){
   const i = ops.indexOf(valor); if(i<0) return '#ffffff';
@@ -162,11 +166,12 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
         const gente=unidad();
         if(!gente.length){ const p=document.createElement('p'); p.className='nota-unidad'; p.textContent='No hay integrantes con "Mostrar en formularios" activo en esta unidad.'; box.appendChild(p); }
         const marcar=document.createElement('small'); marcar.className='todos'; marcar.textContent='Marcar todos: ';
-        const tsel=document.createElement('select'); tsel.innerHTML='<option value="">— elige —</option>'+ops.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+        const etq=o=>`${esc(o)}${c.tipo==='unidad'?'  '+medallas(medallasDe(ops,o)).replace('—',''):''}`;
+        const tsel=document.createElement('select'); tsel.innerHTML='<option value="">— elige —</option>'+ops.map(o=>`<option value="${esc(o)}">${etq(o)}</option>`).join('');
         marcar.appendChild(tsel); if(gente.length && !c.bloqueado) box.appendChild(marcar);
         for(const m of gente){ const f=document.createElement('div'); f.className='uFila';
           const n=document.createElement('span'); n.className='quien'; n.textContent=m.texto; n.title='@'+m.usuario;
-          const s=document.createElement('select'); s.innerHTML='<option value="">—</option>'+ops.map(o=>`<option value="${esc(o)}"${o===c.textoDef?' selected':''}>${esc(o)}</option>`).join('');
+          const s=document.createElement('select'); s.innerHTML='<option value="">—</option>'+ops.map(o=>`<option value="${esc(o)}"${o===c.textoDef?' selected':''}>${etq(o)}</option>`).join('');
           bloquear(s); f.appendChild(n); f.appendChild(s); box.appendChild(f);
           filas.push({ nombre:m.texto, usuario:m.usuario, rango_pm:m.rango_pm||'', sel:s }); }
         tsel.addEventListener('change',()=>{ if(!tsel.value) return; filas.forEach(f=>{ f.sel.value=tsel.value; }); tsel.value=''; cont.dispatchEvent(new Event('change',{bubbles:false})); });
@@ -257,7 +262,7 @@ function dibujarLineas(ctx, lineas, b, s, px, pintar, medir=null){
   while(rows*lh>b.h-pad*2 && tam>8){ tam--; lh=tam+3; }
   if(medir){                                   // ...y hasta que el elemento más largo quepa de ancho
     const peso=s.negrita!==false?'bold ':'';
-    const sobra=()=>{ ctx.font=`${peso}${tam}px "Roboto Condensed",Arial`; return lineas.some(ln=>medir(ln,ctx)>colW-6); };
+    const sobra=()=>{ ctx.font=`${peso}${tam}px "Roboto Condensed",Arial`; return lineas.some(ln=>medir(ln,ctx,tam)>colW-6); };
     while(tam>9 && sobra()){ tam--; lh=tam+3; rows=Math.ceil(n/cols); }
   }
   ctx.save(); ctx.beginPath(); ctx.rect(b.x,b.y,b.w,b.h); ctx.clip();
@@ -286,13 +291,19 @@ export function dibujar(cv, def, fondoImg, valores, fotosCampo, fotosAnexo, sell
     if(c.tipo==='casillas'){ const items=(v||[]); if(!items.length) continue;
       dibujarLineas(ctx, items, b, s, px, (it,xx,yy,cw,tam)=>{ ctx.fillStyle=it.on?'#7fd38a':'#ff6b6b'; ctx.font=`bold ${tam}px "Roboto Condensed",Arial`; ctx.fillText(it.on?'✔':'✘',xx,yy); const n=it.nombre.toUpperCase()+(it.texto?' —':''); ctx.fillStyle='#ffffff'; ctx.fillText(fit(ctx,n,cw-22),xx+20,yy); const nw=ctx.measureText(n).width; if(it.texto){ ctx.fillStyle=s.color||'#f0c24d'; ctx.font=`${tam-1}px "Roboto Condensed",Arial`; ctx.fillText(fit(ctx,it.texto,cw-26-nw),xx+26+nw,yy); } }); continue; }
     if(c.tipo==='unidad'){ const items=(v||[]).filter(i=>i.valor||!c.soloElegidos); if(!items.length) continue; const ops=opcionesDe(c);
-      dibujarLineas(ctx, items, b, s, px, (it,xx,yy,cw,tam)=>{ const val=(it.valor||'—').toUpperCase(), col=colorOpcion(ops,it.valor);
-        ctx.font=`bold ${tam}px "Roboto Condensed",Arial`; ctx.textAlign='left';
-        const bullet='■ '; ctx.fillStyle=col; ctx.fillText(bullet,xx,yy); const bw=ctx.measureText(bullet).width;
-        const vw=ctx.measureText(val).width;                       // el valor va pegado al borde de la columna
+      // Alta 🎖🎖🎖 · Media 🎖🎖 · Baja 🎖 · Nula (solo el cuadrito rojo). El navegador sustituye el emoji solo.
+      const marca=it=>medallas(medallasDe(ops,it.valor));
+      // el emoji ocupa más alto que la letra: va más pequeño para no pisar el renglón de abajo
+      const emo = tam => `${Math.round(tam*0.72)}px "Roboto Condensed",Arial`;
+      dibujarLineas(ctx, items, b, s, px, (it,xx,yy,cw,tam)=>{ const col=colorOpcion(ops,it.valor), val=marca(it);
+        const txt=ctx.font; ctx.textAlign='left'; const bullet='■ ';
+        ctx.fillStyle=col; ctx.fillText(bullet,xx,yy); const bw=ctx.measureText(bullet).width;
+        ctx.font=emo(tam); const vw=ctx.measureText(val).width; ctx.font=txt;   // medallas pegadas al borde
         ctx.fillStyle='#ffffff'; ctx.fillText(fit(ctx,it.nombre.toUpperCase(),cw-bw-vw-10),xx+bw,yy);
-        ctx.textAlign='right'; ctx.fillStyle=col; ctx.fillText(val,xx+cw-4,yy); ctx.textAlign='left'; },
-      (it,cx)=>cx.measureText('■  '+it.nombre.toUpperCase()+'   '+(it.valor||'—').toUpperCase()).width);
+        ctx.textAlign='right'; ctx.fillStyle=col; ctx.font=emo(tam);
+        ctx.fillText(val,xx+cw-4,yy); ctx.font=txt; ctx.textAlign='left'; },
+      (it,cx,tam)=>{ const txt=cx.font; const nw=cx.measureText('■  '+it.nombre.toUpperCase()+'   ').width;
+        cx.font=emo(tam); const vw=cx.measureText(marca(it)).width; cx.font=txt; return nw+vw; });
       continue; }
     if(Array.isArray(v)){ const lineas=v.map((t,i)=>t?`${i+1}. ${t}`:'').filter(Boolean); if(!lineas.length) continue;
       dibujarLineas(ctx, lineas, b, s, px, (ln,xx,yy,cw)=>{ ctx.fillStyle=s.color||'#f0c24d'; ctx.fillText(fit(ctx,ln,cw),xx,yy); }); continue; }
