@@ -158,13 +158,13 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
           let txt=null; if(c.conTexto){ txt=document.createElement('input'); txt.type='text'; txt.maxLength=80; txt.placeholder='Resultado / detalle'; f.appendChild(txt); chk.addEventListener('change',()=>{ if(chk.checked && !txt.value.trim() && c.textoDef) txt.value=c.textoDef; }); }
           box.appendChild(f); filas.push({nombre:o, chk, txt}); }
         el[c.id]=filas; break; }
-      case 'unidad': { box.className='unidad'; const ops=opcionesDe(c); const filas=[];
+      case 'unidad': { box.className='filaUnidad'; const ops=opcionesDe(c); const filas=[];
         const gente=unidad();
         if(!gente.length){ const p=document.createElement('p'); p.className='nota-unidad'; p.textContent='No hay integrantes con "Mostrar en formularios" activo en esta unidad.'; box.appendChild(p); }
         const marcar=document.createElement('small'); marcar.className='todos'; marcar.textContent='Marcar todos: ';
         const tsel=document.createElement('select'); tsel.innerHTML='<option value="">— elige —</option>'+ops.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
         marcar.appendChild(tsel); if(gente.length && !c.bloqueado) box.appendChild(marcar);
-        for(const m of gente){ const f=document.createElement('div'); f.className='fila';
+        for(const m of gente){ const f=document.createElement('div'); f.className='uFila';
           const n=document.createElement('span'); n.className='quien'; n.textContent=m.texto; n.title='@'+m.usuario;
           const s=document.createElement('select'); s.innerHTML='<option value="">—</option>'+ops.map(o=>`<option value="${esc(o)}"${o===c.textoDef?' selected':''}>${esc(o)}</option>`).join('');
           bloquear(s); f.appendChild(n); f.appendChild(s); box.appendChild(f);
@@ -240,7 +240,9 @@ export function layoutAnexo(fotos, W){
   return { gap, colW, rows, total: fotos.length ? 60+rows.reduce((a,r)=>a+r.h+gap,0)+30 : 0 };
 }
 // Líneas en columnas; columnas=0 -> automático (las que hagan falta para que quepan en el alto de la caja, hasta 6, reduciendo la letra si es necesario)
-function dibujarLineas(ctx, lineas, b, s, px, pintar){
+// `medir` (opcional): ancho que necesita un elemento con la letra ya puesta en ctx.
+// Si se pasa, la letra se achica hasta que el más largo quepa en su columna, en vez de recortarlo.
+function dibujarLineas(ctx, lineas, b, s, px, pintar, medir=null){
   const pad=4, maxW=b.w-pad*2-px, n=lineas.length; let tam=s.tam||17, lh=tam+3;
   const filasQueCaben = () => Math.max(1,Math.floor((b.h-pad*2)/lh));
   let cols=+s.columnas||0, rows=filasQueCaben();
@@ -250,9 +252,14 @@ function dibujarLineas(ctx, lineas, b, s, px, pintar){
     while(cols>6 && tam>10){ tam--; lh=tam+3; rows=filasQueCaben(); cols=Math.ceil(n/rows); }   // reduce la letra antes de pasar de 6 columnas
     cols=Math.max(1,Math.min(6,cols));
   }
-  rows=Math.ceil(n/cols); const colW=maxW/cols;
+  rows=Math.ceil(n/cols); let colW=maxW/cols;
   // Si aun así no cabe, se reduce la letra hasta que quepa (mínimo 8 px); nunca se dibuja fuera de la caja
   while(rows*lh>b.h-pad*2 && tam>8){ tam--; lh=tam+3; }
+  if(medir){                                   // ...y hasta que el elemento más largo quepa de ancho
+    const peso=s.negrita!==false?'bold ':'';
+    const sobra=()=>{ ctx.font=`${peso}${tam}px "Roboto Condensed",Arial`; return lineas.some(ln=>medir(ln,ctx)>colW-6); };
+    while(tam>9 && sobra()){ tam--; lh=tam+3; rows=Math.ceil(n/cols); }
+  }
   ctx.save(); ctx.beginPath(); ctx.rect(b.x,b.y,b.w,b.h); ctx.clip();
   ctx.font=`${s.negrita!==false?'bold ':''}${tam}px "Roboto Condensed",Arial`; ctx.textAlign='left';
   lineas.forEach((ln,i)=>{ const col=Math.floor(i/rows), row=i%rows; pintar(ln, b.x+pad+px+col*colW, b.y+pad+tam/2+row*lh, colW-6, tam); });
@@ -284,7 +291,8 @@ export function dibujar(cv, def, fondoImg, valores, fotosCampo, fotosAnexo, sell
         const bullet='■ '; ctx.fillStyle=col; ctx.fillText(bullet,xx,yy); const bw=ctx.measureText(bullet).width;
         const vw=ctx.measureText(val).width;                       // el valor va pegado al borde de la columna
         ctx.fillStyle='#ffffff'; ctx.fillText(fit(ctx,it.nombre.toUpperCase(),cw-bw-vw-10),xx+bw,yy);
-        ctx.textAlign='right'; ctx.fillStyle=col; ctx.fillText(val,xx+cw-4,yy); ctx.textAlign='left'; });
+        ctx.textAlign='right'; ctx.fillStyle=col; ctx.fillText(val,xx+cw-4,yy); ctx.textAlign='left'; },
+      (it,cx)=>cx.measureText('■  '+it.nombre.toUpperCase()+'   '+(it.valor||'—').toUpperCase()).width);
       continue; }
     if(Array.isArray(v)){ const lineas=v.map((t,i)=>t?`${i+1}. ${t}`:'').filter(Boolean); if(!lineas.length) continue;
       dibujarLineas(ctx, lineas, b, s, px, (ln,xx,yy,cw)=>{ ctx.fillStyle=s.color||'#f0c24d'; ctx.fillText(fit(ctx,ln,cw),xx,yy); }); continue; }
