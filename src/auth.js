@@ -554,6 +554,25 @@ export async function urlImagen(path){
 }
 
 // Favicon dinámico: un emoji como icono de pestaña
+// Botón de "ojito" para ver lo que se está escribiendo en un campo de contraseña.
+// Envuelve el input sin tocar el resto del formulario, así que vale para cualquier página.
+// Al enviar el formulario vuelve solo a oculto: la contraseña no se queda a la vista.
+export function ojoPassword(input){
+  if(!input || input.dataset.ojo) return; input.dataset.ojo='1';
+  const caja = document.createElement('div'); caja.className = 'conPass';
+  input.parentNode.insertBefore(caja, input); caja.appendChild(input);
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'ojo'; b.tabIndex = -1;
+  const pintar = () => { const oculto = input.type === 'password';
+    b.textContent = oculto ? '👁' : '🙈';
+    b.title = b.ariaLabel = oculto ? 'Mostrar la contraseña' : 'Ocultar la contraseña';
+    b.setAttribute('aria-pressed', oculto ? 'false' : 'true'); };
+  b.addEventListener('click', () => { input.type = input.type === 'password' ? 'text' : 'password'; pintar();
+    input.focus(); try{ const n = input.value.length; input.setSelectionRange(n, n); }catch(e){} });
+  pintar(); caja.appendChild(b);
+  const f = input.closest('form'); if(f) f.addEventListener('submit', () => { input.type = 'password'; pintar(); });
+}
+
 export function faviconEmoji(emoji){
   if(!emoji) return;
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="var(--bg)"/><rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="var(--line)" stroke-width="2"/><text x="32" y="44" text-anchor="middle" font-size="36">${emoji}</text></svg>`;

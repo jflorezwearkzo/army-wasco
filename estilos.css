@@ -43,3 +43,10 @@ tr:hover td{background:var(--hover)}
 /* Aviso de validación con IA en los formularios */
 .aviso-ia{background:var(--avisobg);border:1px solid var(--avisoline);border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0 0}
 .nota-foto{font-size:12px;color:var(--muted);margin:0 0 6px;line-height:1.35}.nota-foto b{color:var(--text)}
+
+/* Ojito para ver la contraseña mientras se escribe (lo monta ojoPassword en auth.js) */
+.conPass{position:relative;display:block}
+.conPass>input{padding-right:44px}
+.conPass>.ojo{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:auto;min-width:0;margin:0;padding:5px 8px;
+  background:none;border:0;box-shadow:none;border-radius:6px;font-size:17px;line-height:1;cursor:pointer;opacity:.65}
+.conPass>.ojo:hover,.conPass>.ojo:focus-visible{opacity:1;background:var(--bg2)}

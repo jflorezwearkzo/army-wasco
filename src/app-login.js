@@ -1,10 +1,11 @@
-  import { iniciarSesion, cargarYo, configurado, RAIZ, TURNSTILE_SITE_KEY, faltaSegundoPaso, verificarCodigo2FA, sb } from './auth.js';
+  import { iniciarSesion, cargarYo, configurado, RAIZ, TURNSTILE_SITE_KEY, faltaSegundoPaso, verificarCodigo2FA, sb, ojoPassword } from './auth.js';
   const err=document.getElementById('err'), b=document.getElementById('b');
   const next=new URLSearchParams(location.search).get('next');
   { const m=new URLSearchParams(location.search).get('motivo'); if(m==='inactividad') err.textContent='Tu sesión se cerró por inactividad (más de 7 días sin entrar). Vuelve a ingresar.'; if(m==='todas') err.textContent='Cerraste la sesión en todos tus dispositivos.'; }
   const destino=()=> (next && next.startsWith(RAIZ)) ? next : RAIZ;
   if(!configurado) err.textContent='Falta configurar config.js con las claves de Supabase.';
   const f1=document.getElementById('f'), f2=document.getElementById('fMfa');
+  ojoPassword(document.getElementById('p'));
   function pedirCodigo(){ f1.hidden=true; f2.hidden=false; setTimeout(()=>document.getElementById('codigo').focus(),50); }
   f2.onsubmit=async e=>{ e.preventDefault(); const eb=document.getElementById('errMfa'), bm=document.getElementById('bMfa'); eb.textContent=''; bm.disabled=true; bm.textContent='Verificando…';
     try{ await verificarCodigo2FA(document.getElementById('codigo').value); location.replace(destino()); }catch(x){ eb.textContent=x.message; bm.disabled=false; bm.textContent='Verificar'; } };
