@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Diseñador de formularios · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="../js/tema.js?v=1a85ea26"></script>
+<script src="../js/tema.js?v=a71124e8"></script>
 <link rel="stylesheet" href="../estilos.css">
 <style>
   body{margin:0;background:var(--bg);color:var(--text);font-family:"Roboto Condensed",Arial,sans-serif}
@@ -102,7 +102,9 @@
         <div class="fila3"><label><input type="checkbox" id="pReq"> Obligatorio</label><label><input type="checkbox" id="pBloq"> Bloqueado</label><label><input type="checkbox" id="pRes"> En resumen</label></div>
         <label id="pPorPagW"><input type="checkbox" id="pPorPag"> Se repite por página</label>
         <div id="pOpcionesW"><label>Opciones (una por línea)</label><textarea id="pOpciones" rows="3"></textarea>
-          <div id="pCasW" class="fila"><label style="margin:6px 0 0"><input type="checkbox" id="pConTexto"> Con texto por casilla</label><div><label>Texto al marcar</label><input id="pTextoDef" placeholder="p. ej. Control del estado logrado"></div></div></div>
+          <div id="pCasW" class="fila"><label style="margin:6px 0 0"><input type="checkbox" id="pConTexto"> Con texto por casilla</label><div><label>Texto al marcar</label><input id="pTextoDef" placeholder="p. ej. Control del estado logrado"></div></div>
+          <div id="pUniW"><p class="ayuda">Sale un renglón por cada integrante de la unidad que esté activo y con <b>Mostrar en formularios</b>; al lado, un desplegable con estas opciones.</p>
+            <div class="fila"><div><label>Opción marcada por defecto</label><select id="pDefUnidad"></select></div><label style="margin:6px 0 0"><input type="checkbox" id="pSoloElegidos"> En el reporte, solo los que tengan opción</label></div></div></div>
         <div id="pFormulaW">
           <label>Operación</label><select id="pOp"></select>
           <div id="pOrigenW"><label>Campo origen</label><select id="pOrigen"></select></div>
@@ -127,6 +129,6 @@
   </aside>
 </main>
 <div id="modal"><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="color:var(--gold)">Vista previa con datos de ejemplo</b><button class="ghost" id="btnCerrar" type="button">Cerrar</button></div><canvas id="cv"></canvas></div></div>
-<script type="module" src="../js/app-disenador.js?v=d4b78cf4"></script>
+<script type="module" src="../js/app-disenador.js?v=f8562548"></script>
 </body>
 </html>

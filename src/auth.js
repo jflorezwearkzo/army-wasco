@@ -130,7 +130,7 @@ const BLOQ = new Proxy(function(){}, { get:(t,k)=> k==='then' ? (res,rej)=>{ rej
 // (el rol "Read Only" y "Ver como"): si una no está aquí, queda bloqueada, que es el lado
 // seguro cuando mañana se añada una función nueva.
 export const RPC_LECTURA = ['permisos_efectivos','mi_sesion','mis_orgs','tengo_permiso','ficha_usuario',
-  'expediente','ranking_mes','ranking_calc','insignias_lista','listar_integrantes','buscar_folios',
+  'expediente','ranking_mes','ranking_calc','insignias_lista','listar_integrantes','integrantes_unidad','buscar_folios',
   'turnos_lista','datos_ascensos','actividad','actividad_usuarios','puedo_usar_formulario',
   'canales_discord','discord_resolver','ver_como','mi_rango_pm','puedo_sobre','puedo_gestionar_ruta',
   'bajas_de','agenda_invitado'];

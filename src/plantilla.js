@@ -16,6 +16,7 @@ export const TIPOS = {
   personas: { nombre:'Lista de personas (1 a N, con buscador)' },
   lista:    { nombre:'Lista de textos (1 a N)' },
   casillas: { nombre:'Casillas (lista fija con ✔/✘ y texto)' },
+  unidad:   { nombre:'Unidad completa (cada miembro con su desplegable)' },
   formula:  { nombre:'Campo calculado (fórmula)' },
   foto:     { nombre:'Foto en recuadro' },
 };
@@ -70,6 +71,7 @@ function cumple(def, valores, campoId, valor){
   const c=def.campos.find(x=>x.id===campoId); if(!c) return true;
   const v=valores[campoId];
   if(c.tipo==='casillas') return Array.isArray(v) && v.some(x=>x.on);          // "si hay alguna casilla marcada"
+  if(c.tipo==='unidad') return Array.isArray(v) && (valor==null||valor==='' ? v.some(x=>x.valor) : v.some(x=>norm(x.valor)===norm(valor)));
   if(Array.isArray(v)) return v.filter(Boolean).length>0;
   if(valor==null || valor==='') return !!norm(v);
   return norm(v)===norm(valor);
@@ -80,7 +82,7 @@ const esRequerido = (def, valores, c) => c.req && (!c.reglas||!c.reglas.reqCampo
 // ---------- Fórmulas ----------
 export function calcular(def, c, valores){
   const f=c.formula||{}; const o=def.campos.find(x=>x.id===f.origen); const v=o?valores[o.id]:undefined;
-  const cnt = x => Array.isArray(x) ? (o&&o.tipo==='casillas' ? x.filter(i=>i.on).length : x.filter(Boolean).length) : (x?1:0);
+  const cnt = x => Array.isArray(x) ? (o&&o.tipo==='casillas' ? x.filter(i=>i.on).length : o&&o.tipo==='unidad' ? x.filter(i=>i.valor).length : x.filter(Boolean).length) : (x?1:0);
   switch(f.op){
     case 'contar': return o ? String(cnt(v)) : '';
     case 'total':  return o ? `${cnt(v)} / ${o.tipo==='casillas' ? (o.opciones||[]).length : (Array.isArray(v)?v.length:0)}` : '';
@@ -92,10 +94,21 @@ export function calcular(def, c, valores){
     default: return '';
   }
 }
-function textoDe(c, v){ if(v==null) return ''; if(c.tipo==='fecha') return fmtFecha(v, c.estilo&&c.estilo.formato); if(c.tipo==='casillas') return v.filter(i=>i.on).map(i=>i.nombre).join(', '); if(Array.isArray(v)) return v.filter(Boolean).join(', '); return String(v); }
+function textoDe(c, v){ if(v==null) return ''; if(c.tipo==='fecha') return fmtFecha(v, c.estilo&&c.estilo.formato); if(c.tipo==='casillas') return v.filter(i=>i.on).map(i=>i.nombre).join(', '); if(c.tipo==='unidad') return (v||[]).filter(i=>i.valor).map(i=>`${i.nombre}: ${i.valor}`).join(', '); if(Array.isArray(v)) return v.filter(Boolean).join(', '); return String(v); }
 
 // ---------- Construcción del formulario HTML ----------
-export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrantes=()=>[], campos=null, otros=()=>({}) }={}){
+export const OPCIONES_UNIDAD = ['Alta','Media','Baja','Nula'];
+export const opcionesDe = c => (c.opciones && c.opciones.length) ? c.opciones : (c.tipo==='unidad' ? OPCIONES_UNIDAD : []);
+// Color de cada opción en el dibujo: la primera verde, la última roja, las de en medio ámbar.
+export function colorOpcion(ops, valor){
+  const i = ops.indexOf(valor); if(i<0) return '#ffffff';
+  if(ops.length<2) return '#7fd38a';
+  if(i===0) return '#7fd38a';
+  if(i===ops.length-1) return '#ff6b6b';
+  return i < (ops.length-1)/2 ? '#f0c24d' : '#e8923d';
+}
+
+export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrantes=()=>[], unidad=()=>[], campos=null, otros=()=>({}) }={}){
   cont.innerHTML='';
   const CAMPOS = campos || def.campos;
   const fotos = {}; const el = {}; const wraps = {};
@@ -145,6 +158,19 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
           let txt=null; if(c.conTexto){ txt=document.createElement('input'); txt.type='text'; txt.maxLength=80; txt.placeholder='Resultado / detalle'; f.appendChild(txt); chk.addEventListener('change',()=>{ if(chk.checked && !txt.value.trim() && c.textoDef) txt.value=c.textoDef; }); }
           box.appendChild(f); filas.push({nombre:o, chk, txt}); }
         el[c.id]=filas; break; }
+      case 'unidad': { box.className='unidad'; const ops=opcionesDe(c); const filas=[];
+        const gente=unidad();
+        if(!gente.length){ const p=document.createElement('p'); p.className='nota-unidad'; p.textContent='No hay integrantes con "Mostrar en formularios" activo en esta unidad.'; box.appendChild(p); }
+        const marcar=document.createElement('small'); marcar.className='todos'; marcar.textContent='Marcar todos: ';
+        const tsel=document.createElement('select'); tsel.innerHTML='<option value="">— elige —</option>'+ops.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+        marcar.appendChild(tsel); if(gente.length && !c.bloqueado) box.appendChild(marcar);
+        for(const m of gente){ const f=document.createElement('div'); f.className='fila';
+          const n=document.createElement('span'); n.className='quien'; n.textContent=m.texto; n.title='@'+m.usuario;
+          const s=document.createElement('select'); s.innerHTML='<option value="">—</option>'+ops.map(o=>`<option value="${esc(o)}"${o===c.textoDef?' selected':''}>${esc(o)}</option>`).join('');
+          bloquear(s); f.appendChild(n); f.appendChild(s); box.appendChild(f);
+          filas.push({ nombre:m.texto, usuario:m.usuario, rango_pm:m.rango_pm||'', sel:s }); }
+        tsel.addEventListener('change',()=>{ if(!tsel.value) return; filas.forEach(f=>{ f.sel.value=tsel.value; }); tsel.value=''; cont.dispatchEvent(new Event('change',{bubbles:false})); });
+        el[c.id]=filas; break; }
       case 'formula': { const i=document.createElement('input'); i.type='text'; i.readOnly=true; i.tabIndex=-1; i.style.opacity='.75'; i.title='Se calcula automáticamente'; box.appendChild(i); el[c.id]=i; break; }
       case 'foto': { const nf=document.createElement('p'); nf.className='nota-foto'; nf.innerHTML='📱 Sube <b>pantallazos del celular o del PC</b>, no la "foto" de la herramienta del juego: esa cámara oculta el chat, las macros y la HORA DEL SERVIDOR.'; box.appendChild(nf); const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.style.fontSize='13px'; const t=document.createElement('div'); t.className='thumb'; t.textContent='Sin foto';
         i.addEventListener('change',async e=>{ const f=e.target.files[0]; if(!f) return; fotos[c.id]={img:await cargarImagen(f),name:f.name}; t.innerHTML=`<img src="${fotos[c.id].img.src}" alt=""><button type="button" title="Quitar">✕</button>`; t.querySelector('button').onclick=()=>{ delete fotos[c.id]; t.textContent='Sin foto'; i.value=''; onChange(); }; onChange(); });
@@ -157,6 +183,7 @@ export function construirFormulario(cont, def, yo, { onChange=()=>{}, integrante
     for(const c of CAMPOS){ const e=el[c.id]; if(!e) continue;
       if(c.tipo==='hora'){ v[c.id]=(e[0].value&&e[1].value)?`${e[0].value}:${e[1].value}`:''; }
       else if(c.tipo==='casillas'){ v[c.id]=e.map(f=>({ nombre:f.nombre, on:f.chk.checked, texto:f.txt?f.txt.value.trim():'' })); }
+      else if(c.tipo==='unidad'){ v[c.id]=e.map(f=>({ nombre:f.nombre, usuario:f.usuario, rango_pm:f.rango_pm, valor:f.sel.value })); }
       else if(c.tipo==='formula'){ v[c.id]=''; }
       else if(Array.isArray(e)){ v[c.id]=e.map(i=>i.value.trim()); }
       else if(c.tipo==='foto'){ v[c.id]=fotos[c.id]?fotos[c.id].name:''; }
@@ -187,6 +214,10 @@ export function validar(def, v, fotosCampo, fotosAnexo){
   for(const c of def.campos){ if(!estaActivo(def,v,c) || c.tipo==='formula') continue; const x=v[c.id]; const req=esRequerido(def,v,c);
     if(c.tipo==='foto'){ if(req && !fotosCampo[c.id]) e.push(`• Falta la foto: ${c.etiqueta}.`); continue; }
     if(c.tipo==='casillas'){ if(req && !x.some(i=>i.on)) e.push(`• ${c.etiqueta}: marca al menos una casilla.`); if(c.conTexto) x.forEach(i=>{ if(req && !i.texto) e.push(`• ${c.etiqueta}: falta el texto de "${i.nombre}".`); }); continue; }
+    if(c.tipo==='unidad'){ const faltan=(x||[]).filter(i=>!i.valor);
+      if(req && !(x||[]).length) e.push(`• ${c.etiqueta}: no hay integrantes visibles en la unidad.`);
+      else if(req && faltan.length) e.push(`• ${c.etiqueta}: falta elegir en ${faltan.length} integrante(s): ${faltan.slice(0,6).map(i=>i.nombre).join(', ')}${faltan.length>6?'…':''}.`);
+      continue; }
     if(Array.isArray(x)){ const vacios=x.map((s,i)=>s?null:i+1).filter(Boolean); if(req&&vacios.length) e.push(`• ${c.etiqueta}: falta el ${vacios.join(', ')}.`);
       const vistos=new Set(); for(const s of x){ const k=s.toLowerCase(); if(k&&vistos.has(k)){ e.push(`• ${c.etiqueta}: "${s}" está repetido.`); break; } vistos.add(k); } continue; }
     if(req && !x) e.push(`• ${c.etiqueta} es obligatorio.`);
@@ -247,6 +278,14 @@ export function dibujar(cv, def, fondoImg, valores, fotosCampo, fotosAnexo, sell
     ctx.fillStyle=s.color||'#f0c24d'; ctx.font=fuente(s.negrita!==false);
     if(c.tipo==='casillas'){ const items=(v||[]); if(!items.length) continue;
       dibujarLineas(ctx, items, b, s, px, (it,xx,yy,cw,tam)=>{ ctx.fillStyle=it.on?'#7fd38a':'#ff6b6b'; ctx.font=`bold ${tam}px "Roboto Condensed",Arial`; ctx.fillText(it.on?'✔':'✘',xx,yy); const n=it.nombre.toUpperCase()+(it.texto?' —':''); ctx.fillStyle='#ffffff'; ctx.fillText(fit(ctx,n,cw-22),xx+20,yy); const nw=ctx.measureText(n).width; if(it.texto){ ctx.fillStyle=s.color||'#f0c24d'; ctx.font=`${tam-1}px "Roboto Condensed",Arial`; ctx.fillText(fit(ctx,it.texto,cw-26-nw),xx+26+nw,yy); } }); continue; }
+    if(c.tipo==='unidad'){ const items=(v||[]).filter(i=>i.valor||!c.soloElegidos); if(!items.length) continue; const ops=opcionesDe(c);
+      dibujarLineas(ctx, items, b, s, px, (it,xx,yy,cw,tam)=>{ const val=(it.valor||'—').toUpperCase(), col=colorOpcion(ops,it.valor);
+        ctx.font=`bold ${tam}px "Roboto Condensed",Arial`; ctx.textAlign='left';
+        const bullet='■ '; ctx.fillStyle=col; ctx.fillText(bullet,xx,yy); const bw=ctx.measureText(bullet).width;
+        const vw=ctx.measureText(val).width;                       // el valor va pegado al borde de la columna
+        ctx.fillStyle='#ffffff'; ctx.fillText(fit(ctx,it.nombre.toUpperCase(),cw-bw-vw-10),xx+bw,yy);
+        ctx.textAlign='right'; ctx.fillStyle=col; ctx.fillText(val,xx+cw-4,yy); ctx.textAlign='left'; });
+      continue; }
     if(Array.isArray(v)){ const lineas=v.map((t,i)=>t?`${i+1}. ${t}`:'').filter(Boolean); if(!lineas.length) continue;
       dibujarLineas(ctx, lineas, b, s, px, (ln,xx,yy,cw)=>{ ctx.fillStyle=s.color||'#f0c24d'; ctx.fillText(fit(ctx,ln,cw),xx,yy); }); continue; }
     let texto = c.tipo==='fecha' ? fmtFecha(v,s.formato) : v;
@@ -275,6 +314,9 @@ export function dibujar(cv, def, fondoImg, valores, fotosCampo, fotosAnexo, sell
 export function resumenDe(def, v){
   const partes=[]; for(const c of def.campos){ if(!c.resumen) continue; const x=v[c.id];
     if(c.tipo==='casillas'){ const n=(x||[]).filter(i=>i.on).length; partes.push(`${n}/${(c.opciones||[]).length} ${c.etiqueta.toLowerCase()}`); }
+    else if(c.tipo==='unidad'){ const l=(x||[]); const cuenta={}; l.forEach(i=>{ if(i.valor) cuenta[i.valor]=(cuenta[i.valor]||0)+1; });
+      const det=opcionesDe(c).filter(o=>cuenta[o]).map(o=>`${cuenta[o]} ${o.toLowerCase()}`).join(', ');
+      partes.push(`${l.length} integrante(s)${det?' · '+det:''}`); }
     else if(Array.isArray(x)){ if(x.filter(Boolean).length) partes.push(`${x.filter(Boolean).length} ${c.etiqueta.toLowerCase()}`); }
     else if(x) partes.push(c.tipo==='fecha'?fmtFecha(x):String(x)); }
   return partes.join(' · ');

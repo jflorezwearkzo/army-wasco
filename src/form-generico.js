@@ -1,6 +1,6 @@
 // Formulario genérico: carga la definición JSON del formulario (?id=...) y la ejecuta con el motor de plantillas.
 // Soporta reportes de varias páginas (def.paginas.activo): los campos "por página" se repiten y se exporta una imagen por página.
-import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, faviconEmoji, sb, esc, descargarSiProcede } from './auth.js';
+import { requerir, barraUsuario, crearReporte, adjuntarImagen, notificarDiscord, textoDiscord, borrador, mejorasMovil, bloquearPantalla, faviconEmoji, sb, esc, descargarSiProcede, RANGOS } from './auth.js';
 import { construirFormulario, validar, dibujar, cargarFondo, cargarImagen, resumenDe, fmtFecha, calcular, estaActivo } from './plantilla.js';
 
 const ID = new URLSearchParams(location.search).get('id') || '';
@@ -18,6 +18,14 @@ faviconEmoji(F.icono);
 let INTEGRANTES=[];
 sb.rpc('listar_integrantes').then(({data})=>{ INTEGRANTES=(data||[]).map(p=>({...p, texto:[p.rango,p.nombre||p.usuario].filter(Boolean).join(' ')})); });
 
+// Campos tipo "unidad": la lista completa de la unidad hay que tenerla antes de pintar el formulario.
+let UNIDAD=[];
+if(DEF.campos.some(c=>c.tipo==='unidad')){
+  const { data } = await sb.rpc('integrantes_unidad');
+  UNIDAD=(data||[]).map(p=>({...p, texto:[p.rango,p.nombre||p.usuario].filter(Boolean).join(' ')}))
+    .sort((a,b)=>(RANGOS.indexOf(b.rango)-RANGOS.indexOf(a.rango)) || a.texto.localeCompare(b.texto,'es'));
+}
+
 const cv=$('#cv'); let FONDO=null; let SELLO=null; let ACTUAL=0;
 const FOT=DEF.fotos||{min:0,max:10}; let fotos=[];
 const COMUNES = DEF.campos.filter(c=>!MULTI || !c.porPagina), PORPAG = MULTI ? DEF.campos.filter(c=>c.porPagina) : [];
@@ -25,7 +33,7 @@ let comun=null; const paginas=[];           // paginas[i] = { el, form }
 const valoresDe = i => { if(!comun) return {}; if(!paginas[i]) return comun.leer(); const v={ ...comun.leerPropio(), ...paginas[i].form.leerPropio(), __pagina:i+1, __paginas:paginas.length }; for(const c of DEF.campos) if(!estaActivo(DEF,v,c)) v[c.id]=Array.isArray(v[c.id])?[]:''; for(const c of DEF.campos) if(c.tipo==='formula'){ v[c.id]=calcular(DEF,c,v); const e=paginas[i].form.el[c.id]||comun.el[c.id]; if(e) e.value=v[c.id]; } return v; };
 const fotosDe = i => ({ ...(comun?comun.fotos:{}), ...(paginas[i]?paginas[i].form.fotos:{}) });
 
-comun = construirFormulario($('#campos'), DEF, YO, { onChange:()=>draw(), integrantes:()=>INTEGRANTES, campos:COMUNES, otros:()=>paginas[ACTUAL]?paginas[ACTUAL].form.leerPropio():{} });
+comun = construirFormulario($('#campos'), DEF, YO, { onChange:()=>draw(), integrantes:()=>INTEGRANTES, unidad:()=>UNIDAD, campos:COMUNES, otros:()=>paginas[ACTUAL]?paginas[ACTUAL].form.leerPropio():{} });
 
 // ---- Páginas ----
 if(MULTI){
@@ -34,7 +42,7 @@ if(MULTI){
   const tabs=document.createElement('div'); tabs.className='tabs'; tabs.id='tabs'; $('.preview h2').insertAdjacentElement('afterend', tabs);
   const ajustar=()=>{ const n=+$('#nPag').value||1, cont=$('#paginas');
     while(paginas.length<n){ const i=paginas.length; const el=document.createElement('div'); el.className='pag'; el.dataset.i=i; el.innerHTML=`<h3>${esc(ETQ)} N° <span class="num">${i+1}</span></h3>`; const box=document.createElement('div'); el.appendChild(box); cont.appendChild(el);
-      const form=construirFormulario(box, DEF, YO, { onChange:()=>{ ACTUAL=i; pintarTabs(); draw(); }, integrantes:()=>INTEGRANTES, campos:PORPAG, otros:()=>({ ...(comun?comun.leerPropio():{}), __pagina:i+1, __paginas:paginas.length }) });
+      const form=construirFormulario(box, DEF, YO, { onChange:()=>{ ACTUAL=i; pintarTabs(); draw(); }, integrantes:()=>INTEGRANTES, unidad:()=>UNIDAD, campos:PORPAG, otros:()=>({ ...(comun?comun.leerPropio():{}), __pagina:i+1, __paginas:paginas.length }) });
       el.addEventListener('focusin',()=>{ if(ACTUAL!==i){ ACTUAL=i; pintarTabs(); draw(); } }); paginas.push({ el, form }); }
     while(paginas.length>n){ paginas.pop().el.remove(); }
     if(ACTUAL>=n) ACTUAL=n-1; pintarTabs(); draw(); };
