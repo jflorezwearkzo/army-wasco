@@ -469,7 +469,8 @@ function editarForm(f){
   $('#fId').value=f.id; $('#fId').disabled=true; $('#fTitulo').value=f.titulo; $('#fDesc').value=f.descripcion||''; $('#fIcono').value=f.icono||'';
   $('#fOrden').value=f.orden; $('#fRuta').value=f.ruta; $('#fActivo').checked=f.activo; $('#fAprob').checked=!!f.requiere_aprobacion; $('#fDescarga').checked=f.descarga_imagen!==false; msg('f','');
   $('#fWebhook').value=''; $('#fWebhookOn').checked=true; $('#fDiscordMsg').textContent='';
-  if(tiene(yo,'gestion_reportes')) sb.from('formularios_discord').select('webhook,activo').eq('formulario_id',f.id).maybeSingle().then(({data})=>{ if(data){ $('#fWebhook').value=data.webhook; $('#fWebhookOn').checked=data.activo; } });
+  $('#fWebhook').dataset.tenia='';
+  if(tiene(yo,'gestion_reportes')) sb.from('formularios_discord').select('webhook,activo').eq('formulario_id',f.id).maybeSingle().then(({data})=>{ if(data){ $('#fWebhook').value=data.webhook||''; $('#fWebhookOn').checked=data.activo; $('#fWebhook').dataset.tenia = data.webhook ? '1' : ''; } });
   abrirDialogo('formularios', 'editar/'+f.id);
 }
 $('#fProbar').onclick = async () => {
@@ -481,7 +482,9 @@ $('#fProbar').onclick = async () => {
 async function guardarDiscord(id){
   if(!tiene(yo,'gestion_reportes')) return;
   const w=$('#fWebhook').value.trim();
-  if(!w){ await sb.from('formularios_discord').delete().eq('formulario_id',id); return; }
+  // Igual que en la tabla de canales: vaciar el campo borra el webhook, así que si había uno se pregunta.
+  if(!w){ if($('#fWebhook').dataset.tenia === '1' && !confirm('Vas a quitar el webhook de este formulario y dejará de publicarse en Discord. ¿Seguro?')) return;
+    await sb.from('formularios_discord').delete().eq('formulario_id',id); $('#fWebhook').dataset.tenia=''; return; }
   if(!/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ throw new Error('El webhook debe ser un enlace de Discord (https://discord.com/api/webhooks/…).'); }
   const { error } = await sb.from('formularios_discord').upsert({ formulario_id:id, webhook:w, activo:$('#fWebhookOn').checked, actualizado_en:new Date().toISOString() });
   if(error) throw error;
@@ -753,7 +756,7 @@ async function cargarAutomatizacion(){
   $('#cErr').textContent='';
   const EDITA = !!(dc && dc.puede_editar), data = (dc && dc.canales) || [];
   const campoWh = (attr, clave, valor, tiene) => EDITA
-    ? `<input type="url" data-${attr}="${esc(clave)}" value="${esc(valor||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px">`
+    ? `<input type="url" data-${attr}="${esc(clave)}" data-tenia="${tiene?'1':''}" value="${esc(valor||'')}" placeholder="https://discord.com/api/webhooks/…" style="min-width:260px">`
     : `<span class="muted" title="No tienes permiso para ver los enlaces">${tiene ? '🔒 ••••••••••••••••••••  <span style="font-size:11px">(configurado)</span>' : '— sin webhook'}</span>`;
   // Hilo opcional dentro del canal del webhook. Va aparte del enlace para que editar y borrar
   // los mensajes siga funcionando (esas llamadas arman la dirección de otra manera).
@@ -822,7 +825,10 @@ async function cargarAutomatizacion(){
   const guardarF = async id => { const cw = $(`[data-fwh="${id}"]`), ch = $(`[data-fhilo="${id}"]`), m = $(`[data-fm="${id}"]`);
     separarHilo(cw, ch);
     const w = cw.value.trim(), h = ch.value.trim();
-    if(!w){ await sb.from('formularios_discord').delete().eq('formulario_id', id); m.textContent='Sin webhook.'; return true; }
+    // Guardar con el campo vacío borra el webhook. Si había uno, se pregunta antes: así un campo
+    // en blanco por un fallo de carga no se lleva por delante una configuración que sí existía.
+    if(!w){ if(cw.dataset.tenia === '1' && !confirm('Vas a quitar el webhook de este formulario y dejará de publicarse en Discord. ¿Seguro?')){ m.textContent='Sin cambios.'; return false; }
+      await sb.from('formularios_discord').delete().eq('formulario_id', id); cw.dataset.tenia=''; m.textContent='Webhook quitado.'; return true; }
     if(!/^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\//.test(w)){ m.textContent='El webhook debe ser un enlace de Discord.'; return false; }
     if(h && !/^[0-9]{5,25}$/.test(h)){ m.textContent='El hilo es solo el id (números). Modo desarrollador → clic derecho en el hilo → Copiar ID.'; return false; }
     const { error } = await sb.from('formularios_discord').upsert({ formulario_id: id, webhook: w, hilo: h || null, activo: $(`[data-fon="${id}"]`).checked, actualizado_en: new Date().toISOString() }); m.textContent = error ? 'Error: '+error.message : 'Guardado.'; return !error; };
