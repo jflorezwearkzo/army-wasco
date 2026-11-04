@@ -116,6 +116,10 @@ Cada organización tiene además sus propios formularios, canales de Discord, ro
 - Authentication → Providers → Email: **"Confirm email" desactivado** (los usuarios no tienen correo real; se usan `usuario@armywasco.local`).
 - Contraseñas: requisitos de complejidad (mayúscula, minúscula, número y símbolo; la página exige además mínimo 8) y **"Require current password when updating"** activado: "Mi cuenta" pide la contraseña actual.
 - Restablecer una contraseña olvidada: desde el panel (botón "Contraseña", permiso Restablecer contraseñas) o en Supabase → Authentication → Users.
+- **Ninguna función de la base es ejecutable sin sesión.** El rol `anon` no tiene `EXECUTE` sobre ninguna función: los dos formularios públicos van directo a la función de borde `solicitud-acceso` y no tocan PostgREST. Si algún día se añade una página pública que sí necesite leer de la base, hay que conceder `EXECUTE` a `anon` expresamente para esa función y solo para esa.
+- Políticas RLS: una sola política permisiva por tabla y acción (las de escritura están partidas en INSERT / UPDATE / DELETE en vez de `FOR ALL`, para que las lecturas no las evalúen), y `auth.uid()` siempre envuelto en `(select auth.uid())` para que se calcule una vez por consulta y no por fila.
+- Tablas con RLS activo y **sin ninguna política** a propósito (solo las alcanza la clave de servicio desde las funciones de borde): `secretos`, `secretos_internos`, `bot_conocimiento`, `bot_preguntas`, `eventos_avisados`, `solicitudes_limite`. El linter las marca como aviso; es el estado correcto.
+- Avisos del linter que quedan a propósito: las funciones `SECURITY DEFINER` ejecutables por `authenticated` (son justo las que usa la app, y cada una comprueba permisos por dentro) y la protección de contraseñas filtradas (función de pago).
 
 
 ## Diseñador de formularios (plantillas personalizables)
