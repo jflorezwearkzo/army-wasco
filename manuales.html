@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="PM Reportes">
 <title>Manuales · Policía Militar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
-<script src="js/tema.js?v=21b0baea"></script>
+<script src="js/tema.js?v=09f999af"></script>
 <link rel="stylesheet" href="estilos.css">
 <style>
   main{max-width:1180px;margin:0 auto;padding:24px 20px 50px}
@@ -390,7 +390,8 @@
     <p>Al lado del webhook hay una casilla <b>Hilo</b>. Déjala vacía y se publica en el canal; pon el id de un hilo y se publica dentro de ese hilo. Para sacar el id: en Discord, Ajustes → Avanzado → <i>Modo desarrollador</i>, luego clic derecho sobre el hilo → <b>Copiar ID</b>.</p>
     <div class="ojo">El hilo tiene que estar en el mismo canal del webhook y no puede estar archivado. Si se archiva por inactividad, los envíos fallan hasta que alguien lo reabra.</div>
     <div class="tip">Si pegas el enlace con el <code>?thread_id=</code> ya dentro, la página lo separa sola y lo pone en su casilla. El hilo va aparte a propósito: así editar y borrar anuncios desde el panel sigue funcionando.</div></div>
-  <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b>, <b>Ranking mensual</b> (otorga las insignias), <b>Avance semanal del ranking</b> y <b>Reporte de actividad semanal</b> (cómo va la cosa a mitad de mes, sin repartir insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>▶ Ejecutar ahora</i> la lanza de inmediato.</p>
+  <div class="bloque"><h3>Tareas programadas</h3><p><b>Recordatorio de turnos</b> (quién tiene turno hoy y quién no ha reportado), <b>Cierre del día</b>, <b>Resumen semanal</b>, <b>Ranking mensual</b> (otorga las insignias), <b>Avance semanal del ranking</b> y <b>Reporte de actividad semanal</b> (cómo va la cosa a mitad de mes, sin repartir insignias). Marca <i>Activa</i>, fija la hora (hora de Colombia) y Guardar. <i>👁 Vista previa</i> arma el mensaje sin enviarlo; <i>▶ Ejecutar ahora</i> la lanza de inmediato.</p>
+  <p><b>Entregar las insignias del mes.</b> Las reparte el <b>Ranking mensual</b>, no se asignan a mano: el día 1 a la hora que fijes toma el mes que acaba de cerrar, publica el top 3 de cada categoría en el canal de ranking y le da la insignia 🥇 al primero de cada una (más reportes, bajas, patrullajes, reclutamientos y participaciones). Solo cuentan los reportes aprobados, así que conviene no dejar nada en revisión al cerrar el mes. Si quieres entregarlas antes, o el día 1 falló, entra a <b>Automatización</b> y pulsa <i>▶ Ejecutar ahora</i> en esa fila: hace exactamente lo mismo, siempre sobre el mes anterior. Volver a ejecutarla no duplica nada, solo actualiza las cifras. Las insignias quedan en el Salón de insignias del Ranking y en el expediente de cada integrante.</p>
     <p><b>👁 Vista previa</b> te muestra el mensaje exacto que se enviaría, con los datos reales de hoy, sin publicarlo. Desde ahí puedes <b>descargarlo como imagen</b> o copiar el texto, por si quieres mandarlo a mano o guardarlo.</p></div>
   <div class="bloque"><h3>Avisos de eventos del día</h3>
     <p>Publican en Discord un recordatorio <b>X minutos antes</b> de los horarios del calendario de eventos. Puedes tener <b>los que quieras</b>: uno solo para la incursión al arsenal, otro con todas las actividades, otro únicamente con la entrega aérea… Cada uno es independiente y tiene <b>su propio canal</b>.</p>
@@ -421,6 +422,6 @@
     </div>
   </div>
 </main>
-<script type="module" src="js/app-manuales.js?v=4456ead2"></script>
+<script type="module" src="js/app-manuales.js?v=8c695c4a"></script>
 </body>
 </html>
