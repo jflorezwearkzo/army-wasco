@@ -2,7 +2,7 @@
 
 Sitio en GitHub Pages con acceso por usuario y contraseña, roles con permisos, panel de administración e historial de reportes. Backend: Supabase (Auth + Postgres + Storage).
 
-Publicado en: https://pmwasco.zylarion.io (dominio propio; alias: https://jflorezwearkzo.github.io/army-wasco/)
+Publicado en: https://pmwasco.zylarion.io (dominio propio; alias: https://zylarion.github.io/army-wasco/)
 
 ## Estructura
 
@@ -64,7 +64,7 @@ Cada alta, cambio o baja en usuarios, roles, Rangos PM, formularios y reportes, 
 
 ## Cloudflare Turnstile (captcha en el login)
 
-1. Cloudflare → Turnstile → Add widget: dominios `pmwasco.zylarion.io` y `jflorezwearkzo.github.io`, modo Managed. Copia **Site Key** y **Secret Key**.
+1. Cloudflare → Turnstile → Add widget: dominios `pmwasco.zylarion.io` y `zylarion.github.io`, modo Managed. Copia **Site Key** y **Secret Key**.
 2. Supabase → Authentication → Attack Protection → Enable Captcha protection → provider **Turnstile** → pega la Secret Key.
 3. En `src/config.js` pon la Site Key en `TURNSTILE_SITE_KEY` y ejecuta `npm run build`.
 El alta de usuarios desde el panel usa la Edge Function `crear-usuario` (clave de servicio), por lo que no requiere captcha.
