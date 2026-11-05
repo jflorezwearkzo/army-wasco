@@ -1,0 +1,5 @@
+{
+  "verify_jwt": false,
+  "timeout_ms": 120000,
+  "memory_mb": 256
+}

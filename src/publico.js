@@ -4,7 +4,7 @@
 // La página dice cuál es con <body data-tipo="acceso|password">.
 (function () {
   'use strict';
-  var FUNCION = 'https://rvwvnrqwlaudjgzvrzgf.supabase.co/functions/v1/solicitud-acceso';
+  var FUNCION = 'https://ultimatebase.zylarion.io/functions/v1/solicitud-acceso';
   var SITE_KEY = '0x4AAAAAAFrNEt5xSSbtHKaV';   // widget propio de este formulario (no el del login)
   var UNIDADES = { pm: 'Army de Wasco · Policía Militar', eea: 'Army de Wasco · Escuadrón Tormenta' };
   var TIPO = document.body.getAttribute('data-tipo') === 'password' ? 'password' : 'acceso';
