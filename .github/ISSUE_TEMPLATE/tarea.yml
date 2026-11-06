@@ -1,0 +1,19 @@
+name: Tarea o mejora
+description: Algo para construir o cambiar en la app
+labels: [tarea]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué se necesita
+    validations:
+      required: true
+  - type: textarea
+    id: criterio
+    attributes:
+      label: Cómo sabremos que está listo
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options: [Reportes, Panel admin, Calendario, Ranking, Discord, Cuentas y acceso, Seguridad, CI/CD, Otro]
