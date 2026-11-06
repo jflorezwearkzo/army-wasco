@@ -93,7 +93,8 @@ function abrirEditar(p, rol){
   $('#eUsuario').value = p.usuario; $('#eNombre').value = p.nombre || '';
   $('#eRango').innerHTML = '<option value="">— Sin rango —</option>' + RANGOS.map(r => `<option ${r===p.rango?'selected':''}>${esc(r)}</option>`).join('');
   const asignables = ROLES.filter(rolAsignable); $('#eRol').innerHTML = '<option value="">— Sin rol —</option>' + asignables.map(r => `<option value="${esc(r.id)}" ${r.id===p.rol_id?'selected':''}>${esc(r.nombre)}</option>`).join('');
-  if(p.rol_id && !asignables.some(r => r.id===p.rol_id)) $('#eRol').insertAdjacentHTML('afterbegin', `<option value="${esc(p.rol_id)}" selected>${esc(rol.nombre||p.rol_id)}</option>`);
+  // Valores escapados con esc(); Semgrep no ve el escape. nosemgrep en la línea siguiente.
+  if(p.rol_id && !asignables.some(r => r.id===p.rol_id)) $('#eRol').insertAdjacentHTML('afterbegin', `<option value="${esc(p.rol_id)}" selected>${esc(rol.nombre||p.rol_id)}</option>`); // nosemgrep: typescript.react.security.audit.react-unsanitized-method.react-unsanitized-method
   $('#eRol').disabled = !tiene(yo,'asignar_roles'); ['#eNombre','#eRango','#eActivo','#eVisible'].forEach(x => $(x).disabled = !tiene(yo,'usuarios'));
   $('#eActivo').checked = !!p.activo; $('#eVisible').checked = p.visible !== false; $('#eErr').textContent=''; $('#dlgEditar').showModal();
 }

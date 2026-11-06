@@ -1,0 +1,13 @@
+# Reglas por defecto de gitleaks + excepciones justificadas (revisadas a mano, 2026-11-06).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores públicos por diseño y código compilado"
+# js/ es la salida ofuscada de src/ (cadenas aleatorias que parecen llaves).
+paths = ['''^js/''']
+regexTarget = "line"
+regexes = [
+  # Llave anon (pública, va en el navegador) de UltimateBase y, en el historial, de la plataforma anterior.
+  '''SUPABASE_ANON_KEY = ''',
+]

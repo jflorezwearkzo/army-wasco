@@ -377,7 +377,7 @@ export async function modoCorreccion(yo){
   CORRIGIENDO = { id: r.id, folio: r.folio };
   const puestos = precargarCampos(form, r.datos);
   avisoCorreccion(form,
-    `✏️ Estás corrigiendo el reporte <b>${esc(r.folio)}</b>.` +
+    `✏️ Estás corrigiendo el reporte <b>${esc(r.folio)}</b>.` + // nosemgrep: javascript.browser.security.raw-html-concat.raw-html-concat -- todo pasa por esc()
     (r.comentario_revision ? `<br><span style="color:var(--muted)">Motivo (${esc(r.revisor||'revisor')}): ${esc(r.comentario_revision)}</span>` : '') +
     `<br><span style="color:var(--muted)">${puestos ? 'Recuperamos lo que se pudo; r' : 'R'}evisa todo, vuelve a adjuntar las fotos y expórtalo: al terminar reemplaza el reporte y vuelve a revisión.</span>`);
   return CORRIGIENDO;
